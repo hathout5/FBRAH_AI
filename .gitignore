@@ -1,0 +1,12 @@
+﻿.env
+.env.local
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+data/
+النتائج/
+results/
+.venv/
+venv/
+.vscode/

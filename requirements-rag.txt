@@ -1,0 +1,9 @@
+# اختياري لـ Vector RAG + Re-ranker + GROQ
+chromadb>=0.4.0
+# qdrant-client>=1.7.0
+sentence-transformers>=2.2.0
+# torch  # مطلوب لـ sentence-transformers على أغلب الأنظمة
+requests>=2.28.0
+python-docx>=0.8.11
+rank_bm25>=0.2.2
+python-dotenv>=1.0.0

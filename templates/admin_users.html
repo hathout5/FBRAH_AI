@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FBRAH — إدارة المستخدمين</title>
+<style>
+:root {
+  --gold: #d4af37;
+  --gold-dark: #b8860b;
+  --navy: #001F3F;
+  --maroon: #760d0d;
+  --maroon-deep: #6b0f1a;
+  --green: #228B22;
+  --bg: #f8f6f1;
+  --card: #ffffff;
+  --border: #c9b896;
+  --text: #760d0d;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'MicrogrammaDMedExt', Ectacoar, Calibri, Ebrima, Tahoma, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.header {
+  background: var(--navy);
+  color: #e8e8e8;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 3px solid var(--gold);
+}
+.header .brand {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.header .brand .g { color: var(--gold); }
+.header .brand .b { color: #09a4f1; }
+.header .brand .y { color: #FFEF00; }
+.header .brand .gr { color: var(--green); }
+.header .brand .r { color: #8f0606; }
+.header a {
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+.header a:hover { text-decoration: underline; }
+.container { max-width: 960px; margin: 20px auto; padding: 0 14px; }
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  border-top: 3px solid var(--gold);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--gold);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+h2 {
+  margin: 0 0 14px;
+  color: var(--green);
+  font-size: 17px;
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 6px;
+  display: inline-block;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 10px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: top; }
+th { background: #faf6ef; color: var(--maroon); font-weight: 700; }
+tr:hover td { background: #fcfaf6; }
+input, select, button {
+  padding: 8px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+}
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(212,175,55,.22);
+}
+button {
+  background: var(--gold);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  color: #3a2a00;
+}
+button:hover { background: var(--gold-dark); color: #fff; }
+.btn-navy { background: var(--navy); color: var(--gold); }
+.btn-navy:hover { background: #0a2f4f; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #1a6b1a; }
+.btn-danger { background: #c62828; color: #fff; }
+.btn-danger:hover { background: #b71c1c; }
+.msg {
+  padding: 10px 14px;
+  background: #eef7ee;
+  border: 1px solid #c8e5cb;
+  border-right: 4px solid var(--green);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  color: var(--green);
+  font-weight: 600;
+  white-space: pre-wrap;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+.inline-form input { max-width: 140px; }
+.hint { font-size: 11px; color: #8b6914; margin: 0 0 10px; }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.badge-admin { background: #001F3F; color: var(--gold); }
+.badge-user { background: #eef5ee; color: var(--green); border: 1px solid #c8e5cb; }
+footer {
+  text-align: center;
+  padding: 14px;
+  color: #888;
+  font-size: 11px;
+}
+@media (max-width: 700px) {
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  tr {
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    background: #fff;
+  }
+  td {
+    border: none;
+    padding: 6px 8px;
+    text-align: right;
+  }
+  td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--gold-dark);
+    display: block;
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="brand">
+    <span class="g">F</span><span class="b">B</span><span class="y">R</span><span class="gr">A</span><span class="r">H</span>
+    <span style="font-size:14px;font-weight:600;color:#d4af37;margin-right:8px;">— إدارة المستخدمين</span>
+  </div>
+  <a href="{{ url_for('home') }}">العودة للرئيسية</a>
+</header>
+
+<div class="container">
+  {% if msg %}
+  <div class="msg">{{ msg }}</div>
+  {% endif %}
+
+  <div class="card">
+    <h2>إضافة مستخدم</h2>
+    <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
+    <form method="post">
+      <input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
+        <input name="password" type="password" placeholder="كلمة المرور" required minlength="6" autocomplete="new-password">
+        <select name="role">
+          <option value="user">مستخدم</option>
+          <option value="admin">مدير</option>
+        </select>
+        <button type="submit" class="btn-green">إضافة</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>قائمة المستخدمين</h2>
+    <p class="hint">يمكن تعديل اسم المستخدم وكلمة المرور والدور من هنا. حساب <strong>admin</strong> لا يُحذف ولا يُعاد تسميته.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>اسم المستخدم</th>
+          <th>البريد</th>
+          <th>الهاتف</th>
+          <th>الدور</th>
+          <th>تاريخ الإنشاء</th>
+          <th>تعديل / إجراء</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td data-label="#">{{ u.id }}</td>
+          <td data-label="اسم المستخدم"><strong>{{ u.username }}</strong></td>
+          <td data-label="البريد">{{ u.email or '—' }}</td>
+          <td data-label="الهاتف">{{ u.phone or '—' }}</td>
+          <td data-label="الدور">
+            {% if u.role == 'admin' %}
+            <span class="badge badge-admin">مدير</span>
+            {% else %}
+            <span class="badge badge-user">مستخدم</span>
+            {% endif %}
+          </td>
+          <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
+          <td data-label="تعديل">
+            {% if u.username != 'admin' %}
+            <form method="post" class="inline-form" title="تغيير اسم المستخدم">
+              <input type="hidden" name="action" value="rename_user">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input name="new_username" placeholder="اسم جديد" minlength="3" required>
+              <button type="submit" class="btn-navy">تغيير الاسم</button>
+            </form>
+            {% endif %}
+
+            <form method="post" class="inline-form" title="تغيير كلمة المرور">
+              <input type="hidden" name="action" value="change_password">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="6" required autocomplete="new-password">
+              <button type="submit" class="btn-navy">تغيير المرور</button>
+            </form>
+
+            {% if u.username != 'admin' %}
+            <form method="post" class="inline-form" title="تغيير الدور">
+              <input type="hidden" name="action" value="change_role">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <select name="role">
+                <option value="user" {% if u.role == 'user' %}selected{% endif %}>مستخدم</option>
+                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>مدير</option>
+              </select>
+              <button type="submit" class="btn-green">تحديث الدور</button>
+            </form>
+
+            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button type="submit" class="btn-danger">حذف</button>
+            </form>
+            {% else %}
+            <span class="hint" style="margin:0">حساب المدير الأساسي — يمكن تغيير كلمة المرور فقط</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7">لا يوجد مستخدمون.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<footer>FBRAH — إدارة المستخدمين · ألوان الواجهة الرسمية</footer>
+</body>
+</html>
