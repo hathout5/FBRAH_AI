@@ -26,4 +26,5 @@ instance/
 # Local database backups
 backups/
 # Accidental Word backup file
-backup_db.docx
+backup_db.docxrestore_test*.db
+restore_test*.tmp
