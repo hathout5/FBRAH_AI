@@ -1,0 +1,30 @@
+.env
+.env.local
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+data/
+النتائج/
+results/
+.venv/
+venv/
+.vscode/
+
+# Additional security and local files
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.log
+instance/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+# Local database backups
+backups/
+# Accidental Word backup file
+backup_db.docxrestore_test*.db
+restore_test*.tmp
