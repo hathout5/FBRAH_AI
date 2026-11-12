@@ -26,5 +26,25 @@ instance/
 # Local database backups
 backups/
 # Accidental Word backup file
-backup_db.docxrestore_test*.db
+backup_db.docx
+restore_test*.db
 restore_test*.tmp
+run_log.txt
+*.bak
+*.pre_deep_clean.bak
+restore_test*
+
+# Local pre-install snapshots created by INSTALL_RELEASE.ps1
+.fbrah_release_backup_*/
+*.pyc
+
+# Audit artifacts and unsafe legacy tests/scripts — keep out of GitHub
+QUARANTINE_DO_NOT_RUN/
+test_fbrah_system.py
+test_index_integrity.py
+اختبار_الحماية.py
+تطبيق_التحديثات.ps1
+تقرير_التحقق.txt
+FBRAH_AI_Package_Verification.txt
+FBRAH_MASTER_AUDIT.txt
+RELEASE_NOTES_AR.txt

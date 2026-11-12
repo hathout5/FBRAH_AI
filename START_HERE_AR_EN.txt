@@ -1,0 +1,18 @@
+FBRAH AI — RELEASE CANDIDATE / نسخة مرشحة للإصدار
+
+ابدأ بقراءة RELEASE_GUIDE_AR.md أو RELEASE_GUIDE_EN.md، واقرأ RECONCILIATION_REQUIRED_AR.md قبل تشغيل المثبت.
+Start with RELEASE_GUIDE_AR.md or RELEASE_GUIDE_EN.md. Read RECONCILIATION_REQUIRED_AR.md before running the installer.
+
+التثبيت / Install:
+powershell -ExecutionPolicy Bypass -File .\INSTALL_RELEASE.ps1 -ProjectRoot "C:\path\to\Fbrah-AI"
+
+المثبت يتحقق من SHA-256، يجهّز الملفات مرحلياً، يشغّل الاختبارات قبل وبعد التثبيت، ويحفظ نسخة سابقة ويتراجع تلقائياً عند فشل الاختبار. لا يغيّر .env أو قواعد البيانات أو data أو Qdrant أو النسخ الاحتياطية.
+The installer verifies SHA-256, stages files, tests before/after installation, backs up replaced files, and rolls back on test failure. It leaves .env, databases, data, Qdrant and backup folders untouched.
+
+الفحص الثابت / Static check:
+python -m unittest -v test_release_integrity.py
+
+هذه نسخة مرشحة. راجع FEATURE_MATRIX_AR_EN.md لمعرفة ما اكتمل وما لا يزال بحاجة إلى تطوير واختبار.
+This is a release candidate. See FEATURE_MATRIX_AR_EN.md for completed and pending items.
+
+تحديث 11 نوفمبر 2026: راجع RELEASE_NOTES_AR_2026-11-11.txt وUX_RAG_VALIDATION_AR.md.

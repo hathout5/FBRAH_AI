@@ -1,0 +1,15 @@
+# Public deployment and SMTP settings. Replace placeholders locally; never commit secrets.
+FBRAH_PUBLIC_BASE_URL=
+FBRAH_HTTPS=0
+FBRAH_SMTP_HOST=
+FBRAH_SMTP_PORT=587
+FBRAH_SMTP_FROM=
+FBRAH_SMTP_USER=
+FBRAH_SMTP_PASSWORD=
+FBRAH_SMTP_TIMEOUT=15
+# Cloud fallback stays within Gemini/GROQ only; local fallback stays within installed Ollama models.
+# Add valid Groq model IDs, comma-separated.
+GROQ_MODELS=openai/gpt-oss-120b
+FBRAH_ALLOW_CLOUD_FALLBACK=1
+FBRAH_ALLOW_LOCAL_MODEL_FALLBACK=1
+FBRAH_CLOUD_TIMEOUT=30
