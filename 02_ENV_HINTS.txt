@@ -1,0 +1,23 @@
+متغيرات اختيارية في ملف .env (لا ترفع .env على GitHub)
+=====================================================
+
+# كلمة مرور أول admin (بدل العشوائية)
+FBRAH_INITIAL_ADMIN_PASSWORD=غيّرها-إلى-كلمة-قوية
+
+# أو إعادة تعيين لاحقاً
+# FBRAH_RESET_ADMIN_PASSWORD=كلمة-جديدة
+
+# فصل البيئات: hybrid | local | cloud
+FBRAH_RUNTIME_MODE=hybrid
+
+# السماح بإرسال صور OCR للسحابة (افتراضي: ممنوع)
+FBRAH_OCR_ALLOW_CLOUD=0
+
+# التحويل بين Gemini و GROQ عند الفشل (افتراضي: معطل)
+FBRAH_ALLOW_CLOUD_FALLBACK=0
+
+# صفحات OCR: 0 = بلا حد
+FBRAH_OCR_MAX_PAGES=0
+
+GROQ_API_KEY=
+GEMINI_API_KEY=

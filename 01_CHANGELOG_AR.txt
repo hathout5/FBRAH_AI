@@ -1,0 +1,31 @@
+سجل تعديلات الحزمة — حسب الأولوية
+================================
+
+[P0] أمن
+- templates/index.html: {{ answer|fbrah_safe }} بدل |safe
+- app.py: فلتر fbrah_sanitize_html + template filter fbrah_safe
+- app.py: كلمة مرور admin لا تُطبع في السجل → data/.initial_admin_password
+- app.py: get_available_models بدون أسماء وهمية عند تعطل Ollama
+- app.py: FBRAH_RUNTIME_MODE + FBRAH_OCR_ALLOW_CLOUD
+- app.py: لا إسقاط إجابة سحابية ناجحة بسبب الوقت
+
+[P1] توجيه ونماذج
+- app.py: get_models_for_ui من المفاتيح + النماذج المثبتة فقط
+- app.py: التحويل الاحتياطي السحابي يبقى اختيارياً عبر FBRAH_ALLOW_CLOUD_FALLBACK
+
+[P1] ترجمة ملفات
+- app.py: translate_text_quality على أجزاء كاملة + تنبيه نسبة الاكتمال
+- app.py: إلغاء content[:10000] في مسار المرفوعات
+
+[P1] OCR / PDF
+- app.py: OCR_MAX_PAGES=0 بلا حد صفحات
+- app.py: استخراج كل صفحات PDF + تنبيه الصفحات بلا نص
+
+[P1] منصة الإجابة
+- templates/index.html: max-height:none + أنماط جداول و pre
+
+[P2/P3] غير مكتمل في هذه الحزمة
+- توليد صور متقدم، RAG عزل مستخدمين، نداء فبرا، اختبارات تكامل
+  تُنجز في جولات لاحقة
+
+.gitignore: يستبعد .git / .env / .db / .bak / quarantine من النشر

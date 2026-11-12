@@ -23,14 +23,14 @@ git check-ignore -v .env fbrah.db data backups
 - بعد أن يصبح مجلد العمل آمناً وبعد التأكد من أنك على `clean-main`، أنشئ فرع مراجعة جديداً:
 
 ```powershell
-git switch -c release/fbrah-ai-2026-11-11
+git switch -c release/fbrah-ai-2026-11-12
 ```
 
 - أضف الملفات المحددة بعد مراجعتها فقط، ثم افحص ما سيُرفع:
 
 ```powershell
-git add app.py templates/index.html templates/admin_users.html
-# أضف بقية الملفات المطلوبة بأسمائها الصريحة بعد مراجعتها
+git add app.py templates/index.html templates/admin_users.html backup_db.py restore_db.py reset_admin.py security_hardening.py fbrah_priority_enhancements.py requirements.txt requirements-rag.txt .env.example .gitignore .gitattributes test_release_integrity.py test_index_integrity.py test_priority_smoke.py
+# أضف ملفات الوثائق والمثبت بأسمائها الصريحة بعد مراجعتها
 
 git diff --cached --check
 git diff --cached --stat
@@ -42,7 +42,7 @@ git status --short
 
 ```powershell
 git commit -m "Prepare FBRAH AI release candidate"
-git push -u origin release/fbrah-ai-2026-11-11
+git push -u origin release/fbrah-ai-2026-11-12
 ```
 
 ## ملاحظة أمنية للتاريخ
@@ -58,3 +58,15 @@ git push -u origin release/fbrah-ai-2026-11-11
 - استخدم `ENABLE_FALLBACK_LOCAL.ps1` عند الحاجة لتفعيل القيمتين في `.env` المحلي؛ هذا الملف لا يدخل في GitHub ولا يطبع مفاتيح API.
 - ملف `.env` وقاعدة البيانات وبيانات المستخدمين ومجلد `data` وQdrant والنسخ الاحتياطية تبقى محلية.
 - هذا التقرير مبني على مراجع Git المحفوظة في الأرشيف، وليس فحصاً لكل refs البعيدة أو طلبات السحب في GitHub.
+
+## فحوص ما قبل النشر في هذه النسخة
+
+```powershell
+python -m py_compile app.py backup_db.py restore_db.py reset_admin.py security_hardening.py fbrah_priority_enhancements.py
+python -m unittest -v test_release_integrity.py test_index_integrity.py
+python test_priority_smoke.py
+git diff --check
+git status --short
+```
+
+لا ترفع `.env` أو أي قاعدة بيانات أو `data/` أو Qdrant أو ملفات `.bak` أو `.log` أو مجلد `.git`. لا تنفذ `git add -A`.

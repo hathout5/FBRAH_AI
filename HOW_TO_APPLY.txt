@@ -1,0 +1,25 @@
+كيف تطبّق الحزمة على مشروعك (بدون PowerShell)
+==============================================
+
+الملفات المطلوبة للاستبدال:
+
+1) app.py
+   المصدر المعدَّل الكامل:
+   /home/workdir/artifacts/fbrah_src/app.py
+   → انسخه فوق app.py في جذر مشروع FBRAH
+
+2) templates/index.html
+   المصدر المعدَّل:
+   /home/workdir/artifacts/fbrah_src/package/templates/index.html
+   → انسخه إلى templates/index.html
+   وإن نسختك في "Fbrah Ai G/templates/index.html" استبدلها أيضاً من:
+   /home/workdir/artifacts/fbrah_src/Fbrah Ai G/templates/index.html
+
+3) .gitignore  (اختياري)
+   موجود داخل هذه الحزمة: FBRAH_PRIORITY_PACKAGE/.gitignore
+
+ثم شغّل التطبيق كالمعتاد.
+
+تغطي هذه الملفات أولويات:
+P0  أمن HTML + كلمات المرور + فصل البيئات
+P1  التوجيه والنماذج + ترجمة كاملة + PDF/OCR + عرض الإجابة

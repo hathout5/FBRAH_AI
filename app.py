@@ -769,7 +769,7 @@ def get_available_models(force=False):
             ]
             _model_cache.update(at=now, models=models)
             return list(models)
-        except (requests.RequestException, ValueError):
+        except (requests.RequestException, ValueError, TypeError, AttributeError):
             # لا تعرض نماذج افتراضية غير مثبتة؛ حالة Ollama غير المتاحة تعني قائمة فارغة.
             _model_cache.update(at=now, models=[])
             return []
@@ -777,25 +777,72 @@ def get_available_models(force=False):
 
 
 def get_models_for_ui():
-    """قائمة الموديلات: GROQ + Gemini + Ollama."""
+    """قائمة الموديلات السحابية المهيأة والمحلية المثبتة فعلياً في Ollama."""
     models = []
     if GROQ_API_KEY:
-        models.extend(["groq", "groq:openai/gpt-oss-120b"])
+        models.append("groq")
+        for model_id in GROQ_MODELS_LIST:
+            item = "groq:" + model_id
+            if item not in models:
+                models.append(item)
     if GEMINI_API_KEY:
-        models.extend([
-            "gemini",
-            "gemini:" + (GEMINI_MODEL or "gemini-3.5-flash-lite"),
-            "gemini:gemini-3.5-flash-lite",
-            "gemini:gemini-3.8-flash",
-            "gemini:gemini-3.6-flash",
-        ])
+        models.append("gemini")
+        for model_id in dict.fromkeys([GEMINI_MODEL] + GEMINI_MODELS_LIST):
+            if model_id:
+                item = "gemini:" + model_id
+                if item not in models:
+                    models.append(item)
     try:
-        for m in get_available_models() or []:
-            if m and m not in models:
-                models.append(m)
+        for model_id in get_available_models() or []:
+            if model_id and model_id not in models:
+                models.append(model_id)
     except Exception:
-        pass
+        app.logger.exception("تعذر تحميل قائمة نماذج Ollama للواجهة")
     return models
+
+
+_internet_probe_cache = {"at": 0.0, "available": False}
+_internet_probe_lock = threading.Lock()
+
+def is_internet_available(force=False):
+    """تحقق سريع من الوصول للإنترنت؛ لا يختبر صلاحية مفتاح Gemini أو حصته."""
+    now = time.time()
+    with _internet_probe_lock:
+        if not force and now - _internet_probe_cache["at"] < 15:
+            return bool(_internet_probe_cache["available"])
+        available = False
+        try:
+            # أي استجابة HTTP تعني أن الاتصال بالخادم وصل؛ 401/403/404 ليست انقطاع إنترنت.
+            response = requests.get(
+                "https://generativelanguage.googleapis.com/",
+                timeout=(0.7, 1.2),
+                allow_redirects=False,
+            )
+            available = True
+            response.close()
+        except requests.RequestException:
+            available = False
+        _internet_probe_cache.update(at=now, available=available)
+        return available
+
+
+def choose_default_model(models):
+    """Gemini افتراضياً عند وجود الإنترنت ومفتاحه؛ وإلا Ollama المحلي."""
+    available = list(models or [])
+    if GEMINI_API_KEY and is_internet_available():
+        preferred_gemini = "gemini:" + (GEMINI_MODEL or "gemini-3.5-flash-lite")
+        if preferred_gemini in available or "gemini" in available:
+            return preferred_gemini if preferred_gemini in available else "gemini"
+    if DEFAULT_MODEL in available:
+        return DEFAULT_MODEL
+    local_models = [m for m in available if not is_gemini_model(m) and not is_groq_model(m)]
+    if local_models:
+        return local_models[0]
+    if GEMINI_API_KEY and any(is_gemini_model(m) for m in available):
+        return next(m for m in available if is_gemini_model(m))
+    if GROQ_API_KEY and any(is_groq_model(m) for m in available):
+        return next(m for m in available if is_groq_model(m))
+    return DEFAULT_MODEL
 
 def _llm_looks_bad(out):
     if not out or not isinstance(out, str):
@@ -2895,12 +2942,12 @@ def is_groq_model(model_name):
     m = (model_name or "").strip().lower()
     if not m:
         return False
+    # لا تصنّف اسم موديل Ollama محلي مثل gpt-oss:20b على أنه GROQ.
     return (
         m == "groq"
         or m.startswith("groq:")
         or m.startswith("groq/")
         or m.startswith("openai/")
-        or "gpt-oss" in m
     )
 
 
@@ -9427,6 +9474,17 @@ def _classify_existing_files_batch(rows, model):
             app.logger.exception("فشل تصنيف الملف: %s", filepath)
 
 
+@app.route("/api/ollama/models", methods=["GET"])
+@login_required
+def api_ollama_models():
+    """إعادة فحص Ollama فوراً لتحديث قائمة النماذج دون إعادة تشغيل Flask."""
+    models = get_available_models(force=True)
+    if models:
+        return jsonify({"ok": True, "models": models, "message": "تم العثور على نماذج Ollama المثبتة."})
+    ok, message = ollama_status()
+    return jsonify({"ok": False, "models": [], "message": message}), (200 if ok else 503)
+
+
 # ============================================================
 # 10. MAIN PAGE
 # ============================================================
@@ -9444,10 +9502,7 @@ def home():
         answer = session.pop("_display_answer", "") or ""
         generated = session.pop("_display_generated", "") or ""
     models = get_models_for_ui()
-    selected_model = (
-        DEFAULT_MODEL if DEFAULT_MODEL in models
-        else (models[0] if models else DEFAULT_MODEL)
-    )
+    selected_model = choose_default_model(models)
     available_uploaded_files = _get_current_user_uploaded_files()
     available_folders = []
 

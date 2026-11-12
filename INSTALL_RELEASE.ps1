@@ -73,9 +73,9 @@ if ($manifestEntries.Count -lt 10) { throw 'Release manifest is unexpectedly sma
 $manifestEntries += [pscustomobject]@{ Relative = 'MANIFEST_SHA256.txt'; Hash = $null }
 $required = @(
     'app.py', 'templates/index.html', 'templates/admin_users.html',
-    'backup_db.py', 'restore_db.py', 'reset_admin.py', 'security_hardening.py',
+    'backup_db.py', 'restore_db.py', 'reset_admin.py', 'security_hardening.py', 'fbrah_priority_enhancements.py',
     'requirements.txt', 'requirements-rag.txt', '.env.example', '.gitignore', '.gitattributes',
-    'test_release_integrity.py', 'INSTALL_RELEASE.ps1'
+    'test_release_integrity.py', 'test_index_integrity.py', 'test_priority_smoke.py', 'INSTALL_RELEASE.ps1'
 )
 $present = @($manifestEntries | ForEach-Object { $_.Relative.Replace('\', '/') })
 foreach ($name in $required) {
@@ -145,8 +145,10 @@ try {
     # Run the static suite from the staged package before touching the project.
     Push-Location $stageRoot
     try {
-        & $python.Source -m unittest -v test_release_integrity.py
-        if ($LASTEXITCODE -ne 0) { throw "Staged release tests failed (exit $LASTEXITCODE). No project files were changed." }
+        & $python.Source -m unittest -v test_release_integrity.py test_index_integrity.py
+        if ($LASTEXITCODE -ne 0) { throw "Staged Python integrity tests failed (exit $LASTEXITCODE). No project files were changed." }
+        & $python.Source test_priority_smoke.py
+        if ($LASTEXITCODE -ne 0) { throw "Staged smoke tests failed (exit $LASTEXITCODE). No project files were changed." }
     }
     finally { Pop-Location }
 
@@ -176,8 +178,10 @@ try {
 
     Push-Location $ProjectRoot
     try {
-        & $python.Source -m unittest -v test_release_integrity.py
-        if ($LASTEXITCODE -ne 0) { throw "Installed release tests failed (exit $LASTEXITCODE). Rolling back source files." }
+        & $python.Source -m unittest -v test_release_integrity.py test_index_integrity.py
+        if ($LASTEXITCODE -ne 0) { throw "Installed Python integrity tests failed (exit $LASTEXITCODE). Rolling back source files." }
+        & $python.Source test_priority_smoke.py
+        if ($LASTEXITCODE -ne 0) { throw "Installed smoke tests failed (exit $LASTEXITCODE). Rolling back source files." }
     }
     finally { Pop-Location }
 

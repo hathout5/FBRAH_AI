@@ -2194,7 +2194,7 @@
                 <div class="field">
                     <label class="label-model">الموديل</label>
                     <select name="model" id="model">
-                        <option value="groq" {% if selected_model == 'groq' or selected_model == 'groq:openai/gpt-oss-120b' or (selected_model and 'gpt-oss' in selected_model) %}selected{% endif %}>GROQ · openai/gpt-oss-120b</option>
+                        <option value="groq" {% if selected_model == 'groq' or selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · openai/gpt-oss-120b</option>
                         <option value="groq:openai/gpt-oss-120b" {% if selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · gpt-oss-120b (صريح)</option>
                         <option value="gemini:gemini-3.8-flash" {% if selected_model == 'gemini:gemini-3.8-flash' or selected_model == 'gemini' %}selected{% endif %}>Gemini · 3.8 Flash</option>
                         <option value="gemini:gemini-3.5-flash" {% if selected_model == 'gemini:gemini-3.5-flash' %}selected{% endif %}>Gemini · 3.5 Flash</option>
@@ -2202,11 +2202,19 @@
                         <option value="gemini:gemini-3.6-flash" {% if selected_model == 'gemini:gemini-3.6-flash' %}selected{% endif %}>Gemini · 3.6 Flash</option>
                         <option value="gemini:gemini-3.1-pro-preview" {% if selected_model == 'gemini:gemini-3.1-pro-preview' %}selected{% endif %}>Gemini · 3.1 Pro Preview</option>
                         {% for m in models %}
-                        {% if m != 'groq' and not m.startswith('groq:') and m != 'gemini' and not m.startswith('gemini:') and m != 'gemini:gemini-3.5-flash-lite' and m != 'gemini:gemini-3.8-flash' and m != 'gemini:gemini-3.6-flash' %}
-                        <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>{{ m }}</option>
+                        {% if m.startswith('groq:') and m != 'groq:openai/gpt-oss-120b' %}
+                        <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>GROQ · {{ m[5:] }}</option>
+                        {% elif m.startswith('gemini:') and m not in ['gemini:gemini-3.8-flash', 'gemini:gemini-3.5-flash', 'gemini:gemini-3.5-flash-lite', 'gemini:gemini-3.6-flash', 'gemini:gemini-3.1-pro-preview'] %}
+                        <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>Gemini · {{ m[7:] }}</option>
+                        {% elif m != 'groq' and not m.startswith('groq:') and m != 'gemini' and not m.startswith('gemini:') %}
+                        <option value="{{ m }}" data-ollama-model="1" {% if m == selected_model %}selected{% endif %}>{{ m }}</option>
                         {% endif %}
                         {% endfor %}
                     </select>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                        <button type="button" id="refreshOllamaModelsBtn" class="sec" style="padding:5px 9px;font-size:12px;">تحديث نماذج Ollama</button>
+                        <span id="ollamaModelsStatus" role="status" aria-live="polite" style="font-size:11px;opacity:.8;"></span>
+                    </div>
                 </div>
                 <div class="field">
 
@@ -3083,6 +3091,8 @@
 
         // ===== حفظ الاختيارات طالما المتصفح مفتوح (localStorage) =====
         var FBRAH_PREFS_KEY = "fbrah_ui_prefs_session";
+        // لا نحفظ اختيار الخادم الافتراضي كأنه اختيار يدوي؛ حتى يتغير الافتراضي عند انتقال الاتصال بين online/offline.
+        var modelWasManuallySelected = false;
         function saveFbrahPrefs() {
             try {
                 var folders = [];
@@ -3094,6 +3104,7 @@
                 var modeEl = document.getElementById("search_mode");
                 var prefs = {
                     model: modelEl ? modelEl.value : "",
+                    model_user_selected: modelWasManuallySelected,
                     use_web: !!(webOnly && webOnly.checked),
                     use_web_and_local: !!(webAndLocal && webAndLocal.checked),
                     folder_scope: scopeEl ? scopeEl.value : "selected_only",
@@ -3111,7 +3122,8 @@
                 if (!prefs || typeof prefs !== "object") return;
 
                 var modelEl = document.getElementById("model");
-                if (modelEl && prefs.model) {
+                modelWasManuallySelected = prefs.model_user_selected === true;
+                if (modelEl && prefs.model && modelWasManuallySelected) {
                     for (var i = 0; i < modelEl.options.length; i++) {
                         if (modelEl.options[i].value === prefs.model) {
                             modelEl.value = prefs.model;
@@ -3153,7 +3165,46 @@
         }
         // حفظ عند أي تغيير
         var modelElBind = document.getElementById("model");
-        if (modelElBind) modelElBind.addEventListener("change", saveFbrahPrefs);
+        if (modelElBind) modelElBind.addEventListener("change", function () {
+            modelWasManuallySelected = true;
+            saveFbrahPrefs();
+        });
+        var refreshOllamaBtn = document.getElementById("refreshOllamaModelsBtn");
+        var ollamaModelsStatus = document.getElementById("ollamaModelsStatus");
+        if (refreshOllamaBtn && modelElBind) {
+            refreshOllamaBtn.addEventListener("click", async function () {
+                refreshOllamaBtn.disabled = true;
+                if (ollamaModelsStatus) ollamaModelsStatus.textContent = "جارٍ الاتصال بـ Ollama...";
+                try {
+                    var response = await fetch("/api/ollama/models", { credentials: "same-origin", cache: "no-store" });
+                    var payload = await response.json();
+                    var previousModel = modelElBind.value;
+                    modelElBind.querySelectorAll('option[data-ollama-model="1"]').forEach(function (option) { option.remove(); });
+                    (payload.models || []).forEach(function (name) {
+                        if (!name || Array.from(modelElBind.options).some(function (option) { return option.value === name; })) return;
+                        var option = document.createElement("option");
+                        option.value = name;
+                        option.textContent = name;
+                        option.setAttribute("data-ollama-model", "1");
+                        modelElBind.appendChild(option);
+                    });
+                    if (previousModel && Array.from(modelElBind.options).some(function (option) { return option.value === previousModel; })) {
+                        modelElBind.value = previousModel;
+                    }
+                    if (payload.models && payload.models.length) {
+                        if (payload.models.indexOf("qwen2.5:7b") >= 0 && !modelElBind.value) modelElBind.value = "qwen2.5:7b";
+                        if (ollamaModelsStatus) ollamaModelsStatus.textContent = payload.message || (payload.models.length + " نموذج محلي متاح");
+                    } else if (ollamaModelsStatus) {
+                        ollamaModelsStatus.textContent = payload.message || "لم يتم العثور على نماذج محلية.";
+                    }
+                    saveFbrahPrefs();
+                } catch (error) {
+                    if (ollamaModelsStatus) ollamaModelsStatus.textContent = "تعذر تحديث قائمة Ollama؛ تحقق من تشغيل الخدمة.";
+                } finally {
+                    refreshOllamaBtn.disabled = false;
+                }
+            });
+        }
         var modeElBind = document.getElementById("search_mode");
         if (modeElBind) modeElBind.addEventListener("change", saveFbrahPrefs);
         var scopeElBind = document.getElementById("folder_scope");

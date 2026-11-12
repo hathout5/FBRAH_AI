@@ -1,0 +1,21 @@
+حزمة أولويات FBRAH (P0–P1) — ملفات جاهزة للاستبدال
+=====================================================
+
+لا علاقة لها بـ PowerShell. انسخ الملفات إلى مشروعك يدوياً.
+
+الترتيب:
+1) انسخ app.py  →  يستبدل app.py في جذر المشروع
+2) انسخ templates/index.html  →  templates/index.html
+   (إن كان عندك القالب في "Fbrah Ai G/templates" انسخه هناك أيضاً)
+3) انسخ .gitignore  →  جذر المشروع (اختياري لكن مهم قبل النشر)
+4) اقرأ 01_CHANGELOG_AR.txt
+
+بعد النسخ: أعد تشغيل التطبيق فقط (python app.py).
+
+ملفات هذه الحزمة:
+- app.py
+- templates/index.html
+- .gitignore
+- 00_INSTALL_AR.txt
+- 01_CHANGELOG_AR.txt
+- 02_ENV_HINTS.txt

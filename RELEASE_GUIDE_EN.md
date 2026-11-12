@@ -38,9 +38,10 @@ Read `RECONCILIATION_REQUIRED_AR.md`: the local PowerShell audit reported differ
 3. Run `INSTALL_RELEASE.ps1` from PowerShell, passing the project path:
    `powershell -ExecutionPolicy Bypass -File .\INSTALL_RELEASE.ps1 -ProjectRoot "C:\path\to\Fbrah Ai G"`
 4. The installer backs up files it replaces and does not modify `.env`, databases, `data`, Qdrant, or backup folders.
-5. Run the read-only static checks:
-   `python -m unittest -v test_release_integrity.py`
-6. Do not run `test_fbrah_system.py`, `اختبار_الحماية.py`, or the old subprocess test until isolated. Legacy tests/scripts are excluded from the release ZIP and remain ignored by `.gitignore`.
+5. Run the package checks:
+   `python -m unittest -v test_release_integrity.py test_index_integrity.py`
+   then `python test_priority_smoke.py`. These checks do not start Flask or access the user database.
+6. Full Flask, SMTP, OCR, and AI-provider tests must be run in a disposable environment with separate credentials and a separate database; they were not live-tested while building this ZIP.
 7. Test against a disposable database and separate SMTP/model credentials, then inspect Git diffs and status.
 
 ## Publishing cautions
@@ -49,5 +50,7 @@ Never commit `.env`, database/WAL/SHM files, `data/`, Qdrant, `backups/`, logs, 
 ## Not yet completed
 A full answer-page redesign, benchmark-validated RAG ranking changes, advanced table extraction from pen images, scenario/probability workbench, live FX/gold data, and full English localization of account/admin/password-reset pages remain separate tasks requiring functional tests.
 
+
+See `OLLAMA_TROUBLESHOOTING_AR.md` for Ollama model discovery and refresh steps. When a Gemini key and internet access are available, Gemini is the default; when internet is unavailable, Qwen is selected if installed. Explicit manual model choices persist, and automatic cloud/local crossing is forbidden.
 
 See `FEATURE_MATRIX_AR_EN.md` for a precise separation of delivered changes and pending work.

@@ -82,6 +82,49 @@ class ReleaseIntegrityTests(unittest.TestCase):
         self.assertIn('models_try[:4]', self.app)
         self.assertIn('return ask_ollama(', self.app[self.app.find('def resolve_llm('):self.app.find('def _rebuild_vector_chunks')])
 
+
+    def test_local_gpt_oss_name_is_not_misclassified_as_groq(self):
+        tree = ast.parse(self.app)
+        node = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "is_groq_model")
+        namespace = {}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), "app.py", "exec"), namespace)
+        classify = namespace["is_groq_model"]
+        self.assertFalse(classify("gpt-oss:20b"))
+        self.assertTrue(classify("groq:openai/gpt-oss-120b"))
+        self.assertTrue(classify("openai/gpt-oss-120b"))
+
+    def test_online_default_prefers_configured_gemini_and_offline_prefers_installed_local(self):
+        tree = ast.parse(self.app)
+        nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "choose_default_model"]
+        self.assertEqual(len(nodes), 1)
+        namespace = {
+            "DEFAULT_MODEL": "qwen2.5:7b",
+            "GEMINI_MODEL": "gemini-3.8-flash",
+            "GEMINI_API_KEY": "configured",
+            "GROQ_API_KEY": "configured",
+            "is_internet_available": lambda: True,
+            "is_gemini_model": lambda value: str(value or "").lower().startswith("gemini"),
+            "is_groq_model": lambda value: str(value or "").lower().startswith(("groq", "openai/")),
+        }
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), "app.py", "exec"), namespace)
+        choose = namespace["choose_default_model"]
+        self.assertEqual(choose(["qwen2.5:7b", "gemini:gemini-3.8-flash"]), "gemini:gemini-3.8-flash")
+        namespace["is_internet_available"] = lambda: False
+        self.assertEqual(choose(["qwen2.5:7b", "gemini:gemini-3.8-flash"]), "qwen2.5:7b")
+
+    def test_browser_persists_only_explicit_manual_model_selection(self):
+        self.assertIn("model_user_selected: modelWasManuallySelected", self.html)
+        self.assertIn("prefs.model_user_selected === true", self.html)
+        self.assertIn("modelWasManuallySelected = true", self.html)
+        self.assertIn("var previousModel = modelElBind.value", self.html)
+        self.assertIn("modelElBind.value = previousModel", self.html)
+
+    def test_ollama_refresh_endpoint_is_read_only_and_forces_discovery(self):
+        self.assertIn('@app.route("/api/ollama/models", methods=["GET"])', self.app)
+        endpoint = self.app[self.app.find("def api_ollama_models("):self.app.find("# 10. MAIN PAGE")]
+        self.assertIn("get_available_models(force=True)", endpoint)
+        self.assertIn("ollama_status()", endpoint)
+
     def test_terminal_logs_include_pid_and_provider_attempts(self):
         self.assertIn('[PID:{os.getpid()}]', self.app)
         self.assertIn('Process PID', self.app)
@@ -382,7 +425,8 @@ class ReleaseIntegrityTests(unittest.TestCase):
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8-sig")
         self.assertIn("QUARANTINE_DO_NOT_RUN/", ignore)
         self.assertIn("test_fbrah_system.py", ignore)
-        self.assertIn("test_index_integrity.py", ignore)
+        self.assertNotIn("test_index_integrity.py", ignore)
+        self.assertNotIn("test_priority_smoke.py", ignore)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

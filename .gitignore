@@ -41,7 +41,6 @@ restore_test*
 # Audit artifacts and unsafe legacy tests/scripts — keep out of GitHub
 QUARANTINE_DO_NOT_RUN/
 test_fbrah_system.py
-test_index_integrity.py
 اختبار_الحماية.py
 تطبيق_التحديثات.ps1
 تقرير_التحقق.txt

@@ -8,7 +8,7 @@
 | `templates/index.html` | `.html` | نسخة كاملة من الواجهة بعد تحويل تسجيل الخروج إلى POST. |
 | `security_hardening.py` | `.py` | وحدة مستقلة للحماية من CSRF، ورؤوس الأمان، وتحديد محاولات الدخول، واستعادة كلمة المرور بالبريد. |
 | `INSTALL_RELEASE.ps1` | `.ps1` | مثبت PowerShell 5.1 يطبق التغييرات على نسخة المشروع الحالية مع نسخ احتياطية. |
-| `QUARANTINE_DO_NOT_RUN/اختبار_الحماية.py` | `.py` | اختبار دخاني باستخدام Flask test client بعد تثبيت المتطلبات. |
+| `test_release_integrity.py` و`test_index_integrity.py` و`test_priority_smoke.py` | `.py` | اختبارات ثابتة لا تشغّل خادم Flask ولا تفتح قاعدة بيانات المستخدم. |
 | `ENV_SECURITY.example` | `.example` | إعدادات SMTP ورابط الموقع العام؛ لا يحتوي على أسرار حقيقية. |
 | `MANIFEST_SHA256.txt` | `.txt` | بصمات SHA-256 لملفات الحقيبة. |
 
@@ -66,8 +66,9 @@ powershell -ExecutionPolicy Bypass -File ".\INSTALL_RELEASE.ps1" -ProjectRoot "C
 من جذر المشروع وبعد تفعيل البيئة الافتراضية:
 
 ```powershell
-python -m py_compile app.py security_hardening.py
-python اختبار_الحماية.py
+python -m py_compile app.py backup_db.py restore_db.py reset_admin.py security_hardening.py fbrah_priority_enhancements.py
+python -m unittest -v test_release_integrity.py test_index_integrity.py
+python test_priority_smoke.py
 ```
 
 ثم اختبر يدوياً:
@@ -90,11 +91,12 @@ python اختبار_الحماية.py
 - فصل التشخيص للقراءة فقط عن الإصلاح، وعدم حذف ملفات تلقائياً، وقصر الإصلاح على المدير مع سجل تدقيق ونسخة احتياطية.
 - تضييق صلاحيات `/api/self_heal` و`/api/system_diagnostics` و`/api/recordings/where` إلى المدير، ومراجعة كل مسار إدارة.
 - تحديد أحجام JSON وBase64 وOCR وعدد بكسلات الصور، وعدم كشف رسائل الاستثناء والمسارات المطلقة.
-- إكمال مسار `/api/pen/export`؛ فالمراجعة السابقة لم تجد route مسجلاً له رغم استدعاء الواجهة.
 - مراجعة `log_terminal` وقياس الواجهة لمنع تسجيل محتوى الأسئلة/النص المنطوق أو الأسرار.
 - اختبار تكامل فعلي مع SMTP وHTTPS، ومراجعة إعدادات reverse proxy و`TRUSTED_HOSTS` وقيود الشبكة قبل نشر عام.
 
 لا يُنصح بنشر التطبيق على الإنترنت قبل معالجة هذه النقاط. لا تضع مفاتيح API أو كلمات المرور في GitHub. لم تتضمن الحقيبة `.git` أو `.env` أو قواعد بيانات أو Qdrant أو التسجيلات.
+
+راجع `OLLAMA_TROUBLESHOOTING_AR.md` لتشخيص اختفاء النماذج. أضيف زر لإعادة اكتشاف Ollama؛ ويختار التطبيق Gemini عند توفر مفتاحه والإنترنت، وQwen المحلي عند انقطاع الإنترنت إذا كان مثبتاً. لا يثبت ذلك صلاحية مفتاح Gemini أو الحصة، ولا يسمح بانتقال تلقائي بين المحلي والسحابي.
 
 ## 8) التراجع
 
@@ -106,7 +108,7 @@ python اختبار_الحماية.py
 
 
 ## ملاحظة إصدار لاحق
-هذه الوثيقة مرجع أمني مساعد. مثبت الإصدار المعتمد في هذه الحزمة هو `INSTALL_RELEASE.ps1`. الاختبارات القديمة محفوظة في `QUARANTINE_DO_NOT_RUN` ولا تُشغّل على قاعدة البيانات الفعلية. راجع `RELEASE_GUIDE_AR.md` لمعرفة ما تم تنفيذه وما لم يُعتمد بعد.
+هذه الوثيقة مرجع أمني مساعد. مثبت الإصدار في هذه الحزمة هو `INSTALL_RELEASE.ps1`. الاختبارات القديمة والسكريبتات غير المعتمدة غير مدرجة في ZIP. راجع `RELEASE_GUIDE_AR.md` لمعرفة ما تم تنفيذه وما لم يُعتمد بعد.
 
 ## مهلة مزودي النماذج السحابية
 
