@@ -144,17 +144,21 @@ class ProjectIntegrityTests(unittest.TestCase):
     def test_no_embedded_env_or_database_in_release_tree(self):
         import subprocess
 
-        result = subprocess.run(
-            ["git", "ls-files", "-z"],
-            cwd=ROOT,
-            check=True,
-            stdout=subprocess.PIPE,
-        )
-        tracked = [
-            item.decode("utf-8", errors="replace")
-            for item in result.stdout.split(b"\\0")
-            if item
-        ]
+        if (ROOT / ".git").is_dir():
+            result = subprocess.run(
+                ["git", "ls-files", "-z"],
+                cwd=ROOT,
+                check=True,
+                stdout=subprocess.PIPE,
+            )
+            tracked = [
+                item.decode("utf-8", errors="replace")
+                for item in result.stdout.split(b"\\0")
+                if item
+            ]
+        else:
+            # Exported source archives intentionally omit Git history.
+            tracked = [p.relative_to(ROOT).as_posix() for p in ROOT.rglob("*") if p.is_file()]
 
         forbidden_suffixes = (".db", ".sqlite", ".sqlite3", ".pem", ".key")
         for relative_path in tracked:

@@ -428,5 +428,27 @@ class ReleaseIntegrityTests(unittest.TestCase):
         self.assertNotIn("test_index_integrity.py", ignore)
         self.assertNotIn("test_priority_smoke.py", ignore)
 
+    def test_arabic_keyboard_layout_normalizer_is_present_and_conservative(self):
+        self.assertIn("def normalize_arabic_keyboard_layout(text):", self.app)
+        self.assertIn('"من رئس مصر": "من رئيس مصر"', self.app)
+        self.assertIn("arabic / len(letters) < 0.70", self.app)
+
+    def test_answer_speech_excludes_links_and_source_blocks(self):
+        html = (ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('speechClone.querySelectorAll("a,button,nav,script,style', html)
+        self.assertIn('https?:', html)
+
+    def test_login_rotates_csrf_token_and_includes_hidden_token(self):
+        self.assertIn('name="_csrf_token" value="__CSRF_TOKEN__"', self.app)
+        self.assertIn('_csrf_after_login = secrets.token_urlsafe(32)', self.app)
+        security = (ROOT / "security_hardening.py").read_text(encoding="utf-8")
+        self.assertIn("def _fbrah_csrf_template_context", security)
+
+    def test_search_mode_switch_updates_cloud_or_local_model(self):
+        html = (ROOT / "templates" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("function syncModelToSearchMode()", html)
+        self.assertIn('var online = !!((webOnly && webOnly.checked) || (webAndLocal && webAndLocal.checked));', html)
+        self.assertIn('o.value === "qwen2.5:7b"', html)
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -193,7 +193,7 @@ footer {
   <div class="card">
     <h2>إضافة مستخدم</h2>
     <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
-    <form method="post">
+    <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="add">
       <div class="form-row">
         <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
@@ -239,7 +239,7 @@ footer {
           <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
           <td data-label="تعديل">
             {% if u.username != 'admin' %}
-            <form method="post" class="inline-form" title="تغيير اسم المستخدم">
+            <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="rename_user">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <input name="new_username" placeholder="اسم جديد" minlength="3" required>
@@ -247,7 +247,7 @@ footer {
             </form>
             {% endif %}
 
-            <form method="post" class="inline-form" title="تغيير كلمة المرور">
+            <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="change_password">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
@@ -255,7 +255,7 @@ footer {
             </form>
 
             {% if u.username != 'admin' %}
-            <form method="post" class="inline-form" title="تغيير الدور">
+            <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="change_role">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <select name="role">
@@ -265,7 +265,7 @@ footer {
               <button type="submit" class="btn-green">تحديث الدور</button>
             </form>
 
-            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');">
+            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <button type="submit" class="btn-danger">حذف</button>
