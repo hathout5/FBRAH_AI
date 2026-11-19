@@ -332,13 +332,14 @@
             right: 0;
             width: 100% !important;
             max-width: 100vw !important;
-            height: 42px;
+            height: 48px;
+            min-height: 48px;
             background: linear-gradient(90deg, #071322 0%, #0d223c 50%, #071322 100%);
             border-top: 1.5px solid #d4af37;
             border-bottom: 1.5px solid #d4af37;
-            display: flex;
+            display: flex !important;
             align-items: center;
-            z-index: 9999;
+            z-index: 2147482000;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
             direction: rtl;
             overflow: hidden;
@@ -346,6 +347,8 @@
             cursor: ns-resize;
             user-select: none;
             box-sizing: border-box;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
         .fbrah-news-ticker.ticker-floating {
             left: 0 !important;
@@ -428,8 +431,8 @@
             transform: translate3d(0,0,0);
         }
         .ticker-marquee.ticker-ar {
-            /* عربي: من الشمال إلى اليمين */
-            animation-direction: reverse;
+            /* ابدأ من 0 دائماً حتى يظهر المحتوى فوراً */
+            animation-direction: normal;
         }
         .ticker-marquee.ticker-en {
             animation-direction: normal;
@@ -488,26 +491,38 @@
             color: #0a192f;
         }
         .ticker-item {
-            display: inline-flex;
+            display: inline-flex !important;
             align-items: center;
             gap: 6px;
-            margin-left: 36px;
-            font-size: 12px;
-            color: #f1f5f9;
+            margin-left: 28px;
+            margin-right: 8px;
+            font-size: 13px;
+            color: #f8fafc !important;
             cursor: pointer;
             transition: color 0.15s;
+            opacity: 1 !important;
+            visibility: visible !important;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
-        .ticker-marquee.ticker-ltr .ticker-item { margin-left: 0; margin-right: 36px; }
+        .ticker-marquee.ticker-ltr .ticker-item { margin-left: 0; margin-right: 28px; }
         .ticker-item:hover {
-            color: #ffd700;
+            color: #ffd700 !important;
         }
         .ticker-cat {
-            background: rgba(212, 175, 55, 0.2);
-            color: #d4af37;
-            padding: 2px 6px;
+            background: rgba(212, 175, 55, 0.28);
+            color: #ffd700;
+            padding: 2px 7px;
             border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
+            font-size: 11px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+        .ticker-source {
+            color: #ffd700 !important;
+            font-weight: 800 !important;
+            margin-inline-start: 6px;
+            flex-shrink: 0;
         }
         .ticker-actions {
             display: flex;
@@ -2797,9 +2812,10 @@
         var _fbrahNewsRequest = null;
         var _fbrahNewsRequestLang = "";
         var _fbrahLastGoodNews = { ar: [], en: [] };
+        var _fbrahNewsHealTimer = null;
 
         function fbrahTickerFallbackItems() {
-            // موجز احتياطي: أخبار بصياغة عناوين + نكات — بلا رسائل ترويجية وبلا روابط لصفحات رئيسية
+            // عناوين بصياغة خبرية + نكات — بلا ترويج وبلا روابط صفحات رئيسية
             if (fbrahIsEn()) {
                 return [
                     {cat:"Business",icon:"📈",source:"Markets desk",text:"Global markets watch: investors track rates, energy prices and regional risk signals.",url:""},
@@ -2809,9 +2825,7 @@
                     {cat:"Law & Courts",icon:"⚖️",source:"Legal desk",text:"Courts and counsel focus on electronic filing, evidence rules and commercial dispute timelines.",url:""},
                     {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said free afternoon. Rechecked: software bug.",url:""},
                     {cat:"FX & Metals",icon:"💱",source:"FX desk",text:"Currency desks monitor official reference rates and demand for dollar and gold.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"Accountant: the books balance. Manager: then why is the wallet on a diet?",url:""},
-                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""},
-                    {cat:"Science",icon:"🔬",source:"Science desk",text:"Research notes: health guidance and published studies remain under active review.",url:""}
+                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""}
                 ];
             }
             return [
@@ -2829,45 +2843,39 @@
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!",url:""}
             ];
         }
+
         function renderTickerItems(items) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return false;
-            if (!Array.isArray(items) || !items.length) {
-                if (typeof fbrahTickerHasRealItems === "function" && fbrahTickerHasRealItems(marquee)) return false;
-                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
-            }
-            if (!items.length) return false;
+            try {
+                if (!Array.isArray(items) || !items.length) {
+                    items = fbrahTickerFallbackItems();
+                }
+                if (!items.length) return false;
+                if (items.length > 40) items = items.slice(0, 40);
 
-            if (items.length > 48) items = items.slice(0, 48);
+                var wasPaused = marquee.dataset.userPaused === "1";
+                var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
 
-            var wasPaused = marquee.dataset.userPaused === "1";
-            var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
+                marquee.classList.add(isEn ? "ticker-en" : "ticker-ar");
+                marquee.classList.remove(isEn ? "ticker-ar" : "ticker-en");
+                marquee.setAttribute("dir", "ltr");
 
-            marquee.classList.remove("ticker-ltr", "ticker-rtl");
-            marquee.classList.toggle("ticker-en", !!isEn);
-            marquee.classList.toggle("ticker-ar", !isEn);
-            marquee.setAttribute("dir", "ltr");
+                var tickerWrap = marquee.parentElement;
+                if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
 
-            var tickerWrap = marquee.parentElement;
-            if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
+                function isArticleUrl(u) {
+                    if (!u || !/^https?:\/\//i.test(u)) return false;
+                    try {
+                        var path = (new URL(u)).pathname || "/";
+                        if (path === "/" || path === "") return false;
+                    } catch (e) { return true; }
+                    return true;
+                }
 
-            function isArticleUrl(u) {
-                if (!u || !/^https?:\/\//i.test(u)) return false;
-                // ارفض الصفحات الرئيسية العامة حتى لا يفتح «الموقع» بدل الخبر
-                try {
-                    var path = (new URL(u)).pathname || "/";
-                    if (path === "/" || path === "") return false;
-                } catch (e) { return false; }
-                return true;
-            }
-
-            function buildSequence() {
-                var seq = document.createElement("div");
-                seq.className = "ticker-sequence";
-                items.forEach(function (item) {
-                    if (!item || typeof item !== "object") return;
+                function makeItem(item) {
                     var body = String(item.text || "").trim();
-                    if (!body) return;
+                    if (!body) return null;
                     var src = String(item.source || (isEn ? "Source" : "مصدر")).trim();
                     var url = String(item.url || "").trim();
                     var isJoke = /نكتة|joke|Light joke/i.test(item.cat || "") || item.icon === "😄";
@@ -2884,6 +2892,7 @@
                     span.appendChild(catEl);
 
                     var bodyEl = document.createElement("span");
+                    bodyEl.className = "ticker-body";
                     bodyEl.textContent = (item.icon || "▪") + " " + body;
                     span.appendChild(bodyEl);
 
@@ -2898,64 +2907,73 @@
                         span.setAttribute("data-url", url);
                     } else if (isJoke) {
                         span.title = isEn ? "FBRAH joke" : "نكتة فبرا";
-                    } else {
-                        span.title = src;
                     }
-                    seq.appendChild(span);
-                });
-                return seq;
-            }
-
-            var first = buildSequence();
-            if (!first.childNodes.length) {
-                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
-                if (!items.length) return false;
-                first = buildSequence();
-            }
-
-            marquee.replaceChildren();
-            marquee.appendChild(first);
-
-            var vw = tickerWrap ? tickerWrap.clientWidth : 800;
-            if (first.scrollWidth < Math.max(vw, 400) * 1.1) {
-                var seed = Array.prototype.slice.call(first.childNodes);
-                seed.forEach(function (n) { first.appendChild(n.cloneNode(true)); });
-            }
-
-            var second = first.cloneNode(true);
-            marquee.appendChild(second);
-
-            // معالج نقر واحد بالتفويض — يمنع فتح المصدر مرتين
-            if (marquee.dataset.clickBound !== "1") {
-                marquee.dataset.clickBound = "1";
-                marquee.addEventListener("click", function (ev) {
-                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
-                    if (!node) return;
-                    var u = node.getAttribute("data-url") || "";
-                    if (!/^https?:\/\//i.test(u)) return;
-                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
-                    try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
-                });
-            }
-
-            marquee.style.animationPlayState = wasPaused ? "paused" : "running";
-            marquee.dataset.userPaused = wasPaused ? "1" : "0";
-
-            try {
-                var badge = document.querySelector("#tickerDragHandle .ticker-title");
-                if (badge) {
-                    badge.textContent = isEn
-                        ? ("⚡ FBRAH | News (" + items.length + ")")
-                        : ("⚡ فبرا | موجز (" + items.length + ")");
+                    return span;
                 }
-            } catch (eB) {}
 
-            try {
-                requestAnimationFrame(function () {
-                    if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
+                var first = document.createElement("div");
+                first.className = "ticker-sequence";
+                items.forEach(function (it) {
+                    var el = makeItem(it);
+                    if (el) first.appendChild(el);
                 });
-            } catch (eT) {}
-            return true;
+                if (!first.childNodes.length) {
+                    fbrahTickerFallbackItems().forEach(function (it) {
+                        var el = makeItem(it);
+                        if (el) first.appendChild(el);
+                    });
+                }
+
+                marquee.replaceChildren();
+                marquee.appendChild(first);
+
+                // املأ العرض إن لزم
+                var vw = tickerWrap ? tickerWrap.clientWidth : 900;
+                if (first.scrollWidth < Math.max(vw, 500) * 1.15) {
+                    Array.prototype.slice.call(first.childNodes).forEach(function (n) {
+                        first.appendChild(n.cloneNode(true));
+                    });
+                }
+                // نسخة ثانية للحلقة السلسة
+                marquee.appendChild(first.cloneNode(true));
+
+                // تفويض نقر واحد
+                if (marquee.dataset.clickBound !== "1") {
+                    marquee.dataset.clickBound = "1";
+                    marquee.addEventListener("click", function (ev) {
+                        var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+                        if (!node) return;
+                        var u = node.getAttribute("data-url") || "";
+                        if (!/^https?:\/\//i.test(u)) return;
+                        try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
+                        try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
+                    });
+                }
+
+                marquee.style.animationName = "ticker-scroll";
+                marquee.style.animationPlayState = wasPaused ? "paused" : "running";
+                marquee.dataset.userPaused = wasPaused ? "1" : "0";
+
+                try {
+                    var badge = document.querySelector("#tickerDragHandle .ticker-title");
+                    if (badge) {
+                        badge.textContent = isEn
+                            ? ("⚡ FBRAH | News (" + items.length + ")")
+                            : ("⚡ فبرا | موجز (" + items.length + ")");
+                    }
+                } catch (eB) {}
+
+                try {
+                    requestAnimationFrame(function () {
+                        if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
+                        else if (typeof setTickerSpeed === "function") setTickerSpeed(localStorage.getItem("fbrahTickerSpeed") || "normal");
+                    });
+                } catch (eT) {}
+                return true;
+            } catch (err) {
+                try { console.warn("renderTickerItems", err); } catch (e) {}
+                return false;
+            }
         }
 
         function fbrahTickerHasRealItems(marquee) {
@@ -2964,18 +2982,17 @@
             if (!nodes || !nodes.length) return false;
             for (var i = 0; i < nodes.length; i++) {
                 var txt = (nodes[i].textContent || "").trim();
-                // تجاهل رسالة التحميل فقط
                 if (txt && !/جاري تحميل|Loading latest|Loading news/i.test(txt)) return true;
             }
             return false;
         }
+
         function fetchLiveNews(force) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return;
-            var feedLang = fbrahIsEn() ? "en" : "ar";
+            var feedLang = (typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar";
             var hasReal = fbrahTickerHasRealItems(marquee);
 
-            // لا تمسح الشريط أثناء التحديث — اعرض احتياطياً فقط إذا كان فارغاً فعلاً
             if (!hasReal) {
                 var cached0 = _fbrahLastGoodNews[feedLang];
                 if (cached0 && cached0.length) renderTickerItems(cached0);
@@ -2993,46 +3010,60 @@
             try { ctrl = new AbortController(); } catch (e) {}
             _fbrahNewsRequest = ctrl;
             _fbrahNewsRequestLang = feedLang;
-            var timer = setTimeout(function(){ try { if (ctrl) ctrl.abort(); } catch (e2) {} }, 22000);
-            fetch("/api/live_news?lang=" + feedLang + (force ? "&force=1" : ""), ctrl ? { signal: ctrl.signal, credentials: "same-origin", cache: "no-store" } : { credentials: "same-origin", cache: "no-store" })
-                .then(function(r){ if (!r.ok) throw new Error("News feed HTTP " + r.status); return r.json(); })
-                .then(function(data){
+            var timer = setTimeout(function () { try { if (ctrl) ctrl.abort(); } catch (e2) {} }, 25000);
+            var url = "/api/live_news?lang=" + feedLang + (force ? "&force=1" : "");
+            fetch(url, ctrl ? { signal: ctrl.signal, credentials: "same-origin", cache: "no-store" } : { credentials: "same-origin", cache: "no-store" })
+                .then(function (r) {
+                    if (!r.ok) throw new Error("News feed HTTP " + r.status);
+                    return r.json();
+                })
+                .then(function (data) {
                     clearTimeout(timer);
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
-                    if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
-                    var items = data && Array.isArray(data.items) ? data.items.filter(function(x){ return x && typeof x.text === "string" && x.text.trim(); }) : [];
+                    if (((typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar") !== feedLang) return;
+                    var items = data && Array.isArray(data.items)
+                        ? data.items.filter(function (x) { return x && typeof x.text === "string" && x.text.trim(); })
+                        : [];
                     if (items.length) {
-                        var sig = items.map(function(x){ return (x.text||"").slice(0,60); }).join("|");
-                        var prevSig = marquee.dataset.itemsSig || "";
                         _fbrahLastGoodNews[feedLang] = items.slice();
-                        // أعد البناء عند تغيّر الموجز أو فراغ الشريط أو تحديث إجباري
-                        if (force || sig !== prevSig || !fbrahTickerHasRealItems(marquee)) {
-                            marquee.dataset.itemsSig = sig;
-                            renderTickerItems(items);
-                        }
+                        marquee.dataset.itemsSig = items.map(function (x) { return (x.text || "").slice(0, 40); }).join("|");
+                        renderTickerItems(items);
                     } else if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
                 })
-                .catch(function(){
+                .catch(function () {
                     clearTimeout(timer);
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
-                    if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
+                    if (((typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar") !== feedLang) return;
                     if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
                 });
         }
+
         function startLiveNewsAutoRefresh() {
             try { if (_fbrahNewsTimer) clearInterval(_fbrahNewsTimer); } catch (e) {}
-            var _fbrahNewsTick = 0;
+            try { if (_fbrahNewsHealTimer) clearInterval(_fbrahNewsHealTimer); } catch (e2) {}
+            var tick = 0;
             _fbrahNewsTimer = setInterval(function () {
                 try {
-                    _fbrahNewsTick += 1;
-                    // كل 45 ثانية تحديث؛ كل ثالثة مرة إجبار من المصدر
-                    fetchLiveNews(_fbrahNewsTick % 3 === 0);
+                    tick += 1;
+                    fetchLiveNews(tick % 3 === 0);
                 } catch (e1) {}
             }, 45000);
+            // شفاء ذاتي: إن فرغ الشريط أعد الملء فوراً
+            _fbrahNewsHealTimer = setInterval(function () {
+                try {
+                    var m = document.getElementById("tickerMarquee");
+                    if (!m) return;
+                    if (!fbrahTickerHasRealItems(m)) {
+                        var lang = (typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar";
+                        renderTickerItems(_fbrahLastGoodNews[lang] || fbrahTickerFallbackItems());
+                        fetchLiveNews(true);
+                    }
+                } catch (eH) {}
+            }, 12000);
             if (window._fbrahNewsVisibilityHandler) {
                 document.removeEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
             }
@@ -3043,6 +3074,12 @@
             };
             document.addEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
         }
+
+        // تصدير للدوال المستخدمة من HTML (onclick)
+        window.fetchLiveNews = fetchLiveNews;
+        window.renderTickerItems = renderTickerItems;
+        window.startLiveNewsAutoRefresh = startLiveNewsAutoRefresh;
+        window.fbrahTickerFallbackItems = fbrahTickerFallbackItems;
 
 function toggleTickerPause() {
             var marquee = document.getElementById("tickerMarquee");
@@ -7794,7 +7831,20 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         }
         document.addEventListener("DOMContentLoaded", function () {
             try { refreshDialogueContinuity(); } catch (e) {}
-            // املأ الشريط فوراً بمحتوى احتياطي باللغة الصحيحة؛ لا نتركه فارغاً أثناء انتظار RSS.
+            // أظهر الشريط دائماً عند التحميل (لا يبقى مخفياً بسبب حالة قديمة)
+            try {
+                var bar = document.getElementById("fbrahNewsTicker");
+                if (bar) {
+                    bar.style.display = "flex";
+                    bar.hidden = false;
+                    bar.style.visibility = "visible";
+                    bar.style.opacity = "1";
+                }
+                var fab = document.getElementById("tickerRestoreBtn");
+                if (fab) fab.style.display = "none";
+                localStorage.removeItem("fbrahTickerHidden");
+            } catch (eShow) {}
+            // املأ الشريط فوراً ثم اسحب الأخبار الحية
             try { renderTickerItems(fbrahTickerFallbackItems()); } catch (e0) {}
             try { fetchLiveNews(true); } catch (e) {}
             try { startLiveNewsAutoRefresh(); } catch (e) {}
