@@ -2792,33 +2792,41 @@
             };
             return map[cat] || cat || "News";
         }
+        // حالة شريط الأخبار الحية (يجب أن تبقى معرفة قبل أي دالة تستخدمها)
+        var _fbrahNewsTimer = null;
+        var _fbrahNewsRequest = null;
+        var _fbrahNewsRequestLang = "";
+        var _fbrahLastGoodNews = { ar: [], en: [] };
+
         function fbrahTickerFallbackItems() {
-            // موجز احتياطي متنوّع حتى لا يبدو الشريط فارغاً عند بطء أو فشل RSS
+            // موجز احتياطي: أخبار بصياغة عناوين + نكات — بلا رسائل ترويجية وبلا روابط لصفحات رئيسية
             if (fbrahIsEn()) {
                 return [
-                    {cat:"Law & Courts",icon:"⚖️",source:"Egyptian Ministry of Justice",text:"Official legal services and justice-sector information.",url:"https://moj.gov.eg/"},
+                    {cat:"Business",icon:"📈",source:"Markets desk",text:"Global markets watch: investors track rates, energy prices and regional risk signals.",url:""},
                     {cat:"Light joke",icon:"😄",source:"FBRAH",text:"I asked my budget for flexibility. It said: try yoga; the numbers still will not stretch.",url:""},
-                    {cat:"FX & Metals",icon:"💱",source:"Central Bank of Egypt",text:"Official FX reference rates from CBE publications.",url:"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-                    {cat:"Business",icon:"📈",source:"IMF",text:"Global economic outlook and financial stability analysis.",url:"https://www.imf.org/en/News"},
+                    {cat:"Tech & AI",icon:"🤖",source:"Tech desk",text:"AI tools expand in offices — compliance and data-protection rules tighten in parallel.",url:""},
                     {cat:"Light joke",icon:"😄",source:"FBRAH",text:"The office printer asked for a break. It carries more pressure than the whole team.",url:""},
-                    {cat:"Tech & AI",icon:"🤖",source:"Tech",text:"AI governance, data compliance and technology policy under continuous review.",url:""},
+                    {cat:"Law & Courts",icon:"⚖️",source:"Legal desk",text:"Courts and counsel focus on electronic filing, evidence rules and commercial dispute timelines.",url:""},
                     {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said free afternoon. Rechecked: software bug.",url:""},
-                    {cat:"Politics",icon:"🏛️",source:"State Information Service",text:"Official institutional updates for verification and research.",url:"https://sis.gov.eg/"}
+                    {cat:"FX & Metals",icon:"💱",source:"FX desk",text:"Currency desks monitor official reference rates and demand for dollar and gold.",url:""},
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"Accountant: the books balance. Manager: then why is the wallet on a diet?",url:""},
+                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""},
+                    {cat:"Science",icon:"🔬",source:"Science desk",text:"Research notes: health guidance and published studies remain under active review.",url:""}
                 ];
             }
             return [
-                {cat:"قانون وقضاء",icon:"⚖️",source:"وزارة العدل المصرية",text:"خدمات ومعلومات قضائية رسمية من بوابة وزارة العدل.",url:"https://moj.gov.eg/"},
+                {cat:"اقتصاد وأعمال",icon:"📈",source:"مكتب الأسواق",text:"الأسواق تتابع أسعار الفائدة والطاقة ومؤشرات المخاطر الإقليمية عن كثب.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"واحد قال للميزانية: محتاج شوية مرونة. قالتله: جرّب اليوجا، الأرقام مش راضية تتمط.",url:""},
-                {cat:"عملات ومعادن",icon:"💱",source:"البنك المركزي المصري",text:"أسعار الصرف الرسمية من نشرات البنك المركزي المصري.",url:"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-                {cat:"اقتصاد وأعمال",icon:"📈",source:"صندوق النقد الدولي",text:"تقارير الآفاق الاقتصادية والاستقرار المالي.",url:"https://www.imf.org/ar/News"},
+                {cat:"تقنية وذكاء اصطناعي",icon:"🤖",source:"مكتب التقنية",text:"أدوات الذكاء الاصطناعي تتوسع في المكاتب مع تشديد قواعد حماية البيانات والامتثال.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"طابعة المكتب طلبت إجازة… قالت إنها شايلة ضغط الشغل كله على الورق.",url:""},
-                {cat:"تقنية وذكاء اصطناعي",icon:"🤖",source:"تقنية",text:"حوكمة الذكاء الاصطناعي والامتثال وحماية البيانات تحت المراجعة عالمياً.",url:""},
-                {cat:"سياسة",icon:"🏛️",source:"الهيئة العامة للاستعلامات",text:"بيانات رسمية ومتابعات مؤسسات الدولة للتحقق والمراجعة.",url:"https://sis.gov.eg/"},
+                {cat:"قانون وقضاء",icon:"⚖️",source:"مكتب القانون",text:"المحاكم تركز على الإيداع الإلكتروني وقواعد الإثبات ومواعيد المنازعات التجارية.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"التقويم قال لي عندك عصر فاضي… طلع ده خطأ في التحديث.",url:""},
-                {cat:"تشريعات",icon:"📜",source:"مجلس النواب المصري",text:"نشاط المجلس ومشروعات القوانين من الموقع الرسمي.",url:"https://www.parliament.gov.eg/"},
-                {cat:"ضرائب وجمارك",icon:"📑",source:"مصلحة الضرائب المصرية",text:"إرشادات الفاتورة الإلكترونية والخدمات الضريبية الرسمية.",url:"https://www.eta.gov.eg/"},
+                {cat:"عملات ومعادن",icon:"💱",source:"مكتب العملات",text:"مكاتب الصرف تراقب الأسعار المرجعية والطلب على الدولار والذهب.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحاسب: الرقم صح. المدير: طب ليه الخسارة؟ المحاسب: عشان الرقم التاني أصح!",url:""},
-                {cat:"علوم وصحة",icon:"🔬",source:"منظمة الصحة العالمية",text:"إرشادات موثوقة قائمة على الأدلة للصحة العامة.",url:"https://www.who.int/ar"}
+                {cat:"سياسة",icon:"🏛️",source:"مكتب العالم",text:"جولات دبلوماسية وبيانات دولية تحت التغطية المستمرة من مصادر متعددة.",url:""},
+                {cat:"علوم وصحة",icon:"🔬",source:"مكتب العلوم",text:"ملاحظات بحثية: إرشادات الصحة والدراسات المنشورة قيد المتابعة والمراجعة.",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحامي قال للموكل: عندنا قضية قوية. سأله: والقاضي؟ قاله: ده كمان قوي جداً!",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!",url:""}
             ];
         }
         function renderTickerItems(items) {
@@ -2830,7 +2838,6 @@
             }
             if (!items.length) return false;
 
-            // حد أقصى حتى لا يثقل DOM
             if (items.length > 48) items = items.slice(0, 48);
 
             var wasPaused = marquee.dataset.userPaused === "1";
@@ -2844,7 +2851,16 @@
             var tickerWrap = marquee.parentElement;
             if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
 
-            // بناء تسلسل واحد ثم نسخه — حلقة سلسة بلا فراغ
+            function isArticleUrl(u) {
+                if (!u || !/^https?:\/\//i.test(u)) return false;
+                // ارفض الصفحات الرئيسية العامة حتى لا يفتح «الموقع» بدل الخبر
+                try {
+                    var path = (new URL(u)).pathname || "/";
+                    if (path === "/" || path === "") return false;
+                } catch (e) { return false; }
+                return true;
+            }
+
             function buildSequence() {
                 var seq = document.createElement("div");
                 seq.className = "ticker-sequence";
@@ -2871,22 +2887,19 @@
                     bodyEl.textContent = (item.icon || "▪") + " " + body;
                     span.appendChild(bodyEl);
 
-                    // المصدر دائماً في نهاية الخبر
                     var srcEl = document.createElement("span");
                     srcEl.className = "ticker-source";
                     srcEl.textContent = isEn ? (" — Source: " + src) : (" — المصدر: " + src);
                     span.appendChild(srcEl);
 
-                    if (url && /^https?:\/\//i.test(url)) {
-                        span.title = (isEn ? "Open source: " : "افتح المصدر: ") + src;
+                    if (isArticleUrl(url)) {
+                        span.title = (isEn ? "Open article: " : "افتح الخبر: ") + src;
                         span.style.cursor = "pointer";
                         span.setAttribute("data-url", url);
-                        span.addEventListener("click", function (ev) {
-                            try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
-                            try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e1) {}
-                        });
                     } else if (isJoke) {
                         span.title = isEn ? "FBRAH joke" : "نكتة فبرا";
+                    } else {
+                        span.title = src;
                     }
                     seq.appendChild(span);
                 });
@@ -2903,40 +2916,34 @@
             marquee.replaceChildren();
             marquee.appendChild(first);
 
-            // إن كان التسلسل أقصر من الشاشة أضف نسخة واحدة إضافية فقط (بلا تضاعف أسي)
             var vw = tickerWrap ? tickerWrap.clientWidth : 800;
             if (first.scrollWidth < Math.max(vw, 400) * 1.1) {
                 var seed = Array.prototype.slice.call(first.childNodes);
                 seed.forEach(function (n) { first.appendChild(n.cloneNode(true)); });
             }
-            first.querySelectorAll(".ticker-item[data-url]").forEach(function (node) {
-                if (node.getAttribute("data-bound") === "1") return;
-                node.setAttribute("data-bound", "1");
-                var u = node.getAttribute("data-url");
-                node.addEventListener("click", function (ev) {
-                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
-                    try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
-                });
-            });
 
             var second = first.cloneNode(true);
-            second.querySelectorAll(".ticker-item[data-url]").forEach(function (node) {
-                var u = node.getAttribute("data-url");
-                node.addEventListener("click", function (ev) {
+            marquee.appendChild(second);
+
+            // معالج نقر واحد بالتفويض — يمنع فتح المصدر مرتين
+            if (marquee.dataset.clickBound !== "1") {
+                marquee.dataset.clickBound = "1";
+                marquee.addEventListener("click", function (ev) {
+                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+                    if (!node) return;
+                    var u = node.getAttribute("data-url") || "";
+                    if (!/^https?:\/\//i.test(u)) return;
                     try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
                     try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
                 });
-            });
-            marquee.appendChild(second);
+            }
 
             marquee.style.animationPlayState = wasPaused ? "paused" : "running";
             marquee.dataset.userPaused = wasPaused ? "1" : "0";
 
-            // تحديث شارة العدد لتأكيد التدفق
             try {
                 var badge = document.querySelector("#tickerDragHandle .ticker-title");
                 if (badge) {
-                    var n = first.querySelectorAll(".ticker-item").length;
                     badge.textContent = isEn
                         ? ("⚡ FBRAH | News (" + items.length + ")")
                         : ("⚡ فبرا | موجز (" + items.length + ")");

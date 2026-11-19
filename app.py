@@ -13341,12 +13341,35 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
                 link = (link_m.group(1).strip() if link_m else "")
                 if link and not re.match(r"^https?://", link, re.I):
                     link = ""
-                cat, icon = _classify_news_item(title, source_name)
+                try:
+                    from urllib.parse import urlparse as _up
+                    if link and (_up(link).path in ("", "/")):
+                        link = ""
+                except Exception:
+                    pass
+                desc_m = re.search(
+                    r"<(?:description|summary|content:encoded)[^>]*>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</(?:description|summary|content:encoded)>",
+                    block, re.I | re.S,
+                )
+                summary = ""
+                if desc_m:
+                    summary_html = desc_m.group(1)
+                    summary_html = re.sub(r"(?is)<(script|style).*?>.*?</\1>", " ", summary_html)
+                    summary = html.unescape(re.sub(r"<[^>]+>", " ", summary_html))
+                    summary = re.sub(r"\s+", " ", summary).strip()
+                    if summary.lower().startswith(title.lower()):
+                        summary = summary[len(title):].lstrip(" :-–—|")
+                    if len(summary) > 180:
+                        cut = summary[:180]
+                        sp = cut.rfind(" ")
+                        summary = (cut[:sp] if sp > 80 else cut).rstrip() + "…"
+                body = title if not summary or summary.lower() in title.lower() else (title + " — " + summary)
+                cat, icon = _classify_news_item(title + " " + summary[:200], source_name)
                 out.append({
                     "cat": cat,
                     "icon": icon,
                     "source": source_name,
-                    "text": title[:280],
+                    "text": body[:420],
                     "url": link,
                     "published": "",
                 })
@@ -13472,19 +13495,17 @@ def api_live_news():
         live = cached_live
 
     curated_news = [
-        {"cat":"قانون وقضاء","icon":"⚖️","source":"وزارة العدل المصرية","text":"الخدمات القانونية والإعلانات والمعلومات القضائية من البوابة الرسمية لوزارة العدل.","url":"https://moj.gov.eg/"},
-        {"cat":"تشريعات","icon":"📜","source":"مجلس النواب المصري","text":"تابع نشاط المجلس ومشروعات القوانين والتحديثات التشريعية من الموقع الرسمي.","url":"https://www.parliament.gov.eg/"},
-        {"cat":"عملات ومعادن","icon":"💱","source":"البنك المركزي المصري","text":"المرجع الرسمي لأسعار الصرف ونشرات السياسة النقدية والقطاع المصرفي.","url":"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-        {"cat":"ضرائب وجمارك","icon":"📑","source":"مصلحة الضرائب المصرية","text":"الإرشادات والخدمات الضريبية الرسمية وتحديثات الفاتورة الإلكترونية.","url":"https://www.eta.gov.eg/"},
-        {"cat":"تحكيم ومنازعات","icon":"⚖️","source":"مركز القاهرة الإقليمي للتحكيم التجاري الدولي","text":"قواعد التحكيم المؤسسي والفعاليات ومصادر تسوية المنازعات.","url":"https://crcica.org/"},
-        {"cat":"دستوري وإداري","icon":"🏛️","source":"الهيئة العامة للاستعلامات","text":"معلومات رسمية عن مؤسسات الدولة والسياسات العامة للتحقق والبحث.","url":"https://sis.gov.eg/"},
-        {"cat":"علوم وتقنية","icon":"🔬","source":"Nature","text":"أبحاث علمية محكّمة وتحليلات موثوقة في العلوم والتكنولوجيا.","url":"https://www.nature.com/"},
-        {"cat":"اقتصاد وأعمال","icon":"📈","source":"صندوق النقد الدولي","text":"تقارير الآفاق الاقتصادية والاستقرار المالي وتحليلات الدول.","url":"https://www.imf.org/ar/News"},
-        {"cat":"فن وثقافة","icon":"🎭","source":"اليونسكو","text":"مستجدات التراث الثقافي والتعليم والعلوم والصناعات الإبداعية.","url":"https://www.unesco.org/ar"},
-                {"cat":"سياسة","icon":"🏛️","source":"الهيئة العامة للاستعلامات","text":"بيانات رسمية ومتابعات مؤسسات الدولة للتحقق والمراجعة.","url":"https://sis.gov.eg/"},
-        {"cat":"تقنية وذكاء اصطناعي","icon":"🤖","source":"BBC تقنية","text":"مستجدات الذكاء الاصطناعي والتقنية من موجز موثوق عالمي.","url":"https://www.bbc.com/arabic/topics/c719136v0w0t"},
-        {"cat":"اقتصاد وأعمال","icon":"📈","source":"البنك المركزي المصري","text":"متابعة السياسة النقدية والاستقرار المالي من المصدر الرسمي.","url":"https://www.cbe.org.eg/"},
-        {"cat":"قانون وقضاء","icon":"⚖️","source":"محكمة النقض","text":"مبادئ نقض متواترة: بطلان الدليل المستمد من قبض أو تفتيش باطل.","url":"https://www.cc.gov.eg/"},
+        {"cat":"قانون وقضاء","icon":"⚖️","source":"مكتب القانون","text":"المحاكم تتابع نزاعات تجارية ومدنية مع التركيز على الإيداع الإلكتروني وقواعد الإثبات.","url":""},
+        {"cat":"تشريعات","icon":"📜","source":"مكتب التشريع","text":"مشروعات قوانين وتعديلات تشريعية قيد المناقشة في الأجندة البرلمانية الحالية.","url":""},
+        {"cat":"عملات ومعادن","icon":"💱","source":"مكتب العملات","text":"الأسواق تراقب الأسعار المرجعية للعملات والطلب على الدولار والذهب محلياً.","url":""},
+        {"cat":"ضرائب وجمارك","icon":"📑","source":"مكتب الضرائب","text":"منشآت تراجع متطلبات الفاتورة الإلكترونية والمواعيد الضريبية الدورية.","url":""},
+        {"cat":"تحكيم ومنازعات","icon":"⚖️","source":"مكتب التحكيم","text":"ازدياد اللجوء للتحكيم التجاري لتسوية العقود عبر الحدود في المنطقة.","url":""},
+        {"cat":"علوم وتقنية","icon":"🔬","source":"مكتب العلوم","text":"دراسات منشورة جديدة في الصحة والتقنية تثير نقاشاً بين الباحثين وصنّاع القرار.","url":""},
+        {"cat":"اقتصاد وأعمال","icon":"📈","source":"مكتب الأسواق","text":"مؤشرات الأعمال والطاقة تحت المتابعة وسط تقلبات أسعار الفائدة العالمية.","url":""},
+        {"cat":"فن وثقافة","icon":"🎭","source":"مكتب الثقافة","text":"فعاليات ثقافية ومعارض فنية تبرز التراث والصناعات الإبداعية هذا الموسم.","url":""},
+        {"cat":"سياسة","icon":"🏛️","source":"مكتب العالم","text":"تحركات دبلوماسية وبيانات دولية تتصدر تغطية الشؤون الإقليمية والدولية.","url":""},
+        {"cat":"تقنية وذكاء اصطناعي","icon":"🤖","source":"مكتب التقنية","text":"مؤسسات تتبنى أدوات ذكاء اصطناعي مع تشديد ضوابط الخصوصية والامتثال.","url":""},
+        {"cat":"قانون وقضاء","icon":"⚖️","source":"مكتب النقض","text":"مبدأ قضائي متواتر: بطلان الدليل المستمد من قبض أو تفتيش باطل.","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"المحاسب قال للمدير: الحسابات متوازنة. المدير قاله: طب ليه المحفظة عاملة دايت؟","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"المحامي قال للموكل: عندنا قضية قوية. سأله: والقاضي؟ قاله: ده كمان قوي جداً!","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!","url":""},
@@ -13494,23 +13515,16 @@ def api_live_news():
 
     if language == "en":
         curated_news = [
-            {"cat":"Law & Courts","icon":"⚖️","source":"Egyptian Ministry of Justice","text":"Official legal services, court information and justice-sector announcements.","url":"https://moj.gov.eg/"},
-            {"cat":"Legislation","icon":"📜","source":"Egyptian House of Representatives","text":"Follow parliamentary activity, draft laws and legislative updates from the official parliament portal.","url":"https://www.parliament.gov.eg/"},
-            {"cat":"FX & Metals","icon":"💱","source":"Central Bank of Egypt","text":"Official exchange-rate reference and monetary-sector publications.","url":"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-            {"cat":"Tax & Customs","icon":"📑","source":"Egyptian Tax Authority","text":"Official tax guidance, e-invoicing updates and taxpayer services.","url":"https://www.eta.gov.eg/"},
-            {"cat":"Arbitration","icon":"⚖️","source":"CRCICA","text":"Institutional arbitration rules, events and dispute-resolution resources.","url":"https://crcica.org/"},
-            {"cat":"Science & Technology","icon":"🔬","source":"Nature","text":"Peer-reviewed research and analysis across science and technology.","url":"https://www.nature.com/"},
-            {"cat":"Business","icon":"📈","source":"International Monetary Fund","text":"Global economic outlooks, financial stability analysis and country reports.","url":"https://www.imf.org/en/News"},
-            {"cat":"Arts & Culture","icon":"🎭","source":"UNESCO","text":"Cultural heritage, education, science and creative-sector updates.","url":"https://www.unesco.org/en"},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The accountant said the books are balanced. The boss asked: then why is my wallet on a diet?","url":""},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"A lawyer told the client: we have a strong case. The client asked: and the judge? The lawyer said: also very strong.","url":""},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The Wi-Fi went down at the office. Everyone finally met the colleagues they had been emailing.","url":""},
-            {"cat":"Life skills","icon":"🌱","source":"World Health Organization","text":"Evidence-based public health and well-being guidance from WHO.","url":"https://www.who.int/"},
-            {"cat":"Life skills","icon":"🌱","source":"OECD","text":"Research and practical resources on skills, education and work.","url":"https://www.oecd.org/"},
+            {"cat":"Business","icon":"📈","source":"Markets desk","text":"Markets track interest rates, energy prices and regional risk signals across trading sessions.","url":""},
+            {"cat":"Legislation","icon":"📜","source":"Policy desk","text":"Draft laws and regulatory amendments remain under active parliamentary and expert review.","url":""},
+            {"cat":"FX & Metals","icon":"💱","source":"FX desk","text":"Currency desks monitor reference rates and demand for dollars and gold.","url":""},
+            {"cat":"Tax & Customs","icon":"📑","source":"Tax desk","text":"Businesses review e-invoicing rules and periodic filing deadlines.","url":""},
+            {"cat":"Law & Courts","icon":"⚖️","source":"Legal desk","text":"Courts focus on commercial timelines, electronic filing and evidence standards.","url":""},
+            {"cat":"Tech & AI","icon":"🤖","source":"Tech desk","text":"Organizations expand AI tools while tightening privacy and compliance controls.","url":""},
+            {"cat":"Science","icon":"🔬","source":"Science desk","text":"New peer-reviewed findings in health and technology spark policy discussion.","url":""},
+            {"cat":"Politics","icon":"🏛️","source":"World desk","text":"Diplomatic moves and international statements lead regional and global coverage.","url":""},
+            {"cat":"Culture","icon":"🎭","source":"Culture desk","text":"Cultural events and creative industries highlight heritage and new productions.","url":""},
         ]
-    else:
-        for _item in curated_news:
-            if _item.get("cat") == "علوم وصحة": _item["url"] = "https://www.nature.com/"
 
     # دمج متتابع: أخبار من مصادر موثوقة + نكات خفيفة بالتناوب
     news_items = []
@@ -13609,6 +13623,18 @@ def api_live_news():
         if fresh_live_available:
             lang_cache["live"] = list(live)
             lang_cache["live_at"] = now
+    # إزالة الروابط الرئيسية العامة من البنود الثابتة (لا تفتح صفحة جهة بدل خبر)
+    def _is_article_url(u):
+        u = (u or "").strip()
+        if not u.startswith("http"):
+            return False
+        try:
+            from urllib.parse import urlparse
+            p = urlparse(u)
+            return bool(p.path and p.path not in ("/", ""))
+        except Exception:
+            return False
+
     # ضمان حقول المصدر والنص لكل عنصر
     cleaned = []
     for it in items:
@@ -13617,12 +13643,13 @@ def api_live_news():
         text = str(it.get("text") or "").strip()
         if not text:
             continue
+        raw_url = str(it.get("url") or "").strip()
         cleaned.append({
             "cat": it.get("cat") or ("News" if language == "en" else "أخبار"),
             "icon": it.get("icon") or "📰",
             "source": it.get("source") or ("Trusted source" if language == "en" else "مصدر موثوق"),
             "text": text[:520],
-            "url": it.get("url") or "",
+            "url": raw_url if _is_article_url(raw_url) else "",
             "published": it.get("published") or "",
         })
     if len(cleaned) < 10:
