@@ -332,14 +332,13 @@
             right: 0;
             width: 100% !important;
             max-width: 100vw !important;
-            height: 48px;
-            min-height: 48px;
+            height: 42px;
             background: linear-gradient(90deg, #071322 0%, #0d223c 50%, #071322 100%);
             border-top: 1.5px solid #d4af37;
             border-bottom: 1.5px solid #d4af37;
-            display: flex !important;
+            display: flex;
             align-items: center;
-            z-index: 2147482000;
+            z-index: 9999;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
             direction: rtl;
             overflow: hidden;
@@ -347,8 +346,6 @@
             cursor: ns-resize;
             user-select: none;
             box-sizing: border-box;
-            opacity: 1 !important;
-            visibility: visible !important;
         }
         .fbrah-news-ticker.ticker-floating {
             left: 0 !important;
@@ -431,8 +428,8 @@
             transform: translate3d(0,0,0);
         }
         .ticker-marquee.ticker-ar {
-            /* ابدأ من 0 دائماً حتى يظهر المحتوى فوراً */
-            animation-direction: normal;
+            /* عربي: من الشمال إلى اليمين */
+            animation-direction: reverse;
         }
         .ticker-marquee.ticker-en {
             animation-direction: normal;
@@ -448,11 +445,6 @@
             align-items: center;
             direction: ltr;
             padding-inline: 24px;
-        }
-        .ticker-marquee:hover,
-        .ticker-content-wrap:hover .ticker-marquee,
-        .fbrah-news-ticker:hover .ticker-marquee {
-            animation-play-state: paused !important;
         }
         .ticker-item {
             display: inline-flex !important;
@@ -471,6 +463,30 @@
             color: #ffd700 !important;
             background: rgba(212,175,55,0.12);
             border-radius: 4px;
+        }
+        /* توقف الحركة عند مرور الماوس على الشريط أو الخبر */
+        .fbrah-news-ticker:hover .ticker-marquee,
+        .ticker-content-wrap:hover .ticker-marquee,
+        .ticker-marquee:hover,
+        .ticker-item:hover {
+            animation-play-state: paused !important;
+        }
+        .fbrah-news-ticker.ticker-closed {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .ticker-actions, #tickerCloseBtn {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 8 !important;
+            cursor: pointer !important;
         }
         @keyframes ticker-scroll {
             0% { transform: translate3d(0, 0, 0); }
@@ -491,38 +507,26 @@
             color: #0a192f;
         }
         .ticker-item {
-            display: inline-flex !important;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-left: 28px;
-            margin-right: 8px;
-            font-size: 13px;
-            color: #f8fafc !important;
+            margin-left: 36px;
+            font-size: 12px;
+            color: #f1f5f9;
             cursor: pointer;
             transition: color 0.15s;
-            opacity: 1 !important;
-            visibility: visible !important;
-            flex-shrink: 0;
-            white-space: nowrap;
         }
-        .ticker-marquee.ticker-ltr .ticker-item { margin-left: 0; margin-right: 28px; }
+        .ticker-marquee.ticker-ltr .ticker-item { margin-left: 0; margin-right: 36px; }
         .ticker-item:hover {
-            color: #ffd700 !important;
+            color: #ffd700;
         }
         .ticker-cat {
-            background: rgba(212, 175, 55, 0.28);
-            color: #ffd700;
-            padding: 2px 7px;
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 11px;
-            font-weight: 800;
-            flex-shrink: 0;
-        }
-        .ticker-source {
-            color: #ffd700 !important;
-            font-weight: 800 !important;
-            margin-inline-start: 6px;
-            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 700;
         }
         .ticker-actions {
             display: flex;
@@ -851,6 +855,61 @@
             color: #ffd700 !important;
             line-height: 1;
         }
+        
+        /* أيقونة الميكروفون الثابتة أعلى يمين الشاشة */
+        #fbrahMicFab {
+            position: fixed !important;
+            top: 12px !important;
+            right: 14px !important;
+            left: auto !important;
+            bottom: auto !important;
+            z-index: 2147483600 !important;
+            width: 52px !important;
+            height: 52px !important;
+            min-width: 52px !important;
+            min-height: 52px !important;
+            border-radius: 50% !important;
+            border: 2px solid #d4af37 !important;
+            background: #0a192f !important;
+            color: #ffd700 !important;
+            font-size: 24px !important;
+            line-height: 48px !important;
+            text-align: center !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,.35) !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #fbrahMicFab:hover { transform: scale(1.06); background: #12263f !important; }
+        #fbrahMicFab.listening {
+            background: #228B22 !important;
+            color: #fff !important;
+            border-color: #ffd700 !important;
+            box-shadow: 0 0 0 4px rgba(34,139,34,.25) !important;
+        }
+        #voiceRestoreBtn.voice-restore-btn {
+            position: fixed !important;
+            top: 12px !important;
+            right: 14px !important;
+            left: auto !important;
+            bottom: auto !important;
+            z-index: 2147483500 !important;
+            width: 52px !important;
+            height: 52px !important;
+            border-radius: 50% !important;
+            border: 2px solid #d4af37 !important;
+            background: #0a192f !important;
+            color: #ffd700 !important;
+            font-size: 22px !important;
+            padding: 0 !important;
+            line-height: 48px !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,.35) !important;
+        }
+
         #voiceRestoreBtn.voice-restore-btn {
             position: fixed !important;
             z-index: 2147483000 !important;
@@ -2559,6 +2618,7 @@
                         <span class="vstatus" id="voiceStatus">حوار كتابي/صوتي جاهز</span>
                         <span class="vstatus" id="sentimentBox" style="color:#001F3F;"></span>
                     </div>
+<button type="button" id="fbrahMicFab" title="الصوت والميكروفون / Voice" aria-label="فتح الصوت والميكروفون">🎤</button>
 <button type="button" id="voiceRestoreBtn" class="voice-restore-btn" style="display:none" aria-label="إظهار شريط الصوت والحوار" title="اسحب الأيقونة أو انقر لفتح شريط الصوت">🎤</button>
                 </div>
 
@@ -2812,10 +2872,9 @@
         var _fbrahNewsRequest = null;
         var _fbrahNewsRequestLang = "";
         var _fbrahLastGoodNews = { ar: [], en: [] };
-        var _fbrahNewsHealTimer = null;
 
         function fbrahTickerFallbackItems() {
-            // عناوين بصياغة خبرية + نكات — بلا ترويج وبلا روابط صفحات رئيسية
+            // موجز احتياطي: أخبار بصياغة عناوين + نكات — بلا رسائل ترويجية وبلا روابط لصفحات رئيسية
             if (fbrahIsEn()) {
                 return [
                     {cat:"Business",icon:"📈",source:"Markets desk",text:"Global markets watch: investors track rates, energy prices and regional risk signals.",url:""},
@@ -2825,7 +2884,9 @@
                     {cat:"Law & Courts",icon:"⚖️",source:"Legal desk",text:"Courts and counsel focus on electronic filing, evidence rules and commercial dispute timelines.",url:""},
                     {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said free afternoon. Rechecked: software bug.",url:""},
                     {cat:"FX & Metals",icon:"💱",source:"FX desk",text:"Currency desks monitor official reference rates and demand for dollar and gold.",url:""},
-                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""}
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"Accountant: the books balance. Manager: then why is the wallet on a diet?",url:""},
+                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""},
+                    {cat:"Science",icon:"🔬",source:"Science desk",text:"Research notes: health guidance and published studies remain under active review.",url:""}
                 ];
             }
             return [
@@ -2843,39 +2904,45 @@
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!",url:""}
             ];
         }
-
         function renderTickerItems(items) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return false;
-            try {
-                if (!Array.isArray(items) || !items.length) {
-                    items = fbrahTickerFallbackItems();
-                }
-                if (!items.length) return false;
-                if (items.length > 40) items = items.slice(0, 40);
+            if (!Array.isArray(items) || !items.length) {
+                if (typeof fbrahTickerHasRealItems === "function" && fbrahTickerHasRealItems(marquee)) return false;
+                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
+            }
+            if (!items.length) return false;
 
-                var wasPaused = marquee.dataset.userPaused === "1";
-                var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
+            if (items.length > 48) items = items.slice(0, 48);
 
-                marquee.classList.add(isEn ? "ticker-en" : "ticker-ar");
-                marquee.classList.remove(isEn ? "ticker-ar" : "ticker-en");
-                marquee.setAttribute("dir", "ltr");
+            var wasPaused = marquee.dataset.userPaused === "1";
+            var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
 
-                var tickerWrap = marquee.parentElement;
-                if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
+            marquee.classList.remove("ticker-ltr", "ticker-rtl");
+            marquee.classList.toggle("ticker-en", !!isEn);
+            marquee.classList.toggle("ticker-ar", !isEn);
+            marquee.setAttribute("dir", "ltr");
 
-                function isArticleUrl(u) {
-                    if (!u || !/^https?:\/\//i.test(u)) return false;
-                    try {
-                        var path = (new URL(u)).pathname || "/";
-                        if (path === "/" || path === "") return false;
-                    } catch (e) { return true; }
-                    return true;
-                }
+            var tickerWrap = marquee.parentElement;
+            if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
 
-                function makeItem(item) {
+            function isArticleUrl(u) {
+                if (!u || !/^https?:\/\//i.test(u)) return false;
+                // ارفض الصفحات الرئيسية العامة حتى لا يفتح «الموقع» بدل الخبر
+                try {
+                    var path = (new URL(u)).pathname || "/";
+                    if (path === "/" || path === "") return false;
+                } catch (e) { return false; }
+                return true;
+            }
+
+            function buildSequence() {
+                var seq = document.createElement("div");
+                seq.className = "ticker-sequence";
+                items.forEach(function (item) {
+                    if (!item || typeof item !== "object") return;
                     var body = String(item.text || "").trim();
-                    if (!body) return null;
+                    if (!body) return;
                     var src = String(item.source || (isEn ? "Source" : "مصدر")).trim();
                     var url = String(item.url || "").trim();
                     var isJoke = /نكتة|joke|Light joke/i.test(item.cat || "") || item.icon === "😄";
@@ -2892,7 +2959,6 @@
                     span.appendChild(catEl);
 
                     var bodyEl = document.createElement("span");
-                    bodyEl.className = "ticker-body";
                     bodyEl.textContent = (item.icon || "▪") + " " + body;
                     span.appendChild(bodyEl);
 
@@ -2907,73 +2973,64 @@
                         span.setAttribute("data-url", url);
                     } else if (isJoke) {
                         span.title = isEn ? "FBRAH joke" : "نكتة فبرا";
+                    } else {
+                        span.title = src;
                     }
-                    return span;
-                }
-
-                var first = document.createElement("div");
-                first.className = "ticker-sequence";
-                items.forEach(function (it) {
-                    var el = makeItem(it);
-                    if (el) first.appendChild(el);
+                    seq.appendChild(span);
                 });
-                if (!first.childNodes.length) {
-                    fbrahTickerFallbackItems().forEach(function (it) {
-                        var el = makeItem(it);
-                        if (el) first.appendChild(el);
-                    });
-                }
-
-                marquee.replaceChildren();
-                marquee.appendChild(first);
-
-                // املأ العرض إن لزم
-                var vw = tickerWrap ? tickerWrap.clientWidth : 900;
-                if (first.scrollWidth < Math.max(vw, 500) * 1.15) {
-                    Array.prototype.slice.call(first.childNodes).forEach(function (n) {
-                        first.appendChild(n.cloneNode(true));
-                    });
-                }
-                // نسخة ثانية للحلقة السلسة
-                marquee.appendChild(first.cloneNode(true));
-
-                // تفويض نقر واحد
-                if (marquee.dataset.clickBound !== "1") {
-                    marquee.dataset.clickBound = "1";
-                    marquee.addEventListener("click", function (ev) {
-                        var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
-                        if (!node) return;
-                        var u = node.getAttribute("data-url") || "";
-                        if (!/^https?:\/\//i.test(u)) return;
-                        try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
-                        try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
-                    });
-                }
-
-                marquee.style.animationName = "ticker-scroll";
-                marquee.style.animationPlayState = wasPaused ? "paused" : "running";
-                marquee.dataset.userPaused = wasPaused ? "1" : "0";
-
-                try {
-                    var badge = document.querySelector("#tickerDragHandle .ticker-title");
-                    if (badge) {
-                        badge.textContent = isEn
-                            ? ("⚡ FBRAH | News (" + items.length + ")")
-                            : ("⚡ فبرا | موجز (" + items.length + ")");
-                    }
-                } catch (eB) {}
-
-                try {
-                    requestAnimationFrame(function () {
-                        if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
-                        else if (typeof setTickerSpeed === "function") setTickerSpeed(localStorage.getItem("fbrahTickerSpeed") || "normal");
-                    });
-                } catch (eT) {}
-                return true;
-            } catch (err) {
-                try { console.warn("renderTickerItems", err); } catch (e) {}
-                return false;
+                return seq;
             }
+
+            var first = buildSequence();
+            if (!first.childNodes.length) {
+                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
+                if (!items.length) return false;
+                first = buildSequence();
+            }
+
+            marquee.replaceChildren();
+            marquee.appendChild(first);
+
+            var vw = tickerWrap ? tickerWrap.clientWidth : 800;
+            if (first.scrollWidth < Math.max(vw, 400) * 1.1) {
+                var seed = Array.prototype.slice.call(first.childNodes);
+                seed.forEach(function (n) { first.appendChild(n.cloneNode(true)); });
+            }
+
+            var second = first.cloneNode(true);
+            marquee.appendChild(second);
+
+            // معالج نقر واحد بالتفويض — يمنع فتح المصدر مرتين
+            if (marquee.dataset.clickBound !== "1") {
+                marquee.dataset.clickBound = "1";
+                marquee.addEventListener("click", function (ev) {
+                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+                    if (!node) return;
+                    var u = node.getAttribute("data-url") || "";
+                    if (!/^https?:\/\//i.test(u)) return;
+                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
+                    try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
+                });
+            }
+
+            marquee.style.animationPlayState = wasPaused ? "paused" : "running";
+            marquee.dataset.userPaused = wasPaused ? "1" : "0";
+
+            try {
+                var badge = document.querySelector("#tickerDragHandle .ticker-title");
+                if (badge) {
+                    badge.textContent = isEn
+                        ? ("⚡ FBRAH | News (" + items.length + ")")
+                        : ("⚡ فبرا | موجز (" + items.length + ")");
+                }
+            } catch (eB) {}
+
+            try {
+                requestAnimationFrame(function () {
+                    if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
+                });
+            } catch (eT) {}
+            return true;
         }
 
         function fbrahTickerHasRealItems(marquee) {
@@ -2982,17 +3039,18 @@
             if (!nodes || !nodes.length) return false;
             for (var i = 0; i < nodes.length; i++) {
                 var txt = (nodes[i].textContent || "").trim();
+                // تجاهل رسالة التحميل فقط
                 if (txt && !/جاري تحميل|Loading latest|Loading news/i.test(txt)) return true;
             }
             return false;
         }
-
         function fetchLiveNews(force) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return;
-            var feedLang = (typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar";
+            var feedLang = fbrahIsEn() ? "en" : "ar";
             var hasReal = fbrahTickerHasRealItems(marquee);
 
+            // لا تمسح الشريط أثناء التحديث — اعرض احتياطياً فقط إذا كان فارغاً فعلاً
             if (!hasReal) {
                 var cached0 = _fbrahLastGoodNews[feedLang];
                 if (cached0 && cached0.length) renderTickerItems(cached0);
@@ -3010,60 +3068,46 @@
             try { ctrl = new AbortController(); } catch (e) {}
             _fbrahNewsRequest = ctrl;
             _fbrahNewsRequestLang = feedLang;
-            var timer = setTimeout(function () { try { if (ctrl) ctrl.abort(); } catch (e2) {} }, 25000);
-            var url = "/api/live_news?lang=" + feedLang + (force ? "&force=1" : "");
-            fetch(url, ctrl ? { signal: ctrl.signal, credentials: "same-origin", cache: "no-store" } : { credentials: "same-origin", cache: "no-store" })
-                .then(function (r) {
-                    if (!r.ok) throw new Error("News feed HTTP " + r.status);
-                    return r.json();
-                })
-                .then(function (data) {
+            var timer = setTimeout(function(){ try { if (ctrl) ctrl.abort(); } catch (e2) {} }, 22000);
+            fetch("/api/live_news?lang=" + feedLang + (force ? "&force=1" : ""), ctrl ? { signal: ctrl.signal, credentials: "same-origin", cache: "no-store" } : { credentials: "same-origin", cache: "no-store" })
+                .then(function(r){ if (!r.ok) throw new Error("News feed HTTP " + r.status); return r.json(); })
+                .then(function(data){
                     clearTimeout(timer);
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
-                    if (((typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar") !== feedLang) return;
-                    var items = data && Array.isArray(data.items)
-                        ? data.items.filter(function (x) { return x && typeof x.text === "string" && x.text.trim(); })
-                        : [];
+                    if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
+                    var items = data && Array.isArray(data.items) ? data.items.filter(function(x){ return x && typeof x.text === "string" && x.text.trim(); }) : [];
                     if (items.length) {
+                        var sig = items.map(function(x){ return (x.text||"").slice(0,60); }).join("|");
+                        var prevSig = marquee.dataset.itemsSig || "";
                         _fbrahLastGoodNews[feedLang] = items.slice();
-                        marquee.dataset.itemsSig = items.map(function (x) { return (x.text || "").slice(0, 40); }).join("|");
-                        renderTickerItems(items);
+                        // أعد البناء عند تغيّر الموجز أو فراغ الشريط أو تحديث إجباري
+                        if (force || sig !== prevSig || !fbrahTickerHasRealItems(marquee)) {
+                            marquee.dataset.itemsSig = sig;
+                            renderTickerItems(items);
+                        }
                     } else if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
                 })
-                .catch(function () {
+                .catch(function(){
                     clearTimeout(timer);
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
-                    if (((typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar") !== feedLang) return;
+                    if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
                     if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
                 });
         }
-
         function startLiveNewsAutoRefresh() {
             try { if (_fbrahNewsTimer) clearInterval(_fbrahNewsTimer); } catch (e) {}
-            try { if (_fbrahNewsHealTimer) clearInterval(_fbrahNewsHealTimer); } catch (e2) {}
-            var tick = 0;
+            var _fbrahNewsTick = 0;
             _fbrahNewsTimer = setInterval(function () {
                 try {
-                    tick += 1;
-                    fetchLiveNews(tick % 3 === 0);
+                    _fbrahNewsTick += 1;
+                    // كل 45 ثانية تحديث؛ كل ثالثة مرة إجبار من المصدر
+                    fetchLiveNews(_fbrahNewsTick % 3 === 0);
                 } catch (e1) {}
             }, 45000);
-            // شفاء ذاتي: إن فرغ الشريط أعد الملء فوراً
-            _fbrahNewsHealTimer = setInterval(function () {
-                try {
-                    var m = document.getElementById("tickerMarquee");
-                    if (!m) return;
-                    if (!fbrahTickerHasRealItems(m)) {
-                        var lang = (typeof fbrahIsEn === "function" && fbrahIsEn()) ? "en" : "ar";
-                        renderTickerItems(_fbrahLastGoodNews[lang] || fbrahTickerFallbackItems());
-                        fetchLiveNews(true);
-                    }
-                } catch (eH) {}
-            }, 12000);
             if (window._fbrahNewsVisibilityHandler) {
                 document.removeEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
             }
@@ -3074,12 +3118,6 @@
             };
             document.addEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
         }
-
-        // تصدير للدوال المستخدمة من HTML (onclick)
-        window.fetchLiveNews = fetchLiveNews;
-        window.renderTickerItems = renderTickerItems;
-        window.startLiveNewsAutoRefresh = startLiveNewsAutoRefresh;
-        window.fbrahTickerFallbackItems = fbrahTickerFallbackItems;
 
 function toggleTickerPause() {
             var marquee = document.getElementById("tickerMarquee");
@@ -7831,20 +7869,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         }
         document.addEventListener("DOMContentLoaded", function () {
             try { refreshDialogueContinuity(); } catch (e) {}
-            // أظهر الشريط دائماً عند التحميل (لا يبقى مخفياً بسبب حالة قديمة)
-            try {
-                var bar = document.getElementById("fbrahNewsTicker");
-                if (bar) {
-                    bar.style.display = "flex";
-                    bar.hidden = false;
-                    bar.style.visibility = "visible";
-                    bar.style.opacity = "1";
-                }
-                var fab = document.getElementById("tickerRestoreBtn");
-                if (fab) fab.style.display = "none";
-                localStorage.removeItem("fbrahTickerHidden");
-            } catch (eShow) {}
-            // املأ الشريط فوراً ثم اسحب الأخبار الحية
+            // املأ الشريط فوراً بمحتوى احتياطي باللغة الصحيحة؛ لا نتركه فارغاً أثناء انتظار RSS.
             try { renderTickerItems(fbrahTickerFallbackItems()); } catch (e0) {}
             try { fetchLiveNews(true); } catch (e) {}
             try { startLiveNewsAutoRefresh(); } catch (e) {}
@@ -8027,7 +8052,14 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             try {
                 fbrahRec.mediaRec = mime ? new MediaRecorder(fbrahRec.stream, { mimeType: mime }) : new MediaRecorder(fbrahRec.stream);
             } catch (e) {
-                fbrahRec.mediaRec = new MediaRecorder(fbrahRec.stream);
+                try { fbrahRec.mediaRec = new MediaRecorder(fbrahRec.stream); }
+                catch (e2) {
+                    try { if (fbrahRec.stream) fbrahRec.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e3) {}
+                    fbrahRec.stream = null;
+                    fbrahRec.mediaRec = null;
+                    setVoiceStatus(fbrahLang() === "en" ? "Recording is not supported by this browser" : "المتصفح لا يدعم بدء التسجيل");
+                    return;
+                }
             }
             fbrahRec.mediaRec.ondataavailable = function (ev) {
                 if (ev.data && ev.data.size > 0) fbrahRec.chunks.push(ev.data);
@@ -8155,6 +8187,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             if (!blob || blob.size < 64) {
                 if (st) st.textContent = "التسجيل فارغ — أعد المحاولة وتحدث ثانيتين على الأقل";
                 setVoiceStatus("التسجيل فارغ — أعد المحاولة");
+                fbrahRec._uploadLock = false;
                 return;
             }
             var fd = new FormData();
@@ -8240,13 +8273,10 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             } catch (e) {
                 if (st) st.textContent = (e && e.message) ? e.message : "فشل حفظ التسجيل";
                 setVoiceStatus(fbrahLang() === "en" ? "Failed to save recording" : "فشل حفظ التسجيل — تحقق من الاتصال وتسجيل الدخول");
+                fbrahRec._uploadLock = false;
+            } finally {
+                fbrahRec._uploadLock = false;
             }
-        }
-        function isRecStartCommand(text) {
-            var t = (text || "").trim();
-            return /^(سجل|سجّل)(\s*(الان|الآن|حالا|الصوت))?$/i.test(t)
-                || /^(ابدأ|بدء)\s*التسجيل/i.test(t)
-                || /^(start\s*record|start\s*recording|record\s*now|begin\s*recording)\b/i.test(t);
         }
         function isRecStopCommand(text) {
             var t = (text || "").trim();
@@ -8260,13 +8290,19 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             if (typeof _orig !== "function") return;
             submitVoiceQuestion = function (text) {
                 text = (text || "").trim();
-                if (isRecStartCommand(text)) { fbrahRecStart(); return; }
                 if (isRecStopCommand(text)) { fbrahRecStop(); return; }
                 return _orig.apply(this, arguments);
             };
         })();
-        document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); });
-        try { fbrahRecRefreshList(); } catch (e) {}
+        (function initRecordingListOnce() {
+            if (window._fbrahRecListInitDone) return;
+            window._fbrahRecListInitDone = true;
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); }, { once: true });
+            } else {
+                try { fbrahRecRefreshList(); } catch (e) {}
+            }
+        })();
         try {
             fetch("/api/recordings/where", { credentials: "same-origin", headers: fbrahRecHeaders() })
                 .then(function(r){ return r.json(); })
@@ -8290,7 +8326,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         // أوامر من رد الخادم
         (function () {
             var ans = document.querySelector(".answer");
-            if (ans && /FBRAH_REC_START/.test(ans.innerHTML)) fbrahRecStart();
+            // Recording starts only from the explicit record button.
             if (ans && /FBRAH_REC_STOP/.test(ans.innerHTML)) fbrahRecStop();
         })();
 
@@ -9157,7 +9193,8 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             var r = document.getElementById("tickerRestoreBtn");
             var hBtn = document.getElementById("tickerHeaderRestoreBtn");
             if (t) {
-                t.style.display = "none";
+                t.classList.add("ticker-closed");
+                try { t.style.setProperty("display", "none", "important"); } catch (eD) { t.style.display = "none"; }
                 t.setAttribute("aria-hidden", "true");
             }
             // أيقونة الاستعادة دائماً في موضع آمن ظاهر (لا تعتمد على سحب سابق خارج الشاشة)
@@ -9193,7 +9230,8 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             var r = document.getElementById("tickerRestoreBtn");
             var hBtn = document.getElementById("tickerHeaderRestoreBtn");
             if (t) {
-                t.style.display = "flex";
+                t.classList.remove("ticker-closed");
+                try { t.style.setProperty("display", "flex", "important"); } catch (eD) { t.style.display = "flex"; }
                 t.style.visibility = "visible";
                 t.style.opacity = "1";
                 t.removeAttribute("aria-hidden");
@@ -9213,6 +9251,60 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         }
         window.hideNewsTicker = hideNewsTicker;
         window.showNewsTicker = showNewsTicker;
+
+        (function bindFbrahMicFab(){
+            function openVoiceFromFab(){
+                try {
+                    var bar = document.getElementById("voiceBar");
+                    var rest = document.getElementById("voiceRestoreBtn");
+                    if (bar) {
+                        bar.style.display = "";
+                        bar.style.visibility = "visible";
+                        bar.classList.remove("voice-minimized");
+                        try { bar.style.setProperty("display", "flex", "important"); } catch(e){}
+                    }
+                    if (rest) rest.style.display = "none";
+                    try {
+                        if (typeof window.fbrahShowVoiceBar === "function") window.fbrahShowVoiceBar();
+                    } catch(e2){}
+                    // تمرير سريع لزر الميكروفون داخل الشريط
+                    var mic = document.getElementById("micBtn");
+                    if (mic) {
+                        try { mic.scrollIntoView({block:"nearest", inline:"nearest"}); } catch(e3){}
+                    }
+                } catch(e){}
+            }
+            function bind(){
+                var fab = document.getElementById("fbrahMicFab");
+                if (!fab || fab.getAttribute("data-bound")==="1") return;
+                fab.setAttribute("data-bound","1");
+                fab.addEventListener("click", function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openVoiceFromFab();
+                    try {
+                        if (typeof toggleVoiceInput === "function") {
+                            /* لا تبدأ التسجيل تلقائياً — فقط أظهر الشريط؛ نقرة ثانية على 🎤 تحدث */
+                        }
+                    } catch(e4){}
+                });
+            }
+            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+            else bind();
+            // مزامنة حالة الاستماع مع الأيقونة العلوية
+            try {
+                var _obsMic = document.getElementById("micBtn");
+                if (_obsMic && window.MutationObserver) {
+                    new MutationObserver(function(){
+                        var fab = document.getElementById("fbrahMicFab");
+                        if (!fab) return;
+                        if (_obsMic.classList.contains("listening")) fab.classList.add("listening");
+                        else fab.classList.remove("listening");
+                    }).observe(_obsMic, {attributes:true, attributeFilter:["class"]});
+                }
+            } catch(e5){}
+        })();
+
         (function enableTickerDragAndRestore() {
             var bar = document.getElementById("fbrahNewsTicker");
             var restore = document.getElementById("tickerRestoreBtn");
@@ -9225,6 +9317,14 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     e.stopPropagation();
                     hideNewsTicker();
                 };
+                closeBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    hideNewsTicker();
+                }, true);
+                closeBtn.addEventListener("mousedown", function (e) {
+                    e.stopPropagation();
+                }, true);
             }
             if (headerBtn) {
                 headerBtn.onclick = function (e) {

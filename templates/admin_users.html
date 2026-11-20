@@ -13,6 +13,7 @@
   --maroon-deep: #6b0f1a;
   --green: #228B22;
   --bg: #f8f6f1;
+  --panel: #404040;
   --card: #ffffff;
   --border: #c9b896;
   --text: #760d0d;
@@ -55,6 +56,7 @@ body {
 }
 .header a:hover { text-decoration: underline; }
 .container { max-width: 960px; margin: 20px auto; padding: 0 14px; }
+.panel-note { background:#404040; color:#fff; padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:13px; }
 .card {
   background: var(--card);
   border-radius: 10px;
@@ -183,6 +185,7 @@ footer {
 </header>
 
 <div class="container">
+  <div class="panel-note" id="langNote">FBRAH Admin · Navy / Gold · Panel #404040</div>
   {% if msg %}
   <div class="msg">{{ msg }}</div>
   {% endif %}
@@ -190,11 +193,11 @@ footer {
   <div class="card">
     <h2>إضافة مستخدم</h2>
     <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
-    <form method="post">
+    <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="add">
       <div class="form-row">
         <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
-        <input name="password" type="password" placeholder="كلمة المرور" required minlength="6" autocomplete="new-password">
+        <input name="password" type="password" placeholder="كلمة المرور" required minlength="12" autocomplete="new-password">
         <select name="role">
           <option value="user">مستخدم</option>
           <option value="admin">مدير</option>
@@ -236,7 +239,7 @@ footer {
           <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
           <td data-label="تعديل">
             {% if u.username != 'admin' %}
-            <form method="post" class="inline-form" title="تغيير اسم المستخدم">
+            <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="rename_user">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <input name="new_username" placeholder="اسم جديد" minlength="3" required>
@@ -244,15 +247,15 @@ footer {
             </form>
             {% endif %}
 
-            <form method="post" class="inline-form" title="تغيير كلمة المرور">
+            <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="change_password">
               <input type="hidden" name="user_id" value="{{ u.id }}">
-              <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="6" required autocomplete="new-password">
+              <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
               <button type="submit" class="btn-navy">تغيير المرور</button>
             </form>
 
             {% if u.username != 'admin' %}
-            <form method="post" class="inline-form" title="تغيير الدور">
+            <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="change_role">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <select name="role">
@@ -262,7 +265,7 @@ footer {
               <button type="submit" class="btn-green">تحديث الدور</button>
             </form>
 
-            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');">
+            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="user_id" value="{{ u.id }}">
               <button type="submit" class="btn-danger">حذف</button>

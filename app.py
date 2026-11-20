@@ -13364,6 +13364,13 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
                         sp = cut.rfind(" ")
                         summary = (cut[:sp] if sp > 80 else cut).rstrip() + "…"
                 body = title if not summary or summary.lower() in title.lower() else (title + " — " + summary)
+                published_m = re.search(
+                    r"<(?:pubDate|published|updated|dc:date)[^>]*>\\s*(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</(?:pubDate|published|updated|dc:date)>",
+                    block, re.I | re.S,
+                )
+                published = ""
+                if published_m:
+                    published = html.unescape(re.sub(r"<[^>]+>", "", published_m.group(1))).strip()[:80]
                 cat, icon = _classify_news_item(title + " " + summary[:200], source_name)
                 out.append({
                     "cat": cat,
@@ -13371,7 +13378,7 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
                     "source": source_name,
                     "text": body[:420],
                     "url": link,
-                    "published": "",
+                    "published": published,
                 })
         except Exception as exc:
             try:
@@ -13382,22 +13389,22 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
 
     collected = []
     workers = min(14, max(4, len(feeds)))
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = [ex.submit(one_feed, u, n) for u, n in feeds]
-        try:
-            for fut in as_completed(futs, timeout=22):
-                try:
-                    collected.extend(fut.result() or [])
-                except Exception:
-                    continue
-        except Exception:
-            # مهلة إجمالية — خذ ما اكتمل
-            for fut in futs:
-                if fut.done():
-                    try:
-                        collected.extend(fut.result() or [])
-                    except Exception:
-                        pass
+    # Avoid ThreadPoolExecutor context-manager shutdown waiting for slow feeds
+    # after the overall deadline has already expired.
+    ex = ThreadPoolExecutor(max_workers=workers)
+    futs = [ex.submit(one_feed, u, n) for u, n in feeds]
+    try:
+        for fut in as_completed(futs, timeout=12):
+            try:
+                collected.extend(fut.result() or [])
+            except Exception:
+                continue
+    except Exception:
+        pass
+    for fut in futs:
+        if not fut.done():
+            fut.cancel()
+    ex.shutdown(wait=False, cancel_futures=True)
 
     seen = set()
     unique = []
@@ -13463,12 +13470,13 @@ def _fetch_spot_metals_ticker_items(language="ar"):
     return [item for item in results if item]
 
 
-@app.route("/api/live_news", methods=["GET"])
-def api_live_news():
-    """شريط أخبار حي من مصادر موثوقة + بنود ثابتة قانونية/مالية/نكات خفيفة."""
+# Build and refresh the live feed outside the HTTP request path.
+_NEWS_REFRESH_EXECUTOR = ThreadPoolExecutor(max_workers=2)
+_NEWS_REFRESHING = {"ar": False, "en": False}
+
+
+def _build_live_news_payload(language):
     now = time.time()
-    force = str(request.args.get("force") or "").strip() in ("1", "true", "yes")
-    language = "en" if str(request.args.get("lang") or "ar").lower().startswith("en") else "ar"
     # كاش مستقل لكل لغة حتى لا تستبدل الصفحة الإنجليزية موجز العربية أو العكس.
     with _LIVE_NEWS_CACHE["lock"]:
         lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
@@ -13476,9 +13484,6 @@ def api_live_news():
         cached_live = list(lang_cache.get("live") or [])
         cached_at = float(lang_cache.get("at") or 0.0)
         cached_live_at = float(lang_cache.get("live_at") or 0.0)
-    if not force and now - cached_at < 45 and len(cached_items) >= 10:
-        return jsonify({"ok": True, "items": cached_items, "cached": True})
-
     live = []
     try:
         live = _fetch_live_rss_items(max_items=48, language=language)
@@ -13590,9 +13595,6 @@ def api_live_news():
     curated_solid.extend(metals_items)
 
     pool = list(news_items) + list(curated_solid)
-    # إن قلّت الأخبار الحية لا تترك الشريط على نكات فقط أو فارغ
-    if len(pool) < 8:
-        pool = pool + list(curated_solid)
     items = []
     ji = 0
     for i, it in enumerate(pool):
@@ -13608,14 +13610,6 @@ def api_live_news():
             ji += 1
     if not items:
         items = list(curated_solid) + list(curated_jokes)
-    # ضمان حد أدنى دائماً حتى لو فشل RSS بالكامل
-    if len(items) < 16:
-        pad = (list(news_items) + list(curated_solid) + list(curated_jokes)) or items
-        i = 0
-        while len(items) < 20 and pad:
-            items.append(pad[i % len(pad)])
-            i += 1
-
     with _LIVE_NEWS_CACHE["lock"]:
         lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
         lang_cache["at"] = now
@@ -13669,11 +13663,60 @@ def api_live_news():
                 "url": extra.get("url") or "",
                 "published": extra.get("published") or "",
             })
+    # Deduplicate by article URL or normalized title.
+    unique_cleaned = []
+    seen_news_keys = set()
+    for row in cleaned:
+        normalized_title = re.sub(r"\\W+", " ", (row.get("text") or "").lower()).strip()
+        normalized_url = (row.get("url") or "").split("#", 1)[0].rstrip("/").lower()
+        key = ("url:" + normalized_url) if normalized_url else ("title:" + normalized_title[:180])
+        if key in seen_news_keys:
+            continue
+        seen_news_keys.add(key)
+        unique_cleaned.append(row)
+    cleaned = unique_cleaned
     items = cleaned or items
     log_terminal("NEWS", f"Dispatched live news feed ({len(items)} items, live={len(live)}, fresh={fresh_live_available})")
-    return jsonify({"ok": True, "items": items, "cached": False, "live_count": len(live), "live_fresh": fresh_live_available})
+    return {"ok": True, "items": items, "cached": False, "live_count": len(live), "live_fresh": fresh_live_available}
 
 
+
+
+def _refresh_live_news_background(language):
+    try:
+        with app.app_context():
+            _build_live_news_payload(language)
+    except Exception as exc:
+        try:
+            app.logger.warning("live_news background refresh (%s): %s", language, exc)
+        except Exception:
+            pass
+    finally:
+        with _LIVE_NEWS_CACHE["lock"]:
+            _NEWS_REFRESHING[language] = False
+
+
+@app.route("/api/live_news", methods=["GET"])
+def api_live_news():
+    """Return cached news immediately and refresh stale data in the background."""
+    language = "en" if str(request.args.get("lang") or "ar").lower().startswith("en") else "ar"
+    force = str(request.args.get("force") or "").strip().lower() in ("1", "true", "yes")
+    now = time.time()
+    with _LIVE_NEWS_CACHE["lock"]:
+        lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
+        cached_items = list(lang_cache.get("items") or [])
+        cached_at = float(lang_cache.get("at") or 0.0)
+        stale = force or not cached_items or (now - cached_at >= 45)
+        if stale and not _NEWS_REFRESHING[language]:
+            _NEWS_REFRESHING[language] = True
+            try:
+                _NEWS_REFRESH_EXECUTOR.submit(_refresh_live_news_background, language)
+            except Exception:
+                _NEWS_REFRESHING[language] = False
+        refreshing = bool(_NEWS_REFRESHING[language])
+    if cached_items:
+        return jsonify({"ok": True, "items": cached_items, "cached": True, "refreshing": refreshing})
+    return jsonify({"ok": True, "items": [], "cached": False, "refreshing": True})
 # ============================================================
 # 17. SYSTEM DIAGNOSTICS & SELF-HEALING ENDPOINTS
 # ============================================================
