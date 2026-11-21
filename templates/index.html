@@ -1069,6 +1069,18 @@
             cursor: not-allowed !important;
             filter: grayscale(0.3);
         }
+
+        /* بعد النداء: زر التحدث أزرق واضح */
+        #micBtn.listening, button#micBtn.listening, #voiceBar #micBtn.listening {
+            background: #1d4ed8 !important;
+            color: #ffffff !important;
+            border: 2px solid #93c5fd !important;
+            box-shadow: 0 0 0 3px rgba(29,78,216,.35), 0 4px 16px rgba(29,78,216,.4) !important;
+        }
+        #sendBtn:not(:disabled):not(.busy):not(.voice-wait) {
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }
         #micBtn.listening {
             background: #0a7a2f !important;
             color: #FFEF00 !important;
@@ -5181,9 +5193,18 @@ function toggleTickerPause() {
         }
 
         function setVoiceUiState(mode) {
-            // mode: wake | ready | listen | idle — classes + inline حتى يظهر اللون فوراً
+            // mode: wake | ready | listen | idle
+            // تناغم الأزرار:
+            //  wake   = انتظار نداء فبرا (زر النداء أخضر)
+            //  listen = بعد سماع فبرا → زر التحدث أزرق ويستمع
+            //  ready  = اكتمل السؤال → زر الإرسال ذهبي مفعّل
+            //  idle   = عودة للوضع العادي
             var ta = document.querySelector('textarea[name="question"]') || document.getElementById("question");
             var st = document.getElementById("voiceStatus");
+            var mic = document.getElementById("micBtn");
+            var wakeBtn = document.getElementById("wakeBtn");
+            var sendBtn = document.getElementById("sendBtn");
+
             if (ta) {
                 ta.classList.remove("voice-wake", "voice-ready", "voice-listen");
                 ta.style.transition = "border-color .2s, box-shadow .2s, background .2s";
@@ -5192,62 +5213,108 @@ function toggleTickerPause() {
                     ta.style.border = "2px solid #001F3F";
                     ta.style.boxShadow = "0 0 0 3px rgba(0,31,63,.18)";
                     ta.style.background = "#f5f8fc";
+                } else if (mode === "listen") {
+                    ta.classList.add("voice-listen");
+                    ta.style.border = "2px solid #1d4ed8";
+                    ta.style.boxShadow = "0 0 14px rgba(29,78,216,.45)";
+                    ta.style.background = "#eff6ff";
                 } else if (mode === "ready") {
                     ta.classList.add("voice-ready");
                     ta.style.border = "2px solid #d4af37";
-                    ta.style.boxShadow = "0 0 14px rgba(212,175,55,.65)";
+                    ta.style.boxShadow = "0 0 14px rgba(212,175,55,.55)";
                     ta.style.background = "#fffef5";
-                } else if (mode === "listen") {
-                    ta.classList.add("voice-listen");
-                    ta.style.border = "2px solid #228B22";
-                    ta.style.boxShadow = "0 0 14px rgba(34,139,34,.5)";
-                    ta.style.background = "#f3fff5";
                 } else {
                     ta.style.border = "";
                     ta.style.boxShadow = "";
                     ta.style.background = "";
                 }
             }
+
             if (st) {
                 st.classList.remove("voice-ready-msg", "voice-listen-msg", "voice-wake-msg");
                 if (mode === "wake") st.classList.add("voice-wake-msg");
                 if (mode === "ready") st.classList.add("voice-ready-msg");
                 if (mode === "listen") st.classList.add("voice-listen-msg");
             }
-            var mic = document.getElementById("micBtn");
-            var wakeBtn = document.getElementById("wakeBtn");
+
+            // زر التحدث: أزرق عند الاستماع بعد النداء
             if (mic) {
-                if (mode === "listen" || mode === "ready" || mode === "wake") {
-                    if (mode === "listen" || mode === "ready") mic.classList.add("listening");
-                    else mic.classList.remove("listening");
-                } else mic.classList.remove("listening");
-                // ألوان أوضح: استعداد / يسمع الكلام / خامل
+                mic.classList.remove("listening", "voice-ready-mic");
+                mic.style.transition = "background .2s, color .2s, box-shadow .2s, border-color .2s";
                 if (mode === "listen") {
-                    mic.style.background = "#c2410c";
-                    mic.style.color = "#fff";
-                    mic.style.boxShadow = "0 0 0 3px rgba(194,65,12,.35)";
-                    mic.textContent = fbrahLang()==="en" ? "🟠 Hearing…" : "🟠 يسمع…";
+                    mic.classList.add("listening");
+                    mic.style.background = "#1d4ed8";
+                    mic.style.color = "#ffffff";
+                    mic.style.border = "2px solid #93c5fd";
+                    mic.style.boxShadow = "0 0 0 3px rgba(29,78,216,.35), 0 4px 16px rgba(29,78,216,.4)";
+                    mic.textContent = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "🎤 Listening…" : "🎤 يستمع الآن";
                 } else if (mode === "ready") {
-                    mic.style.background = "#0a66c2";
-                    mic.style.color = "#fff";
-                    mic.style.boxShadow = "0 0 0 3px rgba(10,102,194,.3)";
-                    mic.textContent = fbrahLang()==="en" ? "🎤 Speak now" : "🎤 تحدّث الآن";
-                } else if (mode === "wake") {
-                    mic.style.background = "#6b0f1a";
-                    mic.style.color = "#fff";
-                    mic.style.boxShadow = "";
-                    mic.textContent = fbrahT("talk", "🎤 تحدث");
+                    mic.classList.add("voice-ready-mic");
+                    mic.style.background = "#0f766e";
+                    mic.style.color = "#ecfdf5";
+                    mic.style.border = "2px solid #5eead4";
+                    mic.style.boxShadow = "0 0 0 2px rgba(15,118,110,.25)";
+                    mic.textContent = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "🎤 Done — ready" : "🎤 تم — جاهز";
                 } else {
                     mic.style.background = "";
                     mic.style.color = "";
+                    mic.style.border = "";
                     mic.style.boxShadow = "";
-                    mic.textContent = fbrahT("talk", "🎤 تحدث");
+                    try {
+                        mic.textContent = (typeof fbrahT === "function") ? fbrahT("talk", "🎤 تحدث") : "🎤 تحدث";
+                    } catch (eM) { mic.textContent = "🎤 تحدث"; }
                 }
             }
+
+            // زر النداء
             if (wakeBtn) {
-                if (mode === "wake" || mode === "ready" || mode === "listen") {
-                    wakeBtn.textContent = fbrahT("wakeOff", "🔕 إيقاف النداء");
-                    wakeBtn.style.background = mode === "listen" ? "#c2410c" : "#228B22";
+                if (mode === "wake" || mode === "listen") {
+                    wakeBtn.textContent = (typeof fbrahT === "function") ? fbrahT("wakeOff", "🔕 إيقاف النداء") : "🔕 إيقاف النداء";
+                    wakeBtn.style.background = "#228B22";
+                    wakeBtn.style.color = "#fff";
+                    wakeBtn.classList.add("active");
+                } else if (mode === "ready") {
+                    wakeBtn.style.background = "#228B22";
+                    wakeBtn.classList.add("active");
+                } else {
+                    wakeBtn.classList.remove("active", "listening");
+                    // لا تفرض نص الإيقاف إذا كان النداء ما زال مفعّلاً في الجلسة
+                    try {
+                        var we = sessionStorage.getItem("fbrahWakeEnabled") === "1";
+                        if (!we) {
+                            wakeBtn.textContent = (typeof fbrahT === "function") ? fbrahT("wakeOn", "🔔 تفعيل النداء") : "🔔 تفعيل النداء";
+                            wakeBtn.style.background = "#6b0f1a";
+                        }
+                    } catch (eW) {}
+                }
+            }
+
+            // زر الإرسال: معطّل أثناء الاستماع، مفعّل وذهبي عند الجاهزية
+            if (sendBtn) {
+                sendBtn.style.transition = "opacity .2s, box-shadow .2s, filter .2s";
+                if (mode === "listen" || mode === "wake") {
+                    // أثناء النداء/الاستماع: لا ترسل حتى يكتمل الصوت
+                    if (typeof voiceCaptureActive !== "undefined" && voiceCaptureActive) {
+                        sendBtn.disabled = true;
+                        sendBtn.classList.add("voice-wait");
+                        sendBtn.style.opacity = "0.55";
+                        sendBtn.style.boxShadow = "none";
+                    }
+                } else if (mode === "ready") {
+                    sendBtn.disabled = false;
+                    sendBtn.classList.remove("voice-wait");
+                    sendBtn.style.opacity = "1";
+                    sendBtn.style.boxShadow = "0 0 0 3px rgba(212,175,55,.4), 0 4px 14px rgba(212,175,55,.35)";
+                    sendBtn.style.filter = "none";
+                } else {
+                    sendBtn.classList.remove("voice-wait");
+                    if (!sendBtn.classList.contains("busy") && !sendBtn.classList.contains("fbrah-working")) {
+                        sendBtn.disabled = false;
+                        sendBtn.style.opacity = "";
+                        sendBtn.style.boxShadow = "";
+                    }
                 }
             }
         }
@@ -5278,15 +5345,30 @@ function toggleTickerPause() {
 
         function stripWakePhrase(text) {
             var t = (text || "").trim();
-            // لا تلمس كلمة فبراير
-            if (/^\s*فبراير\b/i.test(t) || /^\s*february\b/i.test(t)) return t;
-            // إزالة كل أشكال النداء من أي موضع (لا تظهر في خانة البحث)
-            t = t.replace(/ف\s*ب\s*ر\s*ا\s*[هيي]?/gi, " ");
-            t = t.replace(/\b(f\s*b\s*r\s*a\s*h?|fbrah|fbra|feebra|fibra|febra|phbra)\b/gi, " ");
-            t = t.replace(/(^|[\s،,\.:؛])يا?\s*(فبرا|فبراه|فبراي|فبره|فبرة|فيبرا|خبرا|صبرا|صبره)(?![ا-ي])/gi, " ");
-            t = t.replace(/^(يا\s*)?(فبرا|فبراه|فبراي|خبرا|صبرا|صبره|fbrah|fbra)\s*[,،:\-–—]*\s*/i, "");
-            t = t.replace(/\s+(يا\s*)?(فبرا|فبراه|خبرا|صبرا|fbrah|fbra)\s*$/i, "");
-            return t.replace(/\s+/g, " ").trim();
+            // لا تلمس «فبراير» إن كانت كلمة مستقلة عن النداء
+            var keepFeb = /فبراير|february/i.test(t);
+            // إزالة كل أشكال النداء المكررة من أي موضع
+            for (var i = 0; i < 4; i++) {
+                t = t.replace(/ف\s*ب\s*ر\s*ا\s*[ههيي]?/gi, " ");
+                t = t.replace(/\b(f\s*b\s*r\s*a\s*h?|fbrah|fbra|feebra|fibra|febra|phbra|fb)\b/gi, " ");
+                t = t.replace(/(^|[\s،,\.:؛\-–—])(يا\s*)?(فبرا|فبراه|فبراي|فبره|فبرة|فيبرا|خبرا|صبرا|صبره)(?![ا-يأإآ])/gi, " ");
+                t = t.replace(/^(يا\s*)?(فبرا|فبراه|فبراي|خبرا|صبرا|صبره|fbrah|fbra)\s*[,،:\-–—]*\s*/i, "");
+                t = t.replace(/\s+(يا\s*)?(فبرا|فبراه|خبرا|صبرا|صبره|fbrah|fbra)\s*$/i, "");
+            }
+            t = t.replace(/\s+/g, " ").trim();
+            if (keepFeb && !/فبراير|february/i.test(t)) {
+                // لا نعيد فبراير اصطناعياً — فقط نتجنب مسحها إن بقيت
+            }
+            return t;
+        }
+        function sanitizeQuestionBox() {
+            try {
+                var q = document.getElementById("question");
+                if (!q) return;
+                var before = q.value || "";
+                var after = stripWakePhrase(before);
+                if (after !== before) q.value = after;
+            } catch (e) {}
         }
         // حالة التقاط الصوت: لا يُفعَّل الإرسال حتى اكتمال الطلب
         var voiceCaptureActive = false;
@@ -5320,14 +5402,78 @@ function toggleTickerPause() {
             voiceCaptureReady = true;
             voiceCaptureActive = false;
             setSendEnabled(true);
+            try { if (typeof setVoiceUiState === "function") setVoiceUiState("ready"); } catch (e) {}
         }
         function clearVoiceCapture() {
             voiceCaptureActive = false;
             voiceCaptureReady = false;
             setSendEnabled(true);
         }
+        function resetVoiceUiAfterAnswer() {
+            // بعد ظهور الإجابة: أعد الإرسال والواجهة لاستقبال أمر جديد
+            try {
+                voiceSubmitLock = false;
+            } catch (e0) {}
+            clearVoiceCapture();
+            try {
+                if (typeof setVoiceUiState === "function") setVoiceUiState("idle");
+            } catch (e1) {}
+            try {
+                var send = document.getElementById("sendBtn");
+                if (send) {
+                    send.disabled = false;
+                    send.classList.remove("busy", "fbrah-working", "working", "is-busy", "voice-wait");
+                    send.style.opacity = "1";
+                    send.style.boxShadow = "";
+                    send.style.animation = "none";
+                    send.style.cursor = "pointer";
+                    send.textContent = (typeof fbrahT === "function") ? fbrahT("send", "🚀 إرسال") : "🚀 إرسال";
+                    send.title = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "Ready for a new request" : "جاهز لاستقبال طلب جديد";
+                }
+            } catch (e2) {}
+            try {
+                var mic = document.getElementById("micBtn");
+                if (mic) {
+                    mic.classList.remove("listening", "voice-ready-mic");
+                    mic.style.background = "";
+                    mic.style.color = "";
+                    mic.style.border = "";
+                    mic.style.boxShadow = "";
+                    mic.textContent = (typeof fbrahT === "function") ? fbrahT("talk", "🎤 تحدث") : "🎤 تحدث";
+                }
+            } catch (e3) {}
+            try { sanitizeQuestionBox(); } catch (e4) {}
+            // إن كان النداء مفعّلاً سابقاً: ارجع لوضع الانتظار دون كتابة «فبرا» في الخانة
+            try {
+                if (sessionStorage.getItem("fbrahWakeEnabled") === "1" && typeof startWakeListener === "function") {
+                    setTimeout(function () {
+                        try {
+                            if (!isListening && !wakeListening) startWakeListener();
+                            if (typeof setVoiceUiState === "function") setVoiceUiState("wake");
+                        } catch (e5) {}
+                    }, 500);
+                }
+            } catch (e6) {}
+        }
 
         // منع الإرسال أثناء التقاط الصوت حتى يكتمل الطلب
+
+        // لا يظهر اسم فبرا في خانة البحث عند النداء أو التكرار
+        (function bindSanitizeQuestionBox() {
+            function bind() {
+                var q = document.getElementById("question");
+                if (!q || q.dataset.wakeSanitize === "1") return;
+                q.dataset.wakeSanitize = "1";
+                ["input", "change", "blur", "keyup"].forEach(function (ev) {
+                    q.addEventListener(ev, function () { sanitizeQuestionBox(); });
+                });
+            }
+            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+            else bind();
+        })();
+        // sanitizeQuestionBox on input
+
         (function guardSendUntilVoiceReady() {
             function onSendAttempt(ev) {
                 try {
@@ -5642,7 +5788,7 @@ function toggleTickerPause() {
                 }
                 // خانة البحث: المطلوب فقط بدون كلمة النداء
                 var qBox = document.getElementById("question");
-                if (qBox) qBox.value = stripped;
+                if (qBox) { qBox.value = stripped; try { sanitizeQuestionBox(); } catch (eS) {} }
                 try { analyzeSentiment(stripped); } catch (e) {}
                 setVoiceUiState("listen");
                 setVoiceStatus(fbrahT("vsHear","✓ يسمع:") + " " + stripped);
@@ -5812,25 +5958,14 @@ function toggleTickerPause() {
             isListening = true;
             voiceAccum = restText.length > 2 ? restText : "";
             lastTranscript = voiceAccum;
+            // تفعيل متناغم: زر التحدث أزرق + تعطيل الإرسال حتى اكتمال الصوت
             setVoiceUiState("listen");
-            var micB = document.getElementById("micBtn");
-            if (micB) {
-                micB.classList.add("listening");
-                micB.style.background = "#0a7a2f";
-                micB.style.borderColor = "#FFEF00";
-                micB.style.color = "#FFEF00";
-                micB.style.boxShadow = "0 0 0 3px rgba(255,239,0,.35), 0 4px 16px rgba(10,122,47,.45)";
-                micB.textContent = fbrahLang()==="en" ? "🎤 Listening… speak now" : "🎤 يستمع — تحدّث الآن";
-            }
             var ta = document.getElementById("question");
             if (ta) {
-                // فارغة عند النداء فقط — أو السؤال بعد إزالة النداء
-                ta.value = voiceAccum;
-                try { ta.classList.add("voice-wake"); } catch (e0) {}
-                setTimeout(function () { try { ta.classList.remove("voice-wake"); } catch (e1) {} }, 2800);
+                ta.value = voiceAccum; // بدون «فبرا»
                 try { ta.focus(); } catch (e) {}
             }
-            setVoiceStatus(fbrahT("vsTimeTalk", "✓ حان وقت التحدث — اسأل الآن (الإرسال بعد اكتمال الصوت)"));
+            setVoiceStatus(fbrahT("vsTimeTalk", "✓ حان وقت التحدث — زر التحدث أزرق · الإرسال بعد اكتمال الصوت"));
             // إعادة تشغيل محرك التعرف من الصفر بعد النداء
             try {
                 isListening = false; // مؤقت لإيقاف دورة النداء
@@ -9334,13 +9469,16 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     var send = document.getElementById("sendBtn");
                     if (send) {
                         send.disabled = false;
-                        send.classList.remove("busy", "fbrah-working", "working");
+                        send.classList.remove("busy", "fbrah-working", "working", "is-busy", "voice-wait");
                         send.style.animation = "none";
                         send.style.cursor = "pointer";
+                        send.style.opacity = "1";
+                        send.style.boxShadow = "";
                         try {
-                            send.textContent = (typeof fbrahT === "function") ? fbrahT("send", "إرسال") : "إرسال";
-                        } catch (e) { send.textContent = "إرسال"; }
+                            send.textContent = (typeof fbrahT === "function") ? fbrahT("send", "🚀 إرسال") : "🚀 إرسال";
+                        } catch (e) { send.textContent = "🚀 إرسال"; }
                     }
+                    try { if (typeof resetVoiceUiAfterAnswer === "function") resetVoiceUiAfterAnswer(); } catch (eRV) {}
                     var loading = document.getElementById("loading");
                     if (loading && !document.body.classList.contains("searching-active")) {
                         // أبقِ رسالة النتيجة إن وُجدت لكن أوقف وضع الانتظار البصري
