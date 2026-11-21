@@ -1,0 +1,1176 @@
+﻿FBRAH AI - CSRF DIAGNOSTIC
+
+========== app.py ==========
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:395:            pass
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:396:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:397:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:398:@app.before_request
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:399:def _fbrah_log_request():
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:400:    request._start_time = time.time()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:401:    path = request.path
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:402:    # تجنب إغراق التيرمنال بالأصول الثابتة ونبضات التذكير
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:403:    if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+            pass
+
+
+def _fbrah_log_request():
+    request._start_time = time.time()
+    path = request.path
+    # تجنب إغراق التيرمنال بالأصول الثابتة ونبضات التذكير
+    if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:405:        log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:406:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:407:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:408:@app.after_request
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:409:def _fbrah_log_response(response):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:410:    start = getattr(request, "_start_time", None)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:411:    latency = f"{(time.time() - start)*1000:.1f}ms" if start else "N/A"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:412:    path = request.path
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:413:    if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+        log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+
+
+def _fbrah_log_response(response):
+    start = getattr(request, "_start_time", None)
+    latency = f"{(time.time() - start)*1000:.1f}ms" if start else "N/A"
+    path = request.path
+    if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9079:# 9. AUTHENTICATION
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9080:# ============================================================
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9081:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9082:def login_required(fn):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9083:    @wraps(fn)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9084:    def wrapped(*args, **kwargs):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9085:        if "user" not in session:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9086:            is_ajax = (
+# 9. AUTHENTICATION
+# ============================================================
+
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        if "user" not in session:
+            is_ajax = (
+                request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9087:                request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9088:                or "application/json" in request.headers.get("Accept", "").lower()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9089:                or request.path.startswith("/api/")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9090:            )
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9091:            if is_ajax:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9092:                return jsonify({"ok": False, "message": "انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة."}), 401
+    def wrapped(*args, **kwargs):
+        if "user" not in session:
+            is_ajax = (
+                or "application/json" in request.headers.get("Accept", "").lower()
+                or request.path.startswith("/api/")
+            )
+            if is_ajax:
+                return jsonify({"ok": False, "message": "انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة."}), 401
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9192:      <h1 data-i="title">تسجيل الدخول</h1>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9193:      <div class="panel" data-i="hint">أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور</div>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9194:      <div class="msg">__MESSAGE__</div>
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9195:      <form method="post" autocomplete="on"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9196:        <div class="field">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9197:          <label for="username" data-i="user">اسم المستخدم / البريد / الهاتف</label>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9198:          <input id="username" name="username" required autofocus placeholder="admin">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9199:        </div>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9200:        <div class="field">
+      <h1 data-i="title">تسجيل الدخول</h1>
+      <div class="panel" data-i="hint">أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور</div>
+      <div class="msg">__MESSAGE__</div>
+        <div class="field">
+          <label for="username" data-i="user">اسم المستخدم / البريد / الهاتف</label>
+          <input id="username" name="username" required autofocus placeholder="admin">
+        </div>
+        <div class="field">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9319:    <div class="body">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9320:      <h1 data-i="title">إنشاء حساب جديد</h1>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9321:      <div class="msg">__MESSAGE__</div>
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9322:      <form method="post" autocomplete="off"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9323:        <div class="field">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9324:          <label for="regUsername" data-i="user">اسم المستخدم (3 أحرف على الأقل)</label>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9325:          <input id="regUsername" name="username" required autofocus placeholder="اسم المستخدم">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9326:        </div>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9327:        <div class="field">
+    <div class="body">
+      <h1 data-i="title">إنشاء حساب جديد</h1>
+      <div class="msg">__MESSAGE__</div>
+        <div class="field">
+          <label for="regUsername" data-i="user">اسم المستخدم (3 أحرف على الأقل)</label>
+          <input id="regUsername" name="username" required autofocus placeholder="اسم المستخدم">
+        </div>
+        <div class="field">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9373:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9374:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9375:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9376:@app.route("/login", methods=["GET", "POST"])
+
+
+
+def login():
+    message = ""
+    if request.method == "POST":
+        login_id = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9377:def login():
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9378:    message = ""
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9379:    if request.method == "POST":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9380:        login_id = request.form.get("username", "").strip()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9381:        password = request.form.get("password", "")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9382:        with get_db() as db:
+
+
+@app.route("/login", methods=["GET", "POST"])
+    message = ""
+    if request.method == "POST":
+        login_id = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        with get_db() as db:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9393:                        "UPDATE users SET password_hash=? WHERE id=?",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9394:                        (hash_password(password), row["id"])
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9395:                    )
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9396:                _csrf_after_login = secrets.token_urlsafe(32)
+                        "UPDATE users SET password_hash=? WHERE id=?",
+                        (hash_password(password), row["id"])
+                    )
+                session.clear()
+                session["_fbrah_csrf"] = _csrf_after_login
+                session.permanent = True
+                session["user"] = row["username"]
+                session["role"] = row["role"]
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9397:                session.clear()
+                        (hash_password(password), row["id"])
+                    )
+                _csrf_after_login = secrets.token_urlsafe(32)
+                session["_fbrah_csrf"] = _csrf_after_login
+                session.permanent = True
+                session["user"] = row["username"]
+                session["role"] = row["role"]
+                return redirect(url_for("home"))
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9398:                session["_fbrah_csrf"] = _csrf_after_login
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9399:                session.permanent = True
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9400:                session["user"] = row["username"]
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9401:                session["role"] = row["role"]
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9402:                return redirect(url_for("home"))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9403:        message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+                    )
+                _csrf_after_login = secrets.token_urlsafe(32)
+                session.clear()
+                session.permanent = True
+                session["user"] = row["username"]
+                session["role"] = row["role"]
+                return redirect(url_for("home"))
+        message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9404:    return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9405:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9406:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9407:@app.route("/register", methods=["GET", "POST"])
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9408:def register():
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9409:    message = ""
+                session["role"] = row["role"]
+                return redirect(url_for("home"))
+        message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    message = ""
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9445:                    "<p style='color:#b00020'>"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9446:                    "اسم المستخدم أو البريد أو الهاتف مسجل بالفعل.</p>"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9447:                )
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9448:    return REGISTER_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9449:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9450:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9451:@app.route("/logout", methods=["POST"])
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9452:def logout():
+                    "<p style='color:#b00020'>"
+                    "اسم المستخدم أو البريد أو الهاتف مسجل بالفعل.</p>"
+                )
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9453:    session.clear()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9454:    return redirect(url_for("login"))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9455:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9456:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9457:# معالجة الملفات في الخلفية حتى لا ينتظر المستخدم تلخيص كل ملف وتصنيفه.
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9458:_FILE_TASKS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fbrah-files")
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    return redirect(url_for("login"))
+
+
+# معالجة الملفات في الخلفية حتى لا ينتظر المستخدم تلخيص كل ملف وتصنيفه.
+_FILE_TASKS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fbrah-files")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9609:            comment = request.form.get("fb_comment", "").strip()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9610:            if not question or not answer:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9611:                message = "تعذر ربط التقييم بسؤال وإجابة. أعد السؤال ثم قيّم الإجابة."
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9612:                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9613:                    return jsonify({"ok": False, "message": message}), 400
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9614:                flash(message)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9615:                return redirect(url_for("home"))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9616:            try:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9617:                save_feedback(
+            comment = request.form.get("fb_comment", "").strip()
+            if not question or not answer:
+                message = "تعذر ربط التقييم بسؤال وإجابة. أعد السؤال ثم قيّم الإجابة."
+                    return jsonify({"ok": False, "message": message}), 400
+                flash(message)
+                return redirect(url_for("home"))
+            try:
+                save_feedback(
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9628:                )
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9629:            except Exception:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9630:                app.logger.exception("فشل التقييم")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9631:                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9632:                    return jsonify({"ok": False, "message": "تعذر حفظ التقييم. حاول مرة أخرى."}), 500
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9633:                flash("تعذر حفظ التقييم.")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9634:            # استجابة JSON لطلب التقييم غير المتزامن، حتى لا يُفسَّر خطأ الحفظ على أنه نجاح.
+                )
+            except Exception:
+                app.logger.exception("فشل التقييم")
+                    return jsonify({"ok": False, "message": "تعذر حفظ التقييم. حاول مرة أخرى."}), 500
+                flash("تعذر حفظ التقييم.")
+            # استجابة JSON لطلب التقييم غير المتزامن، حتى لا يُفسَّر خطأ الحفظ على أنه نجاح.
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9635:            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9636:                return jsonify({
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9637:                    "ok": True,
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9638:                    "message": "شكرًا لك، تم حفظ تقييمك." if rating_i > 0 else "تم حفظ ملاحظتك لتحسين النتائج."
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9639:                })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:9640:            # إعادة عرض الصفحة مع آخر إجابة
+                    return jsonify({"ok": False, "message": "تعذر حفظ التقييم. حاول مرة أخرى."}), 500
+                flash("تعذر حفظ التقييم.")
+            # استجابة JSON لطلب التقييم غير المتزامن، حتى لا يُفسَّر خطأ الحفظ على أنه نجاح.
+                return jsonify({
+                    "ok": True,
+                    "message": "شكرًا لك، تم حفظ تقييمك." if rating_i > 0 else "تم حفظ ملاحظتك لتحسين النتائج."
+                })
+            # إعادة عرض الصفحة مع آخر إجابة
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11010:@app.route("/feedback", methods=["POST"])
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11011:def feedback():
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11012:    """حفظ تقييم الإجابة، مع رد JSON ثابت لطلبات AJAX."""
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11013:    is_ajax = request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11014:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11015:    def feedback_response(ok, message, status=200):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11016:        if is_ajax:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11017:            response = jsonify({"ok": bool(ok), "message": message})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\app.py:11018:            response.status_code = status
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    """حفظ تقييم الإجابة، مع رد JSON ثابت لطلبات AJAX."""
+
+    def feedback_response(ok, message, status=200):
+        if is_ajax:
+            response = jsonify({"ok": bool(ok), "message": message})
+            response.status_code = status
+
+========== security_hardening.py ==========
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:1:# -*- coding: utf-8 -*-
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:2:"""FBRAH security extension: CSRF, safe password reset by email, and headers.
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:3:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:4:This module is intentionally independent of the application's business logic.
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:5:It uses the existing SQLite connection factory and password hasher supplied by
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:6:app.py. No password or reset token is logged or stored in plaintext.
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:7:"""
+# -*- coding: utf-8 -*-
+
+This module is intentionally independent of the application's business logic.
+It uses the existing SQLite connection factory and password hasher supplied by
+app.py. No password or reset token is logged or stored in plaintext.
+"""
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:24:                   redirect, render_template_string, request, session, url_for)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:25:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:26:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:27:CSRF_SESSION_KEY = "_fbrah_csrf"
+                   redirect, render_template_string, request, session, url_for)
+
+
+CSRF_HEADER = "X-FBRAH-CSRF"
+RESET_TTL_MINUTES = 20
+RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:28:CSRF_HEADER = "X-FBRAH-CSRF"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:29:RESET_TTL_MINUTES = 20
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:30:RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:31:RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:32:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:33:
+
+
+CSRF_SESSION_KEY = "_fbrah_csrf"
+RESET_TTL_MINUTES = 20
+RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+
+
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:111:            db.commit()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:112:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:113:    @app.context_processor
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:114:    def _fbrah_csrf_template_context():
+            db.commit()
+
+    @app.context_processor
+        return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+
+    @app.before_request
+    def _fbrah_csrf_guard():
+        if not session.get(CSRF_SESSION_KEY):
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:115:        return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:116:
+
+    @app.context_processor
+    def _fbrah_csrf_template_context():
+
+    @app.before_request
+    def _fbrah_csrf_guard():
+        if not session.get(CSRF_SESSION_KEY):
+            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:117:    @app.before_request
+    def _fbrah_csrf_template_context():
+        return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+
+    def _fbrah_csrf_guard():
+        if not session.get(CSRF_SESSION_KEY):
+            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get(CSRF_HEADER, "")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:118:    def _fbrah_csrf_guard():
+        return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+
+    @app.before_request
+        if not session.get(CSRF_SESSION_KEY):
+            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get(CSRF_HEADER, "")
+            if not supplied:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:119:        if not session.get(CSRF_SESSION_KEY):
+
+    @app.before_request
+    def _fbrah_csrf_guard():
+            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get(CSRF_HEADER, "")
+            if not supplied:
+                supplied = request.form.get("_csrf_token", "")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:120:            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:121:        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+    @app.before_request
+    def _fbrah_csrf_guard():
+        if not session.get(CSRF_SESSION_KEY):
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get(CSRF_HEADER, "")
+            if not supplied:
+                supplied = request.form.get("_csrf_token", "")
+            expected = session.get(CSRF_SESSION_KEY, "")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:122:            supplied = request.headers.get(CSRF_HEADER, "")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:123:            if not supplied:
+        if not session.get(CSRF_SESSION_KEY):
+            session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            if not supplied:
+                supplied = request.form.get("_csrf_token", "")
+            expected = session.get(CSRF_SESSION_KEY, "")
+            if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+                if request.path in ("/api/client_telemetry", "/api/client_log"):
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:124:                supplied = request.form.get("_csrf_token", "")
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            supplied = request.headers.get(CSRF_HEADER, "")
+            if not supplied:
+            expected = session.get(CSRF_SESSION_KEY, "")
+            if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+                if request.path in ("/api/client_telemetry", "/api/client_log"):
+                    # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+                    origin = request.headers.get("Origin", "")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:125:            expected = session.get(CSRF_SESSION_KEY, "")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:126:            if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:127:                if request.path in ("/api/client_telemetry", "/api/client_log"):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:128:                    # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:129:                    origin = request.headers.get("Origin", "")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:130:                    origin_parts = urlparse(origin)
+            supplied = request.headers.get(CSRF_HEADER, "")
+            if not supplied:
+                supplied = request.form.get("_csrf_token", "")
+            if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+                if request.path in ("/api/client_telemetry", "/api/client_log"):
+                    # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+                    origin = request.headers.get("Origin", "")
+                    origin_parts = urlparse(origin)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:136:                        or origin_parts.username
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:137:                        or origin_parts.password
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:138:                    ):
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:139:                        abort(400, description="CSRF validation failed")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:140:                else:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:141:                    if request.path.startswith("/api/") or request.is_json:
+                        or origin_parts.username
+                        or origin_parts.password
+                    ):
+                else:
+                    if request.path.startswith("/api/") or request.is_json:
+                        return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+                    abort(400, description="CSRF validation failed")
+
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:142:                        return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+                        abort(400, description="CSRF validation failed")
+                else:
+                    if request.path.startswith("/api/") or request.is_json:
+                    abort(400, description="CSRF validation failed")
+
+    @app.after_request
+    def _fbrah_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:143:                    abort(400, description="CSRF validation failed")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:144:
+                else:
+                    if request.path.startswith("/api/") or request.is_json:
+                        return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+
+    @app.after_request
+    def _fbrah_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:145:    @app.after_request
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:146:    def _fbrah_security_headers(response):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:147:        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:148:        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:149:        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:150:        response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+                        return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+                    abort(400, description="CSRF validation failed")
+
+    def _fbrah_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:160:        if response.mimetype == "text/html" and response.direct_passthrough is False:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:161:            try:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:162:                body = response.get_data(as_text=True)
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:163:                token = session.get(CSRF_SESSION_KEY, "")
+        if response.mimetype == "text/html" and response.direct_passthrough is False:
+            try:
+                body = response.get_data(as_text=True)
+                meta = '<meta name="fbrah-csrf" content="' + token + '">'
+                if "name=\"fbrah-csrf\"" not in body:
+                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:164:                meta = '<meta name="fbrah-csrf" content="' + token + '">'
+            try:
+                body = response.get_data(as_text=True)
+                token = session.get(CSRF_SESSION_KEY, "")
+                if "name=\"fbrah-csrf\"" not in body:
+                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:165:                if "name=\"fbrah-csrf\"" not in body:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:166:                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                body = response.get_data(as_text=True)
+                token = session.get(CSRF_SESSION_KEY, "")
+                meta = '<meta name="fbrah-csrf" content="' + token + '">'
+                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+                if "X-FBRAH-CSRF" not in body:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:167:                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:168:                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                meta = '<meta name="fbrah-csrf" content="' + token + '">'
+                if "name=\"fbrah-csrf\"" not in body:
+                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+                if "X-FBRAH-CSRF" not in body:
+                    body = body.replace("</body>", helper + "</body>")
+                response.set_data(body)
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:169:                helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+                    body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                if "X-FBRAH-CSRF" not in body:
+                    body = body.replace("</body>", helper + "</body>")
+                response.set_data(body)
+            except Exception:
+                current_app.logger.exception("Could not inject CSRF token into HTML response")
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:170:                if "X-FBRAH-CSRF" not in body:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:171:                    body = body.replace("</body>", helper + "</body>")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:172:                response.set_data(body)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:173:            except Exception:
+                hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+                body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+                helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+                    body = body.replace("</body>", helper + "</body>")
+                response.set_data(body)
+            except Exception:
+                current_app.logger.exception("Could not inject CSRF token into HTML response")
+        return response
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:174:                current_app.logger.exception("Could not inject CSRF token into HTML response")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:175:        return response
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:176:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:177:    def _throttle_state(bucket):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:178:        now = time.time()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:179:        with get_db() as db:
+                    body = body.replace("</body>", helper + "</body>")
+                response.set_data(body)
+            except Exception:
+        return response
+
+    def _throttle_state(bucket):
+        now = time.time()
+        with get_db() as db:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:202:            db.commit()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:203:            return True
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:204:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:205:    @app.before_request
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:206:    def _fbrah_login_throttle():
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:207:        if request.path == "/login" and request.method == "POST":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:208:            ip = request.remote_addr or "unknown"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:209:            ident = (request.form.get("username") or "").strip().lower()[:160]
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:210:            if _throttle_state("ip:" + ip) or _throttle_state("id:" + hashlib.sha256(ident.encode()).hexdigest()):
+            db.commit()
+            return True
+
+    def _fbrah_login_throttle():
+        if request.path == "/login" and request.method == "POST":
+            ip = request.remote_addr or "unknown"
+            ident = (request.form.get("username") or "").strip().lower()[:160]
+            if _throttle_state("ip:" + ip) or _throttle_state("id:" + hashlib.sha256(ident.encode()).hexdigest()):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:211:                return make_response("تم تجاوز عدد محاولات الدخول. انتظر 15 دقيقة ثم أعد المحاولة.", 429)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:212:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:213:    @app.after_request
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:214:    def _fbrah_login_throttle_result(response):
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:215:        if request.path == "/login" and request.method == "POST":
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:216:            ip = request.remote_addr or "unknown"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:217:            ident = (request.form.get("username") or "").strip().lower()[:160]
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:218:            buckets = ["ip:" + ip, "id:" + hashlib.sha256(ident.encode()).hexdigest()]
+            if _throttle_state("ip:" + ip) or _throttle_state("id:" + hashlib.sha256(ident.encode()).hexdigest()):
+                return make_response("تم تجاوز عدد محاولات الدخول. انتظر 15 دقيقة ثم أعد المحاولة.", 429)
+
+    def _fbrah_login_throttle_result(response):
+        if request.path == "/login" and request.method == "POST":
+            ip = request.remote_addr or "unknown"
+            ident = (request.form.get("username") or "").strip().lower()[:160]
+            buckets = ["ip:" + ip, "id:" + hashlib.sha256(ident.encode()).hexdigest()]
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:321:                        (now, row["user_id"]),
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:322:                    )
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:323:                    db.commit()
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:324:                session.clear()
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:325:                return redirect(url_for("login"))
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:326:        return render_template_string(_RESET_PASSWORD_HTML, message=message)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:327:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:328:    app.register_blueprint(bp)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:329:
+                        (now, row["user_id"]),
+                    )
+                    db.commit()
+                return redirect(url_for("login"))
+        return render_template_string(_RESET_PASSWORD_HTML, message=message)
+
+    app.register_blueprint(bp)
+
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:330:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:331:_RESET_REQUEST_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استعادة كلمة المرور — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>استعادة كلمة المرور</h2><p>أدخل اسم المستخدم أو البريد الإلكتروني المسجل.</p><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>اسم المستخدم أو البريد</label><input name='username' required maxlength='160' autocomplete='username'><button type='submit'>إرسال رابط الاستعادة</button></form><p><a href='/login'>العودة لتسجيل الدخول</a></p></main></body></html>"""
+    app.register_blueprint(bp)
+
+
+_RESET_PASSWORD_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>تعيين كلمة مرور جديدة — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>تعيين كلمة مرور جديدة</h2><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>كلمة المرور الجديدة (12 حرفاً على الأقل)</label><input type='password' name='password' minlength='12' required autocomplete='new-password'><label>تأكيد كلمة المرور</label><input type='password' name='password2' minlength='12' required autocomplete='new-password'><button type='submit'>حفظ كلمة المرور</button></form></main></body></html>"""
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\security_hardening.py:332:_RESET_PASSWORD_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>تعيين كلمة مرور جديدة — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>تعيين كلمة مرور جديدة</h2><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>كلمة المرور الجديدة (12 حرفاً على الأقل)</label><input type='password' name='password' minlength='12' required autocomplete='new-password'><label>تأكيد كلمة المرور</label><input type='password' name='password2' minlength='12' required autocomplete='new-password'><button type='submit'>حفظ كلمة المرور</button></form></main></body></html>"""
+
+
+_RESET_REQUEST_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استعادة كلمة المرور — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>استعادة كلمة المرور</h2><p>أدخل اسم المستخدم أو البريد الإلكتروني المسجل.</p><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>اسم المستخدم أو البريد</label><input name='username' required maxlength='160' autocomplete='username'><button type='submit'>إرسال رابط الاستعادة</button></form><p><a href='/login'>العودة لتسجيل الدخول</a></p></main></body></html>"""
+
+========== templates\index.html ==========
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2568:                if (navigator.sendBeacon) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2569:                    navigator.sendBeacon("/api/client_telemetry", new Blob([JSON.stringify(payload)], {type: "application/json"}));
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2570:                } else {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2571:                    fetch("/api/client_telemetry", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2572:                        method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2573:                        headers: {"Content-Type": "application/json"},
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2574:                        body: JSON.stringify(payload)
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2575:                    }).catch(function(){});
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2576:                }
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon("/api/client_telemetry", new Blob([JSON.stringify(payload)], {type: "application/json"}));
+                } else {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify(payload)
+                    }).catch(function(){});
+                }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2580:        function fetchLiveNews(force) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2581:            var marquee = document.getElementById("tickerMarquee");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2582:            if (!marquee) return;
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2583:            fetch("/api/live_news" + (force ? "?force=1" : ""), {credentials:"same-origin"})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2584:                .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2585:                .then(function(data){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2586:                    if (!data || !Array.isArray(data.items) || !data.items.length) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2587:                        marquee.textContent = (document.documentElement.lang === "en")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2588:                            ? "No verified live headlines are available right now."
+        function fetchLiveNews(force) {
+            var marquee = document.getElementById("tickerMarquee");
+            if (!marquee) return;
+                .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+                .then(function(data){
+                    if (!data || !Array.isArray(data.items) || !data.items.length) {
+                        marquee.textContent = (document.documentElement.lang === "en")
+                            ? "No verified live headlines are available right now."
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2726:            var btn = document.getElementById("selfHealBtn");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2727:            if (btn) { btn.disabled = true; btn.textContent = "جاري الفحص والإصلاح..."; }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2728:            fbrahLogToTerminal("HEAL", "User clicked Self-Healing button");
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2729:            fetch("/api/self_heal", {method: "POST"})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2730:                .then(function(r){ return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2731:                .then(function(res){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2732:                    if (btn) { btn.disabled = false; btn.textContent = "🛠️ فحص وإصلاح ذاتي"; }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2733:                    var msg = "تقرير الفحص الذاتي للأنظمة:\n" +
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2734:                              "الحالة العامة: " + (res.status === "healthy" ? "سليم ومستقر ✓" : (res.status === "repaired" ? "تم الإصلاح بنجاح ✓" : "تنبيه")) + "\n";
+            var btn = document.getElementById("selfHealBtn");
+            if (btn) { btn.disabled = true; btn.textContent = "جاري الفحص والإصلاح..."; }
+            fbrahLogToTerminal("HEAL", "User clicked Self-Healing button");
+                .then(function(r){ return r.json(); })
+                .then(function(res){
+                    if (btn) { btn.disabled = false; btn.textContent = "🛠️ فحص وإصلاح ذاتي"; }
+                    var msg = "تقرير الفحص الذاتي للأنظمة:\n" +
+                              "الحالة العامة: " + (res.status === "healthy" ? "سليم ومستقر ✓" : (res.status === "repaired" ? "تم الإصلاح بنجاح ✓" : "تنبيه")) + "\n";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2803:                fbrahLogToTerminal("FILE EXPORT", "User requested export", {kind: kind, query: qText.substring(0, 60)});
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2804:            }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2805:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2806:            fetch("/api/export_answer", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2807:                method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2808:                headers: {"Content-Type": "application/json"},
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2809:                credentials: "same-origin",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2810:                body: JSON.stringify({question: qText, answer: aText, format: kind})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2811:            }).then(function(r){ return r.json(); })
+                fbrahLogToTerminal("FILE EXPORT", "User requested export", {kind: kind, query: qText.substring(0, 60)});
+            }
+
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                credentials: "same-origin",
+                body: JSON.stringify({question: qText, answer: aText, format: kind})
+            }).then(function(r){ return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2901:                65: isEn ? "Heavy rain" : "مطر غزير", 71: isEn ? "Snow" : "ثلج", 95: isEn ? "Thunder" : "رعد"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2902:            };
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2903:            function showTemp(lat, lon, label) {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2904:                fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat +
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2905:                      "&longitude=" + lon + "&current=temperature_2m,weather_code&timezone=auto")
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2906:                    .then(function (r) { return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2907:                    .then(function (d) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2908:                        if (!d.current) throw new Error("no");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2909:                        var t = Math.round(d.current.temperature_2m) + "°C · " +
+                65: isEn ? "Heavy rain" : "مطر غزير", 71: isEn ? "Snow" : "ثلج", 95: isEn ? "Thunder" : "رعد"
+            };
+            function showTemp(lat, lon, label) {
+                      "&longitude=" + lon + "&current=temperature_2m,weather_code&timezone=auto")
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (!d.current) throw new Error("no");
+                        var t = Math.round(d.current.temperature_2m) + "°C · " +
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2922:                var done = false;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2923:                function tryUrl(url, parse) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2924:                    if (done) return;
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2925:                    fetch(url, { credentials: "omit" }).then(function (r) { return r.json(); }).then(function (j) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2926:                        if (done) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2927:                        var loc = parse(j);
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2928:                        if (!loc) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2929:                        done = true;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:2930:                        showTemp(loc.lat, loc.lon, loc.label || "");
+                var done = false;
+                function tryUrl(url, parse) {
+                    if (done) return;
+                        if (done) return;
+                        var loc = parse(j);
+                        if (!loc) return;
+                        done = true;
+                        showTemp(loc.lat, loc.lon, loc.label || "");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3205:                refreshOllamaBtn.disabled = true;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3206:                if (ollamaModelsStatus) ollamaModelsStatus.textContent = "جارٍ الاتصال بـ Ollama...";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3207:                try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3208:                    var response = await fetch("/api/ollama/models", { credentials: "same-origin", cache: "no-store" });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3209:                    var payload = await response.json();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3210:                    var previousModel = modelElBind.value;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3211:                    modelElBind.querySelectorAll('option[data-ollama-model="1"]').forEach(function (option) { option.remove(); });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3212:                    (payload.models || []).forEach(function (name) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:3213:                        if (!name || Array.from(modelElBind.options).some(function (option) { return option.value === name; })) return;
+                refreshOllamaBtn.disabled = true;
+                if (ollamaModelsStatus) ollamaModelsStatus.textContent = "جارٍ الاتصال بـ Ollama...";
+                try {
+                    var payload = await response.json();
+                    var previousModel = modelElBind.value;
+                    modelElBind.querySelectorAll('option[data-ollama-model="1"]').forEach(function (option) { option.remove(); });
+                    (payload.models || []).forEach(function (name) {
+                        if (!name || Array.from(modelElBind.options).some(function (option) { return option.value === name; })) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4346:                    payload.set("model", modelField ? modelField.value : "");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4347:                    payload.set("comment", commentField ? commentField.value : "");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4348:                    payload.set("rating", action === "feedback_up" ? "1" : "-1");
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4349:                    var response = await fetch("/feedback", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4350:                        method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4351:                        body: payload,
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4352:                        credentials: "same-origin",
+                    payload.set("model", modelField ? modelField.value : "");
+                    payload.set("comment", commentField ? commentField.value : "");
+                    payload.set("rating", action === "feedback_up" ? "1" : "-1");
+                        method: "POST",
+                        body: payload,
+                        credentials: "same-origin",
+                        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+                    });
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4353:                        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4354:                    });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4355:                    var raw = await response.text();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4356:                    var result = null;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4357:                    try { result = JSON.parse(raw); } catch (parseError) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:4358:                        if (response.redirected || response.status === 401 || response.status === 403 || /تسجيل الدخول|login/i.test(raw)) {
+                        method: "POST",
+                        body: payload,
+                        credentials: "same-origin",
+                    });
+                    var raw = await response.text();
+                    var result = null;
+                    try { result = JSON.parse(raw); } catch (parseError) {
+                        if (response.redirected || response.status === 401 || response.status === 403 || /تسجيل الدخول|login/i.test(raw)) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6383:                try { if (box) box.remove(); } catch (e) {}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6384:                if (doneApi && item.id && String(item.id).indexOf("local-") !== 0) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6385:                    try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6386:                        fetch("/api/reminders/" + item.id + "/done", { method: "POST", credentials: "same-origin" });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6387:                    } catch (e) {}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6388:                }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6389:            }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6390:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6391:            if (big) {
+                try { if (box) box.remove(); } catch (e) {}
+                if (doneApi && item.id && String(item.id).indexOf("local-") !== 0) {
+                    try {
+                    } catch (e) {}
+                }
+            }
+
+            if (big) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6420:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6421:        function pollReminders() {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6422:            // يعمل أثناء الكتابة والبحث طالما التبويب مفتوح — بعد كل تحديث صفحة يُستأنف تلقائياً
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6423:            fetch("/api/reminders/due", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6424:                credentials: "same-origin",
+
+        function pollReminders() {
+            // يعمل أثناء الكتابة والبحث طالما التبويب مفتوح — بعد كل تحديث صفحة يُستأنف تلقائياً
+                credentials: "same-origin",
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            }).then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (data) {
+                  if (!data || !data.items) return;
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6425:                headers: { "X-Requested-With": "XMLHttpRequest" }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6426:            }).then(function (r) { return r.ok ? r.json() : null; })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6427:              .then(function (data) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6428:                  if (!data || !data.items) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6429:                  data.items.forEach(function (it) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6430:                      // إن كانت بطاقة نفس المنبّه ظاهرة لا نكررها
+            // يعمل أثناء الكتابة والبحث طالما التبويب مفتوح — بعد كل تحديث صفحة يُستأنف تلقائياً
+            fetch("/api/reminders/due", {
+                credentials: "same-origin",
+            }).then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (data) {
+                  if (!data || !data.items) return;
+                  data.items.forEach(function (it) {
+                      // إن كانت بطاقة نفس المنبّه ظاهرة لا نكررها
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6958:            var bases = ["/api/recordings", "/recordings/api"];
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6959:            for (var i = 0; i < bases.length; i++) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6960:                try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6961:                    var r = await fetch(bases[i], { credentials: "same-origin", headers: fbrahRecHeaders() });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6962:                    if (r.status !== 404) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6963:                        fbrahRec.apiBase = bases[i];
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6964:                        return bases[i];
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6965:                    }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6966:                } catch (e) {}
+            var bases = ["/api/recordings", "/recordings/api"];
+            for (var i = 0; i < bases.length; i++) {
+                try {
+                    if (r.status !== 404) {
+                        fbrahRec.apiBase = bases[i];
+                        return bases[i];
+                    }
+                } catch (e) {}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6985:        }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6986:        function fbrahRecHeaders() {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6987:            return {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6988:                "X-Requested-With": "XMLHttpRequest",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6989:                "Accept": "application/json"
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6990:            };
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6991:        }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6992:        async function fbrahRecRefreshList() {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6993:            var ul = document.getElementById("recList");
+        }
+        function fbrahRecHeaders() {
+            return {
+                "Accept": "application/json"
+            };
+        }
+        async function fbrahRecRefreshList() {
+            var ul = document.getElementById("recList");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6997:                    await fbrahRecProbe();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6998:                    fbrahRec._probed = true;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:6999:                }
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7000:                var r = await fetch(fbrahRec.apiBase, { credentials: "same-origin", headers: fbrahRecHeaders() });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7001:                if (r.status === 404) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7002:                    ul.innerHTML = "<li style=\"color:#760d0d\">مسار التسجيل غير مفعّل — انسخ app.py الجديد وأعد تشغيل python app.py</li>";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7003:                    return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7004:                }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7005:                if (r.status === 401) {
+                    await fbrahRecProbe();
+                    fbrahRec._probed = true;
+                }
+                if (r.status === 404) {
+                    ul.innerHTML = "<li style=\"color:#760d0d\">مسار التسجيل غير مفعّل — انسخ app.py الجديد وأعد تشغيل python app.py</li>";
+                    return;
+                }
+                if (r.status === 401) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7049:                var fd = new FormData();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7050:                fd.append("ui_lang", typeof fbrahLang === "function" ? fbrahLang() : "ar");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7051:                var url = (fbrahRec.apiBase || "/api/recordings") + "/" + encodeURIComponent(rid) + "/export";
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7052:                var r = await fetch(url, {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7053:                    method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7054:                    body: fd,
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7055:                    credentials: "same-origin",
+                var fd = new FormData();
+                fd.append("ui_lang", typeof fbrahLang === "function" ? fbrahLang() : "ar");
+                var url = (fbrahRec.apiBase || "/api/recordings") + "/" + encodeURIComponent(rid) + "/export";
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                    headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+                });
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7056:                    headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7057:                });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7058:                var raw = await r.text();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7059:                var data = {};
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7060:                try { data = JSON.parse(raw); } catch (e) { data = { message: raw.slice(0, 300) }; }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7061:                if (r.ok && data.ok) {
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                });
+                var raw = await r.text();
+                var data = {};
+                try { data = JSON.parse(raw); } catch (e) { data = { message: raw.slice(0, 300) }; }
+                if (r.ok && data.ok) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7081:        async function fbrahRecDelete(rid) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7082:            if (!rid) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7083:            try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7084:                await fetch((fbrahRec.apiBase || "/api/recordings") + "/" + rid, { method: "DELETE", credentials: "same-origin", headers: fbrahRecHeaders() });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7085:                fbrahRecRefreshList();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7086:                setVoiceStatus(fbrahLang() === "en" ? "Recording deleted" : "تم حذف التسجيل");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7087:            } catch (e) {}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7088:        }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7089:        async function fbrahRecStart() {
+        async function fbrahRecDelete(rid) {
+            if (!rid) return;
+            try {
+                fbrahRecRefreshList();
+                setVoiceStatus(fbrahLang() === "en" ? "Recording deleted" : "تم حذف التسجيل");
+            } catch (e) {}
+        }
+        async function fbrahRecStart() {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7090:            if (fbrahRec.recording) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7091:            var st = document.getElementById("recStatus");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7092:            try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7093:                var chk = await fetch("/api/recordings", { credentials: "same-origin" });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7094:                var meta = await chk.json();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7095:                if ((meta.items || []).length >= (meta.max || 10)) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7096:                    if (st) st.textContent = fbrahT("recMax", "الحد الأقصى 10");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7097:                    setVoiceStatus(fbrahT("recMax", "الحد الأقصى 10"));
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7098:                    return;
+            if (fbrahRec.recording) return;
+            var st = document.getElementById("recStatus");
+            try {
+                var meta = await chk.json();
+                if ((meta.items || []).length >= (meta.max || 10)) {
+                    if (st) st.textContent = fbrahT("recMax", "الحد الأقصى 10");
+                    setVoiceStatus(fbrahT("recMax", "الحد الأقصى 10"));
+                    return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7275:            try {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7276:                fbrahRec._uploadLock = true;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7277:                if (!fbrahRec._probed) { await fbrahRecProbe(); fbrahRec._probed = true; }
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7278:                var r = await fetch(fbrahRec.apiBase || "/api/recordings", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7279:                    method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7280:                    body: fd,
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7281:                    credentials: "same-origin",
+            try {
+                fbrahRec._uploadLock = true;
+                if (!fbrahRec._probed) { await fbrahRecProbe(); fbrahRec._probed = true; }
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                    headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+                });
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7282:                    headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7283:                });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7284:                var data = null;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7285:                try { data = await r.json(); } catch (eJson) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7286:                    if (st) st.textContent = "استجابة غير متوقعة من الخادم (" + r.status + ")";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7287:                    setVoiceStatus("فشل الحفظ — تأكد من تسجيل الدخول");
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                });
+                var data = null;
+                try { data = await r.json(); } catch (eJson) {
+                    if (st) st.textContent = "استجابة غير متوقعة من الخادم (" + r.status + ")";
+                    setVoiceStatus("فشل الحفظ — تأكد من تسجيل الدخول");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7356:        document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); });
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7357:        try { fbrahRecRefreshList(); } catch (e) {}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7358:        try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7359:            fetch("/api/recordings/where", { credentials: "same-origin", headers: fbrahRecHeaders() })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7360:                .then(function(r){ return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7361:                .then(function(d){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7362:                    if (!d || !d.ok) return;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7363:                    var tip = document.getElementById("recPathsTip");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:7364:                    if (!tip) {
+        document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); });
+        try { fbrahRecRefreshList(); } catch (e) {}
+        try {
+                .then(function(r){ return r.json(); })
+                .then(function(d){
+                    if (!d || !d.ok) return;
+                    var tip = document.getElementById("recPathsTip");
+                    if (!tip) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8097:                    if (loading) loading.style.display = "block";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8098:                    if (sendBtn) sendBtn.disabled = true;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8099:                } catch (e4) {}
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8100:                fetch(form.getAttribute("action") || window.location.pathname || "/", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8101:                    method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8102:                    body: fd,
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8103:                    credentials: "same-origin",
+                    if (loading) loading.style.display = "block";
+                    if (sendBtn) sendBtn.disabled = true;
+                } catch (e4) {}
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                    headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "text/html" }
+                }).then(function (resp) { return resp.text().then(function (text) { return { ok: resp.ok, text: text }; }); })
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8104:                    headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "text/html" }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8105:                }).then(function (resp) { return resp.text().then(function (text) { return { ok: resp.ok, text: text }; }); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8106:                .then(function (res) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8107:                    try {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8108:                        var doc = new DOMParser().parseFromString(res.text, "text/html");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8109:                        var newAns = doc.querySelector("#answerBlock, .answer-block, .answer");
+                    method: "POST",
+                    body: fd,
+                    credentials: "same-origin",
+                }).then(function (resp) { return resp.text().then(function (text) { return { ok: resp.ok, text: text }; }); })
+                .then(function (res) {
+                    try {
+                        var doc = new DOMParser().parseFromString(res.text, "text/html");
+                        var newAns = doc.querySelector("#answerBlock, .answer-block, .answer");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8243:                    var fd = new FormData();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8244:                    fd.append("file", ocrInput.files[0]);
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8245:                    if (box) { box.style.display = "block"; box.textContent = "جاري OCR…"; }
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8246:                    fetch("/api/ocr/extract", { method: "POST", body: fd, credentials: "same-origin" })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8247:                        .then(function (r) { return r.json(); })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8248:                        .then(function (j) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8249:                            var t = (j && j.text) ? j.text : "";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8250:                            window.__fbrahLastOcrText = t;
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8251:                            if (box) {
+                    var fd = new FormData();
+                    fd.append("file", ocrInput.files[0]);
+                    if (box) { box.style.display = "block"; box.textContent = "جاري OCR…"; }
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) {
+                            var t = (j && j.text) ? j.text : "";
+                            window.__fbrahLastOcrText = t;
+                            if (box) {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8292:                        imgBox.style.display = "block";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8293:                        imgBox.innerHTML = "<span style='color:#d4af37'>جاري توليد الصورة…</span>";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8294:                    }
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8295:                    fetch("/api/image/generate", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8296:                        method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8297:                        headers: { "Content-Type": "application/json" },
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8298:                        credentials: "same-origin",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8299:                        body: JSON.stringify({ prompt: promptText })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8300:                    })
+                        imgBox.style.display = "block";
+                        imgBox.innerHTML = "<span style='color:#d4af37'>جاري توليد الصورة…</span>";
+                    }
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "same-origin",
+                        body: JSON.stringify({ prompt: promptText })
+                    })
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8584:        ex.fillStyle = "#ffffff";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8585:        ex.fillRect(0,0,exportC.width,exportC.height);
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8586:        ex.drawImage(canvas, 0, 0);
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8587:        fetch("/api/pen/export", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8588:          method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8589:          headers: {"Content-Type":"application/json"},
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8590:          credentials: "same-origin",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8591:          body: JSON.stringify({image: exportC.toDataURL("image/png"), format: "docx", lang: document.documentElement.lang||"ar"})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8592:        }).then(function(r){ return r.json(); }).then(function(j){
+        ex.fillStyle = "#ffffff";
+        ex.fillRect(0,0,exportC.width,exportC.height);
+        ex.drawImage(canvas, 0, 0);
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          credentials: "same-origin",
+          body: JSON.stringify({image: exportC.toDataURL("image/png"), format: "docx", lang: document.documentElement.lang||"ar"})
+        }).then(function(r){ return r.json(); }).then(function(j){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8610:      ex.fillRect(0, 0, exportC.width, exportC.height);
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8611:      ex.drawImage(canvas, 0, 0);
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8612:      var dataUrl = exportC.toDataURL("image/png");
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8613:      fetch("/api/ocr_handwriting", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8614:        method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8615:        headers: {"Content-Type":"application/json"},
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8616:        credentials: "same-origin",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8617:        body: JSON.stringify({image: dataUrl, mode: "handwriting", lang: (document.documentElement.lang || "ar")})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8618:      }).then(function(r){
+      ex.fillRect(0, 0, exportC.width, exportC.height);
+      ex.drawImage(canvas, 0, 0);
+      var dataUrl = exportC.toDataURL("image/png");
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        credentials: "same-origin",
+        body: JSON.stringify({image: dataUrl, mode: "handwriting", lang: (document.documentElement.lang || "ar")})
+      }).then(function(r){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8648:          var prev = (document.documentElement.lang==="en") ? "Reading image..." : "جاري قراءة الصورة/الرسم...";
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8649:          var tip = document.getElementById("penStatus");
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8650:          if (tip) tip.textContent = prev;
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8651:          fetch("/api/ocr_handwriting", {
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8652:            method: "POST",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8653:            headers: {"Content-Type":"application/json"},
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8654:            credentials: "same-origin",
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8655:            body: JSON.stringify({image: reader.result, mode: "diagram"})
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8656:          }).then(function(r){ return r.json(); }).then(function(j){
+          var prev = (document.documentElement.lang==="en") ? "Reading image..." : "جاري قراءة الصورة/الرسم...";
+          var tip = document.getElementById("penStatus");
+          if (tip) tip.textContent = prev;
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            credentials: "same-origin",
+            body: JSON.stringify({image: reader.result, mode: "diagram"})
+          }).then(function(r){ return r.json(); }).then(function(j){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8757:    resetSearchChrome();
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8758:    // أبلغ الخادم بمسح سياق الحوار
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8759:    try {
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8760:      fetch("/api/clear_dialogue", {method:"POST", credentials:"same-origin", headers:{"Content-Type":"application/json"}, body:"{}"}).catch(function(){});
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8761:    } catch(e){}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8762:  }
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8763:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8764:  document.addEventListener("DOMContentLoaded", function(){
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\index.html:8765:    var cab = document.getElementById("clearAnswerBtn");
+    resetSearchChrome();
+    // أبلغ الخادم بمسح سياق الحوار
+    try {
+    } catch(e){}
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    var cab = document.getElementById("clearAnswerBtn");
+
+========== templates\admin_users.html ==========
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:193:  <div class="card">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:194:    <h2>إضافة مستخدم</h2>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:195:    <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:196:    <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:197:      <input type="hidden" name="action" value="add">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:198:      <div class="form-row">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:199:        <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:200:        <input name="password" type="password" placeholder="كلمة المرور" required minlength="12" autocomplete="new-password">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:201:        <select name="role">
+  <div class="card">
+    <h2>إضافة مستخدم</h2>
+    <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
+      <input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
+        <input name="password" type="password" placeholder="كلمة المرور" required minlength="12" autocomplete="new-password">
+        <select name="role">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:239:          <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:240:          <td data-label="تعديل">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:241:            {% if u.username != 'admin' %}
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:242:            <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:243:              <input type="hidden" name="action" value="rename_user">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:244:              <input type="hidden" name="user_id" value="{{ u.id }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:245:              <input name="new_username" placeholder="اسم جديد" minlength="3" required>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:246:              <button type="submit" class="btn-navy">تغيير الاسم</button>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:247:            </form>
+          <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
+          <td data-label="تعديل">
+            {% if u.username != 'admin' %}
+              <input type="hidden" name="action" value="rename_user">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input name="new_username" placeholder="اسم جديد" minlength="3" required>
+              <button type="submit" class="btn-navy">تغيير الاسم</button>
+            </form>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:248:            {% endif %}
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:249:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:250:            <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:251:              <input type="hidden" name="action" value="change_password">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:252:              <input type="hidden" name="user_id" value="{{ u.id }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:253:              <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:254:              <button type="submit" class="btn-navy">تغيير المرور</button>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:255:            </form>
+            </form>
+            {% endif %}
+
+              <input type="hidden" name="action" value="change_password">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
+              <button type="submit" class="btn-navy">تغيير المرور</button>
+            </form>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:256:
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:257:            {% if u.username != 'admin' %}
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:258:            <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:259:              <input type="hidden" name="action" value="change_role">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:260:              <input type="hidden" name="user_id" value="{{ u.id }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:261:              <select name="role">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:262:                <option value="user" {% if u.role == 'user' %}selected{% endif %}>مستخدم</option>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:263:                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>مدير</option>
+            </form>
+
+            {% if u.username != 'admin' %}
+              <input type="hidden" name="action" value="change_role">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <select name="role">
+                <option value="user" {% if u.role == 'user' %}selected{% endif %}>مستخدم</option>
+                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>مدير</option>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:265:              <button type="submit" class="btn-green">تحديث الدور</button>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:266:            </form>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:267:
+> C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:268:            <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:269:              <input type="hidden" name="action" value="delete">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:270:              <input type="hidden" name="user_id" value="{{ u.id }}">
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:271:              <button type="submit" class="btn-danger">حذف</button>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:272:            </form>
+  C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G\templates\admin_users.html:273:            {% else %}
+              <button type="submit" class="btn-green">تحديث الدور</button>
+            </form>
+
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <button type="submit" class="btn-danger">حذف</button>
+            </form>
+            {% else %}
+
+========== GIT STATUS ==========
+## release/fbrah-ai-2026-11-12...origin/release/fbrah-ai-2026-11-12
+ D FBRAH_AI_GITHUB_RELEASE_CANDIDATE_2026-11-12.zip.sha256
+ D FBRAH_AI_RELEASE_2026-11-12.zip.sha256
+ M IMPLEMENTATION_REPORT_AR.md
+ M MANIFEST_SHA256.txt
+ M app.py
+ M security_hardening.py
+ M templates/admin_users.html
+ M templates/index.html
+ M test_release_integrity.py
+?? FBRAH_AI_Release_2026-11-14.zip.sha256
+?? RELEASE_UPDATE_2026-11-14_AR.md
+
+========== PYTHON VERSION ==========
+Python 3.11.0
+
+========== FLASK VERSION ==========
+Name: Flask
+Version: 3.1.3

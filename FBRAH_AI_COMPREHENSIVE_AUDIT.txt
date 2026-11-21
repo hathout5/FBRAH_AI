@@ -1,0 +1,953 @@
+﻿============================================================
+FBRAH AI - COMPREHENSIVE RELEASE AUDIT
+Generated: 2026-11-14 01:56:59
+Project: C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G
+Mode: READ ONLY - NO GIT MUTATIONS - NO PROJECT FILE EDITS
+============================================================
+
+
+============================================================
+1. PROJECT AND ENVIRONMENT
+============================================================
+PowerShell: 5.1.26100.9818
+Computer: DESKTOP-VJU2927
+Project exists: True
+Python command:
+Python 3.11.0
+
+Git command:
+git version 2.56.0.windows.4
+
+
+============================================================
+2. COMPLETE FILE INVENTORY
+============================================================
+Total files: 113
+.env | 1365 bytes | .env
+.env.example | 2637 bytes | .example
+.gitattributes | 236 bytes | .gitattributes
+.gitignore | 802 bytes | .gitignore
+.vscode\settings.json | 44 bytes | .json
+00_INSTALL_AR.txt | 833 bytes | .txt
+01_CHANGELOG_AR.txt | 1529 bytes | .txt
+02_ENV_HINTS.txt | 744 bytes | .txt
+app.py | 599027 bytes | .py
+AUDIT_REPORT_AR_2026-11-12.md | 5782 bytes | .md
+backup_db.py | 1255 bytes | .py
+backups\before_admin_reset_20261104_032445.db | 9117696 bytes | .db
+backups\fbrah_2026-11-03_23-49-21.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_00-00-30.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_00-01-34.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_02-38-50.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_03-39-51.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_04-05-22.db | 9117696 bytes | .db
+backups\fbrah_2026-11-04_04-24-33.db | 9117696 bytes | .db
+backups\fbrah_2026-11-12_16-24-25.db | 59412480 bytes | .db
+backups\fbrah_2026-11-12_16-35-49.db | 59412480 bytes | .db
+backups\fbrah_2026-11-12_22-46-04.db | 59412480 bytes | .db
+CREATE_FBRAH_ZIP.py | 2082 bytes | .py
+data\.initial_admin_password | 26 bytes | .initial_admin_password
+data\.secret_key | 64 bytes | .secret_key
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\data_level0.bin | 8380000 bytes | .bin
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\header.bin | 100 bytes | .bin
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\index_metadata.pickle | 1345354 bytes | .pickle
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\length.bin | 20000 bytes | .bin
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\link_lists.bin | 42372 bytes | .bin
+data\chroma_legal\chroma.sqlite3 | 87859200 bytes | .sqlite3
+data\documents\-_.pdf | 42173943 bytes | .pdf
+data\documents\Chapter_1.docx | 28637 bytes | .docx
+data\documents\Chapter_1_1794517734_1ec690.docx | 28637 bytes | .docx
+data\documents\Chapter_1_1794570393_e64423.docx | 28637 bytes | .docx
+data\documents\Constitution_1971.pdf | 16274766 bytes | .pdf
+data\documents\Constitution_1971_1794241356_280525.pdf | 16274766 bytes | .pdf
+data\documents\docx.docx | 39390 bytes | .docx
+data\documents\docx_1794053888_9e78ba.docx | 39390 bytes | .docx
+data\documents\النتائج\تجربة.pdf | 1500 bytes | .pdf
+data\documents\النتائج\تقرير قانوني وإداري متقدم.docx | 38730 bytes | .docx
+data\documents\النتائج\تقرير قانوني وإداري متقدم.pdf | 49919 bytes | .pdf
+data\documents\النتائج\تقرير قانوني وإداري متقدم.pptx | 31466 bytes | .pptx
+data\documents\النتائج\تقرير قانوني وإداري متقدم.xlsx | 7539 bytes | .xlsx
+data\documents\النتائج\تقرير قانوني وإداري متقدم_1794065828_2ec516.docx | 38730 bytes | .docx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.docx | 39091 bytes | .docx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.pdf | 52808 bytes | .pdf
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.pptx | 33102 bytes | .pptx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.xlsx | 7973 bytes | .xlsx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086535_bf5cda.docx | 39091 bytes | .docx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086536_e3b18b.pptx | 33102 bytes | .pptx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086536_e705ea.xlsx | 7972 bytes | .xlsx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086537_5cc3cc.xlsx | 7973 bytes | .xlsx
+data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086537_a73be9.pdf | 52808 bytes | .pdf
+data\qdrant_legal\.lock | 13 bytes | .lock
+data\qdrant_legal\collection\fbrah_legal\storage.sqlite | 178946048 bytes | .sqlite
+data\qdrant_legal\meta.json | 511 bytes | .json
+ENABLE_FALLBACK_LOCAL.ps1 | 2668 bytes | .ps1
+ENV_SECURITY.example | 507 bytes | .example
+fbrah.db | 64733184 bytes | .db
+fbrah.db-shm | 32768 bytes | .db-shm
+fbrah.db-wal | 148352 bytes | .db-wal
+FBRAH_AI_Release_2026-11-14.zip.sha256 | 98 bytes | .sha256
+FBRAH_COMPLETE_README_AR.txt | 1268 bytes | .txt
+FBRAH_CSRF_DIAGNOSTIC.txt | 107881 bytes | .txt
+FBRAH_CSRF_SOURCE_REVIEW.txt | 65053 bytes | .txt
+FBRAH_FULL_AUDIT_2026-11-14.txt | 176980 bytes | .txt
+FBRAH_P0_P1_SECURITY_NOTES.md | 2987 bytes | .md
+fbrah_priority_enhancements.py | 7986 bytes | .py
+FEATURE_MATRIX_AR_EN.md | 2982 bytes | .md
+FINAL_AUDIT_AR.md | 2694 bytes | .md
+GITHUB_PUBLISH_CHECKLIST_AR.md | 4746 bytes | .md
+HOW_TO_APPLY.txt | 1037 bytes | .txt
+IMPLEMENTATION_REPORT_AR.md | 8876 bytes | .md
+INSTALL_RELEASE.ps1 | 10942 bytes | .ps1
+INSTALLER_FIX_NOTE_AR.md | 716 bytes | .md
+MANIFEST_SHA256.txt | 3268 bytes | .txt
+OLLAMA_TROUBLESHOOTING_AR.md | 2627 bytes | .md
+QUARANTINE_DO_NOT_RUN\FBRAH_AI_Package_Verification.txt | 1912 bytes | .txt
+QUARANTINE_DO_NOT_RUN\FBRAH_MASTER_AUDIT.txt | 17261 bytes | .txt
+QUARANTINE_DO_NOT_RUN\README_DO_NOT_RUN_AR_EN.md | 770 bytes | .md
+QUARANTINE_DO_NOT_RUN\RELEASE_NOTES_AR_OLD.txt | 5349 bytes | .txt
+QUARANTINE_DO_NOT_RUN\test_fbrah_system.py | 6464 bytes | .py
+QUARANTINE_DO_NOT_RUN\test_index_integrity.py | 7366 bytes | .py
+QUARANTINE_DO_NOT_RUN\اختبار_الحماية.py | 2155 bytes | .py
+QUARANTINE_DO_NOT_RUN\تطبيق_التحديثات.ps1 | 8195 bytes | .ps1
+QUARANTINE_DO_NOT_RUN\تقرير_التحقق.txt | 1912 bytes | .txt
+RAG_QUALITY_ROADMAP_AR_EN.md | 4451 bytes | .md
+README_SECURITY_AR.md | 12849 bytes | .md
+README-AR.txt | 8127 bytes | .txt
+RECONCILIATION_REQUIRED_AR.md | 1532 bytes | .md
+RELEASE_GUIDE_AR.md | 9012 bytes | .md
+RELEASE_GUIDE_EN.md | 5700 bytes | .md
+RELEASE_NOTES_AR.txt | 5349 bytes | .txt
+RELEASE_NOTES_AR_2026-11-11.txt | 3516 bytes | .txt
+RELEASE_UPDATE_2026-11-14_AR.md | 4174 bytes | .md
+requirements.txt | 466 bytes | .txt
+requirements-rag.txt | 275 bytes | .txt
+reset_admin.py | 2445 bytes | .py
+restore_db.py | 6648 bytes | .py
+security_hardening.py | 20114 bytes | .py
+START_HERE_AR_EN.txt | 2387 bytes | .txt
+templates\admin_users.html | 9835 bytes | .html
+templates\index.html | 472571 bytes | .html
+templates\index.html.bak | 415311 bytes | .bak
+templates\index.html.pre_deep_clean.bak | 415311 bytes | .bak
+test_fbrah_system.py | 6464 bytes | .py
+test_index_integrity.py | 7728 bytes | .py
+test_priority_smoke.py | 2672 bytes | .py
+test_release_integrity.py | 26424 bytes | .py
+UX_RAG_VALIDATION_AR.md | 3166 bytes | .md
+اختبار_الحماية.py | 2155 bytes | .py
+تطبيق_التحديثات.ps1 | 8195 bytes | .ps1
+
+
+============================================================
+3. FILE EXTENSION SUMMARY
+============================================================
+.bak                        2 files
+.bin                        4 files
+.db                        12 files
+.db-shm                     1 files
+.db-wal                     1 files
+.docx                       9 files
+.env                        1 files
+.example                    2 files
+.gitattributes              1 files
+.gitignore                  1 files
+.html                       2 files
+.initial_admin_password      1 files
+.json                       2 files
+.lock                       1 files
+.md                        16 files
+.pdf                        7 files
+.pickle                     1 files
+.pptx                       3 files
+.ps1                        4 files
+.py                        15 files
+.secret_key                 1 files
+.sha256                     1 files
+.sqlite                     1 files
+.sqlite3                    1 files
+.txt                       19 files
+.xlsx                       4 files
+
+
+============================================================
+4. DIRECTORY INVENTORY
+============================================================
+.vscode
+backups
+data
+data\chroma_legal
+data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab
+data\documents
+data\documents\النتائج
+data\qdrant_legal
+data\qdrant_legal\collection
+data\qdrant_legal\collection\fbrah_legal
+data\recordings
+data\results
+QUARANTINE_DO_NOT_RUN
+results
+templates
+النتائج
+
+
+============================================================
+5. GIT BRANCH AND STATUS
+============================================================
+Repository root:
+C:/Users/hatho/Desktop/Amit/Fbrah AI/Fbrah Ai G
+
+Current branch:
+release/fbrah-ai-2026-11-12
+
+HEAD commit:
+6b0bea911bae71cff19325f878ec47e2e53a2703
+6b0bea9
+2026-11-12 22:46:04 +0200
+Complete FBRAH AI release audit and updates
+
+Working tree status:
+## release/fbrah-ai-2026-11-12...origin/release/fbrah-ai-2026-11-12
+ D FBRAH_AI_GITHUB_RELEASE_CANDIDATE_2026-11-12.zip.sha256
+ D FBRAH_AI_RELEASE_2026-11-12.zip.sha256
+ M IMPLEMENTATION_REPORT_AR.md
+ M MANIFEST_SHA256.txt
+ M app.py
+ M security_hardening.py
+ M templates/admin_users.html
+ M templates/index.html
+ M test_release_integrity.py
+?? FBRAH_AI_Release_2026-11-14.zip.sha256
+?? FBRAH_CSRF_DIAGNOSTIC.txt
+?? FBRAH_CSRF_SOURCE_REVIEW.txt
+?? FBRAH_FULL_AUDIT_2026-11-14.txt
+?? RELEASE_UPDATE_2026-11-14_AR.md
+
+Changed tracked files:
+FBRAH_AI_GITHUB_RELEASE_CANDIDATE_2026-11-12.zip.sha256
+FBRAH_AI_RELEASE_2026-11-12.zip.sha256
+IMPLEMENTATION_REPORT_AR.md
+MANIFEST_SHA256.txt
+app.py
+security_hardening.py
+templates/admin_users.html
+templates/index.html
+test_release_integrity.py
+
+Staged files:
+
+Untracked files:
+FBRAH_AI_Release_2026-11-14.zip.sha256
+FBRAH_CSRF_DIAGNOSTIC.txt
+FBRAH_CSRF_SOURCE_REVIEW.txt
+FBRAH_FULL_AUDIT_2026-11-14.txt
+RELEASE_UPDATE_2026-11-14_AR.md
+
+Latest 10 commits:
+6b0bea9 (HEAD -> release/fbrah-ai-2026-11-12, origin/release/fbrah-ai-2026-11-12) Complete FBRAH AI release audit and updates
+15f0273 Add release integrity manifest
+5646fa8 Prepare FBRAH AI release candidate
+1cd9048 (origin/main, origin/HEAD, clean-main) Create clean secure project baseline
+
+
+============================================================
+6. GIT DIFF CHECK
+============================================================
+UNSTAGED DIFF CHECK: PASS
+STAGED DIFF CHECK: PASS
+
+
+============================================================
+7. PYTHON SYNTAX CHECK
+============================================================
+Python files found: 15
+PASS | app.py
+PASS | backup_db.py
+PASS | CREATE_FBRAH_ZIP.py
+PASS | fbrah_priority_enhancements.py
+PASS | QUARANTINE_DO_NOT_RUN\test_fbrah_system.py
+PASS | QUARANTINE_DO_NOT_RUN\test_index_integrity.py
+PASS | QUARANTINE_DO_NOT_RUN\اختبار_الحماية.py
+PASS | reset_admin.py
+PASS | restore_db.py
+PASS | security_hardening.py
+PASS | test_fbrah_system.py
+PASS | test_index_integrity.py
+PASS | test_priority_smoke.py
+PASS | test_release_integrity.py
+PASS | اختبار_الحماية.py
+PYTHON_SYNTAX_SUMMARY | PASS=15 | FAIL=0
+PYTHON SYNTAX: PASS
+
+
+============================================================
+8. IMPORTANT PROJECT FILES
+============================================================
+FOUND | app.py | 599027 bytes
+FOUND | security_hardening.py | 20114 bytes
+FOUND | requirements.txt | 466 bytes
+FOUND | requirements-rag.txt | 275 bytes
+FOUND | reset_admin.py | 2445 bytes
+FOUND | backup_db.py | 1255 bytes
+FOUND | restore_db.py | 6648 bytes
+FOUND | test_release_integrity.py | 26424 bytes
+FOUND | templates\index.html | 472571 bytes
+FOUND | templates\admin_users.html | 9835 bytes
+FOUND | .gitignore | 802 bytes
+FOUND | .env.example | 2637 bytes
+FOUND | MANIFEST_SHA256.txt | 3268 bytes
+FOUND | IMPLEMENTATION_REPORT_AR.md | 8876 bytes
+FOUND | RELEASE_UPDATE_2026-11-14_AR.md | 4174 bytes
+
+
+============================================================
+9. CSRF AND SESSION SOURCE REVIEW
+============================================================
+
+--- FILE: app.py ---
+Line 221: secret_key = (os.environ.get("FBRAH_SECRET_KEY") or "").strip()
+Line 222: _key_file = os.path.join(DATA_DIR, ".secret_key")
+Line 223: if not secret_key:
+Line 227: secret_key = kf.read().strip()
+Line 229: secret_key = ""
+Line 230: if not secret_key or len(secret_key) < 32:
+Line 231: secret_key = secrets.token_hex(32)
+Line 234: kf.write(secret_key)
+Line 238: "تم حفظ مفتاح الجلسة في data/.secret_key (أو عيّن FBRAH_SECRET_KEY)."
+Line 240: app.secret_key = secret_key
+Line 243: app.config["PERMANENT_SESSION_LIFETIME"] = dt.timedelta(days=7)
+Line 247: SESSION_COOKIE_HTTPONLY=True,
+Line 248: SESSION_COOKIE_SAMESITE="Lax",
+Line 249: SESSION_COOKIE_SECURE=os.environ.get("FBRAH_HTTPS") == "1",
+Line 398: @app.before_request
+Line 408: @app.after_request
+Line 716: initial_password = secrets.token_urlsafe(18)
+Line 9082: def login_required(fn):
+Line 9195: <form method="post" autocomplete="on"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+Line 9322: <form method="post" autocomplete="off"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+Line 9376: @app.route("/login", methods=["GET", "POST"])
+Line 9377: def login():
+Line 9396: _csrf_after_login = secrets.token_urlsafe(32)
+Line 9397: session.clear()
+Line 9398: session["_fbrah_csrf"] = _csrf_after_login
+Line 9404: return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+Line 9448: return REGISTER_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+Line 9452: def logout():
+Line 9453: session.clear()
+
+--- FILE: security_hardening.py ---
+Line 27: CSRF_SESSION_KEY = "_fbrah_csrf"
+Line 28: CSRF_HEADER = "X-FBRAH-CSRF"
+Line 114: def _fbrah_csrf_template_context():
+Line 115: return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+Line 117: @app.before_request
+Line 118: def _fbrah_csrf_guard():
+Line 119: if not session.get(CSRF_SESSION_KEY):
+Line 120: session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+Line 124: supplied = request.form.get("_csrf_token", "")
+Line 125: expected = session.get(CSRF_SESSION_KEY, "")
+Line 145: @app.after_request
+Line 163: token = session.get(CSRF_SESSION_KEY, "")
+Line 167: hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+Line 169: helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+Line 170: if "X-FBRAH-CSRF" not in body:
+Line 205: @app.before_request
+Line 213: @app.after_request
+Line 250: raw = secrets.token_urlsafe(40)
+Line 324: session.clear()
+Line 331: _RESET_REQUEST_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استعادة كلمة المرور — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>استعادة كلمة المرور</h2><p>أدخل اسم المستخدم أو البريد الإلكتروني المسجل.</p><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>اسم المستخدم أو البريد</label><input name='username' required maxlength='160' autocomplete='username'><button type='submit'>إرسال رابط الاستعادة</button></form><p><a href='/login'>العودة لتسجيل الدخول</a></p></main></body></html>"""
+Line 332: _RESET_PASSWORD_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>تعيين كلمة مرور جديدة — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>تعيين كلمة مرور جديدة</h2><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>كلمة المرور الجديدة (12 حرفاً على الأقل)</label><input type='password' name='password' minlength='12' required autocomplete='new-password'><label>تأكيد كلمة المرور</label><input type='password' name='password2' minlength='12' required autocomplete='new-password'><button type='submit'>حفظ كلمة المرور</button></form></main></body></html>"""
+
+--- FILE: templates\index.html ---
+
+--- FILE: templates\admin_users.html ---
+Line 196: <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+Line 242: <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+Line 250: <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+Line 258: <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+Line 268: <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+
+
+============================================================
+10. FRONT-END AND MODEL CONFIGURATION MARKERS
+============================================================
+
+--- app.py ---
+Line 110: OLLAMA_BASE_URL = os.environ.get(
+Line 111: "OLLAMA_BASE_URL",
+Line 115: OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
+Line 116: OLLAMA_TAGS_URL = f"{OLLAMA_BASE_URL}/api/tags"
+Line 119: # GROQ / OpenAI-compatible (gpt-oss-120b via Groq)
+Line 120: GROQ_API_KEY = (os.environ.get("GROQ_API_KEY") or "").strip()
+Line 121: GROQ_MODEL = (os.environ.get("GROQ_MODEL") or "openai/gpt-oss-120b").strip()
+Line 122: GROQ_MODELS_LIST = list(dict.fromkeys(
+Line 123: x.strip() for x in (os.environ.get("GROQ_MODELS") or GROQ_MODEL).split(",") if x.strip()
+Line 125: GROQ_BASE_URL = (os.environ.get("GROQ_BASE_URL") or "https://api.groq.com/openai/v1").rstrip("/")
+Line 127: # Google Gemini (AI Studio — free tier)
+Line 128: GEMINI_API_KEY = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
+Line 130: _GEMINI_MODELS_DEFAULT = (
+Line 131: "gemini-3.8-flash,gemini-3.5-flash,gemini-3.5-flash-lite,"
+Line 132: "gemini-3.6-flash,gemini-3.1-pro-preview"
+Line 134: GEMINI_MODELS_LIST = [
+Line 136: for x in (os.environ.get("GEMINI_MODELS") or _GEMINI_MODELS_DEFAULT).split(",")
+Line 139: if not GEMINI_MODELS_LIST:
+Line 140: GEMINI_MODELS_LIST = [
+Line 141: "gemini-3.8-flash",
+Line 142: "gemini-3.5-flash",
+Line 143: "gemini-3.5-flash-lite",
+Line 144: "gemini-3.6-flash",
+Line 145: "gemini-3.1-pro-preview",
+Line 148: GEMINI_MODEL = (os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash").strip()
+Line 150: _gm_l = GEMINI_MODEL.lower()
+Line 152: GEMINI_MODEL = "gemini-3.1-pro-preview"
+Line 154: GEMINI_MODEL = "gemini-3.8-flash"
+Line 156: GEMINI_MODEL = "gemini-3.5-flash-lite"
+Line 158: GEMINI_MODEL = "gemini-3.5-flash"
+Line 160: GEMINI_MODEL = "gemini-3.6-flash"
+Line 162: GEMINI_MODEL = "gemini-2.5-flash"
+Line 163: elif "·" in GEMINI_MODEL or (" " in GEMINI_MODEL and not GEMINI_MODEL.startswith("gemini-")):
+Line 164: GEMINI_MODEL = "gemini-3.8-flash"
+Line 166: _GEMINI_MODELS_CACHE = {"ts": 0, "names": []}
+Line 495: results["checks"]["gemini_configured"] = bool(GEMINI_API_KEY)
+Line 496: results["checks"]["groq_configured"] = bool(GROQ_API_KEY)
+Line 750: # 4. OLLAMA
+Line 760: OLLAMA_TAGS_URL,
+Line 773: # لا تعرض نماذج افتراضية غير مثبتة؛ حالة Ollama غير المتاحة تعني قائمة فارغة.
+Line 780: """قائمة الموديلات السحابية المهيأة والمحلية المثبتة فعلياً في Ollama."""
+Line 782: if GROQ_API_KEY:
+Line 783: models.append("groq")
+Line 784: for model_id in GROQ_MODELS_LIST:
+Line 785: item = "groq:" + model_id
+Line 788: if GEMINI_API_KEY:
+Line 789: models.append("gemini")
+Line 790: for model_id in dict.fromkeys([GEMINI_MODEL] + GEMINI_MODELS_LIST):
+Line 792: item = "gemini:" + model_id
+Line 800: app.logger.exception("تعذر تحميل قائمة نماذج Ollama للواجهة")
+Line 808: """تحقق سريع من الوصول للإنترنت؛ لا يختبر صلاحية مفتاح Gemini أو حصته."""
+Line 830: """Gemini افتراضياً عند وجود الإنترنت ومفتاحه؛ وإلا Ollama المحلي."""
+Line 832: if GEMINI_API_KEY and is_internet_available():
+Line 833: preferred_gemini = "gemini:" + (GEMINI_MODEL or "gemini-3.5-flash-lite")
+Line 834: if preferred_gemini in available or "gemini" in available:
+Line 835: return preferred_gemini if preferred_gemini in available else "gemini"
+Line 838: local_models = [m for m in available if not is_gemini_model(m) and not is_groq_model(m)]
+Line 841: if GEMINI_API_KEY and any(is_gemini_model(m) for m in available):
+Line 842: return next(m for m in available if is_gemini_model(m))
+Line 843: if GROQ_API_KEY and any(is_groq_model(m) for m in available):
+Line 844: return next(m for m in available if is_groq_model(m))
+Line 854: "تعذر", "خطأ", "انتهت مهلة", "GEMINI_BUSY", "تم اختيار Gemini لكن",
+Line 855: "تم اختيار GROQ لكن", "مفتاح", "HTTPConnection", "Failed to",
+Line 861: if t.startswith("تعذر") or t.startswith("خطأ") or "GEMINI_BUSY" in t:
+Line 869: """اختيار النموذج المحلي المحدد، أو بدائل Ollama المثبتة فقط عند السماح الصريح."""
+Line 875: allow = (os.environ.get("FBRAH_ALLOW_LOCAL_MODEL_FALLBACK") or "0").strip().lower() in ("1", "true", "yes")
+Line 886: def ask_ollama(prompt, model=None, num_predict=1800, timeout=320,
+Line 892: if is_gemini_model(model) or is_groq_model(model):
+Line 900: # —— محلي Ollama: تشغيل النموذج المحلي المحدد ——
+Line 902: # لا تُجرّب نموذجاً محلياً آخر إلا عند تفعيل FBRAH_ALLOW_LOCAL_MODEL_FALLBACK=1
+Line 905: return "لا توجد نماذج Ollama مثبتة أو أن خدمة Ollama غير متاحة. لم يتم التحويل إلى البيئة السحابية."
+Line 924: log_terminal("MODEL", f"Local provider=OLLAMA | model={cand} | attempt={i + 1}/{len(candidates)}")
+Line 926: OLLAMA_GENERATE_URL,
+Line 934: log_terminal("MODEL", f"Ollama {cand} returned a model error; trying next installed local model", level="warning")
+Line 935: app.logger.warning("Ollama %s error: %s → next", cand, last_err[:120])
+Line 941: log_terminal("MODEL", f"Ollama {cand} returned an empty answer; trying next installed local model", level="warning")
+Line 946: log_terminal("MODEL", f"SUCCESS: OLLAMA model={cand}")
+Line 950: log_terminal("MODEL", f"Ollama {cand} timed out; trying next installed local model", level="warning")
+Line 951: app.logger.warning("Ollama timeout %s → next", cand)
+Line 955: log_terminal("MODEL", f"Ollama {cand} failed ({type(e).__name__}); trying next installed local model", level="warning")
+Line 956: app.logger.warning("Ollama %s fail: %s", cand, last_err)
+Line 961: "Ollama غير شغّال حالياً.\n"
+Line 962: "1) من الطرفية: ollama serve\n"
+Line 963: "2) تثبيت النموذج: ollama pull qwen2.5:7b\n"
+Line 964: "3) أو استخدم Gemini/GROQ من القائمة.\n"
+Line 969: "جرّب Gemini أو GROQ من القائمة، أو ollama serve\n"
+Line 1065: def ollama_status():
+Line 1066: """فحص سريع: هل Ollama يعمل وما النماذج المتاحة؟"""
+Line 1068: r = get_http_session().get(OLLAMA_TAGS_URL, timeout=4)
+Line 1070: return False, f"Ollama ردّ برمز {r.status_code} على {OLLAMA_BASE_URL}"
+Line 1074: return False, f"Ollama يعمل على {OLLAMA_BASE_URL} لكن لا يوجد أي نموذج. نفّذ: ollama pull qwen2.5:7b"
+Line 1077: return False, f"لا يمكن الاتصال بـ Ollama على {OLLAMA_BASE_URL}: {exc}"
+Line 1080: def is_ollama_error(answer):
+Line 1086: "خطأ من Ollama",
+Line 1087: (_friendly_ollama_error("connection")),
+Line 2140: # Vector RAG (Chroma/Qdrant) + Arabic embeddings + Re-ranker + GROQ
+Line 2219: """Embeddings عربية/متعددة: sentence-transformers أو Ollama أو هاش احتياطي."""
+Line 2239: # probe ollama embeddings
+Line 2241: OLLAMA_BASE_URL.rstrip("/") + "/api/embeddings",
+Line 2246: self.mode = "ollama"
+Line 2248: app.logger.info("Embeddings: Ollama nomic-embed-text dim=%s", self.dim)
+Line 2259: if self.mode == "ollama":
+Line 2264: OLLAMA_BASE_URL.rstrip("/") + "/api/embeddings",
+Line 2674: def ask_groq(prompt, model=None, max_tokens=2000, temperature=0.2, timeout=None):
+Line 2675: """Groq API with bounded, opt-in fallback among explicitly configured Groq models."""
+Line 2676: key = GROQ_API_KEY
+Line 2678: return "مفتاح GROQ غير مضبوط. عيّن GROQ_API_KEY في ملف .env المحلي."
+Line 2680: preferred = (model or GROQ_MODEL or "openai/gpt-oss-120b").strip()
+Line 2681: allow_fallback = (os.environ.get("FBRAH_ALLOW_CLOUD_FALLBACK") or "0").strip().lower() in ("1", "true", "yes")
+Line 2684: candidates.extend(x for x in GROQ_MODELS_LIST if x not in candidates)
+Line 2687: url = GROQ_BASE_URL + "/chat/completions"
+Line 2702: log_terminal("MODEL", f"Cloud provider=GROQ | model={candidate} | attempt={index + 1}/{len(candidates)}")
+Line 2708: last_error = f"GROQ_HTTP_{status}: {body}"
+Line 2710: log_terminal("MODEL", f"GROQ {candidate} returned HTTP {status}; trying configured cloud alternative", level="warning")
+Line 2713: last_error = f"GROQ_MODEL_NOT_FOUND: {candidate}"
+Line 2714: log_terminal("MODEL", f"GROQ model not found: {candidate}; trying next configured model", level="warning")
+Line 2716: return f"خطأ GROQ ({status}): {body}"
+Line 2722: log_terminal("MODEL", f"SUCCESS: GROQ model={candidate}" + (" (same-provider fallback)" if index else ""))
+Line 2724: last_error = f"GROQ_EMPTY_RESPONSE: {candidate}"
+Line 2726: last_error = f"GROQ_TIMEOUT: {type(exc).__name__}"
+Line 2727: log_terminal("MODEL", f"GROQ {candidate} timed out; trying configured cloud alternative", level="warning")
+Line 2729: last_error = f"GROQ_CONNECTION_ERROR: {type(exc).__name__}"
+Line 2730: log_terminal("MODEL", f"GROQ {candidate} connection failed; trying configured cloud alternative", level="warning")
+Line 2732: last_error = f"GROQ_RESPONSE_ERROR: {type(exc).__name__}"
+Line 2735: return last_error or "GROQ_NO_MODEL_SUCCEEDED: no configured Groq model returned a response."
+Line 2739: def ask_gemini(prompt, model=None, max_tokens=2000, temperature=0.2, timeout=None):
+Line 2740: """Google Gemini REST with bounded timeout and opt-in model-ID fallback."""
+Line 2741: key = GEMINI_API_KEY
+Line 2744: "مفتاح Gemini غير مضبوط / Gemini API key missing.\n"
+Line 2746: "GEMINI_API_KEY=...\nGEMINI_MODEL=gemini-3.5-flash-lite"
+Line 2749: model = normalize_gemini_model_id(model or GEMINI_MODEL)
+Line 2751: print(f"[FBRAH PID:{os.getpid()}] GEMINI using model: {model}", flush=True)
+Line 2761: allow_model_fallback = (os.environ.get("FBRAH_ALLOW_CLOUD_FALLBACK") or "0").strip().lower() in ("1", "true", "yes")
+Line 2765: _fallback_order = list(GEMINI_MODELS_LIST)
+Line 2769: "gemini-3.8-flash",
+Line 2770: "gemini-3.5-flash",
+Line 2771: "gemini-3.5-flash-lite",
+Line 2772: "gemini-3.6-flash",
+Line 2773: "gemini-3.1-pro-preview",
+Line 2774: "gemini-2.5-flash",
+Line 2775: "gemini-flash-latest",
+Line 2781: # Discover alternative Gemini IDs only when the cloud-fallback policy is enabled.
+Line 2785: if now - float(_GEMINI_MODELS_CACHE.get("ts") or 0) > 3600 or not _GEMINI_MODELS_CACHE.get("names"):
+Line 2795: if (name and "generateContent" in methods and "gemini" in name
+Line 2799: _GEMINI_MODELS_CACHE["names"] = (prefer + names)[:8]
+Line 2800: _GEMINI_MODELS_CACHE["ts"] = now
+Line 2801: for n in (_GEMINI_MODELS_CACHE.get("names") or []):
+Line 2806: app.logger.warning("Gemini list models: %s", safe_error[:180])
+Line 2819: log_terminal("MODEL", f"Cloud provider=GEMINI | model={mname} | attempt={mi + 1}/{min(len(models_try), 4)}")
+Line 2829: last_body = f"GEMINI_TIMEOUT: {type(e).__name__}"
+Line 2830: log_terminal("MODEL", f"Gemini {mname} timed out; trying configured Gemini alternative", level="warning")
+Line 2833: last_body = f"GEMINI_CONNECTION_ERROR: {type(e).__name__}"
+Line 2834: log_terminal("MODEL", f"Gemini {mname} connection failed; trying configured Gemini alternative", level="warning")
+Line 2837: last_body = f"GEMINI_REQUEST_ERROR: {type(e).__name__}"
+Line 2838: log_terminal("MODEL", f"Gemini {mname} request failed ({type(e).__name__})", level="warning")
+Line 2844: last_body = "GEMINI_RESPONSE_ERROR: invalid JSON response"
+Line 2852: log_terminal("MODEL", f"SUCCESS: GEMINI model={mname}" + (" (same-provider fallback)" if mi else ""))
+Line 2855: last_body = "GEMINI_EMPTY_RESPONSE: " + str((data.get("error") or {}).get("message") or fr or "empty")[:200]
+Line 2859: last_body = f"GEMINI_HTTP_{r.status_code}: {last_body}"
+Line 2860: log_terminal("MODEL", f"Gemini {mname} returned HTTP {r.status_code}; trying configured Gemini alternative", level="warning")
+Line 2863: last_body = f"GEMINI_MODEL_NOT_FOUND: {mname}"
+Line 2864: log_terminal("MODEL", f"Gemini model not found: {mname}; trying next configured model", level="warning")
+Line 2867: return f"خطأ Gemini ({r.status_code}): {last_body}"
+Line 2868: last_body = f"GEMINI_HTTP_{r.status_code}: {last_body}"
+Line 2869: return last_body or "GEMINI_NO_MODEL_SUCCEEDED: no configured Gemini model returned a response."
+Line 2873: def normalize_gemini_model_id(model_name):
+Line 2874: """حوّل قيمة الواجهة/البيئة إلى معرف Gemini API الدقيق دون استبدال خاطئ."""
+Line 2877: return GEMINI_MODEL or "gemini-3.5-flash-lite"
+Line 2878: if m.lower().startswith("gemini:"):
+Line 2883: "gemini-3.8-flash": "gemini-3.8-flash",
+Line 2884: "gemini-3.5-flash": "gemini-3.5-flash",
+Line 2885: "gemini-3.5-flash-lite": "gemini-3.5-flash-lite",
+Line 2886: "gemini-3.5-flashlite": "gemini-3.5-flash-lite",
+Line 2887: "gemini-3.6-flash": "gemini-3.6-flash",
+Line 2888: "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
+Line 2889: "gemini-3.1-pro": "gemini-3.1-pro-preview",
+Line 2890: "gemini-2.5-flash": "gemini-2.5-flash",
+Line 2891: "gemini-2.5-flash-lite": "gemini-2.5-flash-lite",
+Line 2892: "gemini-flash-latest": "gemini-flash-latest",
+Line 2899: return "gemini-3.1-pro-preview"
+Line 2901: return "gemini-3.8-flash"
+Line 2903: return "gemini-3.5-flash-lite"
+Line 2905: return "gemini-3.5-flash"
+Line 2907: return "gemini-3.6-flash"
+Line 2909: return "gemini-2.5-flash-lite"
+Line 2911: return "gemini-2.5-flash"
+Line 2914: "gemini-2.0-flash": "gemini-2.5-flash",
+Line 2915: "gemini-2.0-flash-lite": "gemini-2.5-flash-lite",
+Line 2916: "gemini-1.5-flash": "gemini-2.5-flash",
+Line 2917: "gemini-1.5-flash-latest": "gemini-flash-latest",
+Line 2918: "gemini-pro": "gemini-3.1-pro-preview",
+Line 2919: "gemini-1.5-pro": "gemini-3.1-pro-preview",
+Line 2920: "gemini": GEMINI_MODEL or "gemini-3.5-flash-lite",
+Line 2924: if m.startswith("gemini-"):
+Line 2926: return GEMINI_MODEL or "gemini-3.5-flash-lite"
+Line 2929: def is_gemini_model(model_name):
+Line 2934: m == "gemini"
+Line 2935: or m.startswith("gemini:")
+Line 2936: or m.startswith("gemini-")
+Line 2937: or "gemini" in m
+Line 2941: def is_groq_model(model_name):
+Line 2945: # لا تصنّف اسم موديل Ollama محلي مثل gpt-oss:20b على أنه GROQ.
+Line 2947: m == "groq"
+Line 2948: or m.startswith("groq:")
+Line 2949: or m.startswith("groq/")
+Line 2955: """توجيه التوليد مع تحويل تلقائي داخل البيئة: Gemini↔GROQ ومحلي↔محلي فقط."""
+Line 2956: allow_cloud = (os.environ.get("FBRAH_ALLOW_CLOUD_FALLBACK") or "0").strip().lower() in ("1", "true", "yes")
+Line 2975: if any(token in s for token in ("GEMINI_BUSY", "GEMINI_HTTP_", "GEMINI_TIMEOUT", "GEMINI_CONNECTION_ERROR", "GEMINI_REQUEST_ERROR", "GEMINI_RESPONSE_ERROR", "GEMINI_EMPTY_RESPONSE", "GEMINI_MODEL_NOT_FOUND", "GEMINI_NO_MODEL_SUCCEEDED", "GROQ_HTTP_", "GROQ_MODEL_NOT_FOUND", "GROQ_TIMEOUT", "GROQ_CONNECTION_ERROR", "GROQ_RESPONSE_ERROR", "GROQ_EMPTY_RESPONSE", "GROQ_NO_MODEL_SUCCEEDED")):
+Line 2982: "خطأ Gemini", "خطأ GROQ", "تعذر الاتصال بـ", "تعذر الاتصال ب", "مفتاح Gemini", "مفتاح GROQ",
+Line 2983: "Gemini unavailable", "GROQ_API_KEY", "Groq API error",
+Line 2994: if is_gemini_model(model):
+Line 2996: if gmodel and str(gmodel).lower().startswith("gemini:"):
+Line 2997: gmodel = normalize_gemini_model_id(gmodel or GEMINI_MODEL)
+Line 2998: out = ask_gemini(prompt, model=gmodel, max_tokens=mt, temperature=kwargs.get("temperature", 0.2))
+Line 3001: if GROQ_API_KEY and allow_cloud:
+Line 3003: return "تعذر Gemini بسبب خطأ غير قابل للتحويل تلقائياً. راجع إعدادات المزود.\n" + str(out or "")[:300]
+Line 3005: log_terminal("MODEL", "AUTOMATIC CLOUD FAILOVER: Gemini → GROQ", {"reason": str(out or "")[:160]}, level="warning")
+Line 3006: print(f"[FBRAH PID:{os.getpid()}] FAILOVER: Gemini → GROQ", flush=True)
+Line 3007: app.logger.warning("Gemini failed → GROQ: %s", (out or "")[:180])
+Line 3010: fb = ask_groq(prompt, model=GROQ_MODEL, max_tokens=mt, temperature=kwargs.get("temperature", 0.2))
+Line 3012: return "⚠️ تحويل تلقائي Gemini → GROQ\n\n" + str(fb)
+Line 3013: log_terminal("MODEL", "GROQ fallback also failed after Gemini failure", {"groq_error": str(fb or "")[:160]}, level="error")
+Line 3014: fallback_error = "\nوفشل البديل GROQ أيضاً: " + str(fb or "")[:180]
+Line 3017: if "GEMINI_HTTP_429" in str(out):
+Line 3018: friendly = "تجاوز Gemini حصة الاستخدام أو حد الطلبات (HTTP 429)."
+Line 3019: elif "GEMINI_HTTP_503" in str(out):
+Line 3020: friendly = "خدمة Gemini غير متاحة مؤقتاً (HTTP 503)."
+Line 3021: elif "GEMINI_TIMEOUT" in str(out):
+Line 3022: friendly = "انتهت مهلة الاتصال بخدمة Gemini."
+Line 3024: friendly = "تعذر إكمال الطلب عبر Gemini."
+Line 3026: if is_groq_model(model) or (model is None and GROQ_API_KEY and kwargs.get("prefer_groq")):
+Line 3028: if gmodel and str(gmodel).lower().startswith("groq:"):
+Line 3029: gmodel = str(gmodel).split(":", 1)[-1] or GROQ_MODEL
+Line 3030: if not gmodel or str(gmodel).lower() == "groq":
+Line 3031: gmodel = GROQ_MODEL
+Line 3032: out = ask_groq(prompt, model=gmodel, max_tokens=mt, temperature=kwargs.get("temperature", 0.2))
+Line 3035: if GEMINI_API_KEY and allow_cloud:
+Line 3038: log_terminal("MODEL", "AUTOMATIC CLOUD FAILOVER: GROQ → Gemini", {"reason": str(out or "")[:160]}, level="warning")
+Line 3039: app.logger.warning("Cloud fallback requested: GROQ → Gemini")
+Line 3040: fb = ask_gemini(prompt, model=GEMINI_MODEL, max_tokens=mt, temperature=kwargs.get("temperature", 0.2))
+Line 3042: return "⚠️ تحويل تلقائي GROQ → Gemini\n\n" + str(fb)
+Line 3043: log_terminal("MODEL", "Gemini fallback also failed after GROQ failure", {"gemini_error": str(fb or "")[:160]}, level="error")
+Line 3044: return "تعذر GROQ وGemini.\nGROQ: " + str(out or "")[:180] + "\nGemini: " + str(fb or "")[:180]
+Line 3045: return out if out else "تعذر GROQ وGemini."
+Line 3047: # محلي (Ollama): التحويل الاحتياطي يقتصر على النماذج المحلية فقط.
+Line 3048: return ask_ollama(
+Line 4178: def normalize_arabic_keyboard_layout(text):
+Line 5840: "machine learning", "deep learning", "llm", "chatgpt", "openai", "groq",
+Line 5902: "tensorflow.org", "openai.com", "platform.openai.com", "groq.com",
+Line 6852: if is_ollama_error(answer):
+Line 6898: if ans2 and not is_ollama_error(ans2):
+Line 6927: if not is_ollama_error(retry) and len(re.findall(r"[\u0600-\u06ff]", retry)) > 20:
+Line 6943: """ملخص سريع بدون نموذج عند بطء Ollama — مع إبراز العنوان."""
+Line 7471: is_api = is_gemini_model(model) or is_groq_model(model)
+Line 7526: result = ask_ollama(prompt, model=model, num_predict=850, timeout=75, temperature=0.1)
+Line 7666: out = ask_ollama(prompt, model=model, num_predict=900, timeout=90, temperature=0.2)
+Line 7669: if out and not is_ollama_error(out):
+Line 7900: "Gemini" if is_gemini_model(model)
+Line 7901: else ("GROQ" if is_groq_model(model) else "النموذج المحلي")
+Line 8027: sum_part = ask_ollama(
+Line 8031: if is_ollama_error(sum_part or "") or _is_mostly_latin(sum_part or ""):
+Line 8035: if is_ollama_error(sum_part) or not sum_part:
+Line 8044: sum_part = ask_ollama(
+Line 8048: if is_ollama_error(sum_part or "") or not (sum_part or "").strip():
+Line 8049: sum_part = ask_ollama(
+Line 8053: if is_ollama_error(sum_part or "") or _is_mostly_latin(sum_part or ""):
+Line 8067: ok_ol, ol_msg = ollama_status()
+Line 8070: f"حالة Ollama: {ol_msg}\n"
+Line 8072: "  ollama serve\n"
+Line 8073: "  ollama run qwen2.5:7b \"ترجم للعربية: The state is an institution.\"\n"
+Line 8084: if model_out and not is_ollama_error(model_out) and len(model_out.strip()) > 80:
+Line 8113: # حارس النتيجة: أظهر ما توفّر دائماً (لا تُخفِ نتيجة Gemini/GROQ)
+Line 8124: "Gemini/API"
+Line 8125: if mlow.startswith("gemini")
+Line 8126: else ("GROQ/API" if mlow.startswith("groq") or "gpt-oss" in mlow else "محلي")
+Line 8147: if is_ollama_error(value):
+Line 8151: value.startswith(("تعذر", "خطأ Gemini", "خطأ GROQ", "GEMINI_BUSY", "مفتاح Gemini", "مفتاح GROQ", "ERROR"))
+Line 8152: or "gemini unavailable" in low
+Line 8160: is_cloud_model = is_gemini_model(model) or is_groq_model(model)
+Line 8165: elif configured_translation_model and not (is_gemini_model(configured_translation_model) or is_groq_model(configured_translation_model)):
+Line 8214: result = ask_ollama(
+Line 8249: final = ask_ollama(
+Line 8254: if is_ollama_error(final):
+Line 8267: # محاولة عبر Ollama إن وُجد نموذج صور (نادر محلياً)
+Line 8281: prompt = ask_ollama(
+Line 8285: if is_ollama_error(prompt) or not prompt:
+Line 8294: return ask_ollama(
+Line 8533: if is_ollama_error(answer) or not (answer or "").strip():
+Line 8539: answer = "تعذر توليد المحتوى تلقائياً. أعد المحاولة أو اختر GROQ.\nCould not auto-generate content. Retry or choose GROQ."
+Line 9508: @app.route("/api/ollama/models", methods=["GET"])
+Line 9510: def api_ollama_models():
+Line 9511: """إعادة فحص Ollama فوراً لتحديث قائمة النماذج دون إعادة تشغيل Flask."""
+Line 9514: return jsonify({"ok": True, "models": models, "message": "تم العثور على نماذج Ollama المثبتة."})
+Line 9515: ok, message = ollama_status()
+Line 9669: question = normalize_arabic_keyboard_layout(request.form.get("question", "").strip())
+Line 9671: # قبول GROQ دائماً (حتى مع تعطل Ollama)
+Line 9672: if requested_model and is_gemini_model(requested_model):
+Line 9674: elif requested_model and is_groq_model(requested_model):
+Line 9678: elif GEMINI_API_KEY and any(is_gemini_model(m) for m in models):
+Line 9679: selected_model = next(m for m in models if is_gemini_model(m))
+Line 9680: elif GROQ_API_KEY and any(is_groq_model(m) for m in models):
+Line 9681: selected_model = next(m for m in models if is_groq_model(m))
+Line 9687: "LLM model selected: %s (requested=%s, gemini_key=%s, groq_key=%s)",
+Line 9688: selected_model, requested_model, bool(GEMINI_API_KEY), bool(GROQ_API_KEY),
+Line 10083: answer = "خطأ أثناء التلخيص. تأكد من رفع الملف وتشغيل Ollama."
+Line 10449: "تعذر إكمال التلخيص/الترجمة. تأكد أن Ollama يعمل:\n"
+Line 10450: "  ollama serve\n"
+Line 10458: "وتأكد أن الملف مرفوع وأن Ollama يعمل."
+Line 10473: "لم يُرجع النظام نصاً. تأكد من رفع الملف وأن Ollama يعمل (ollama serve)."
+Line 10870: and not is_ollama_error(answer)
+Line 11504: def _friendly_ollama_error(err):
+Line 11505: """رسالة مختصرة عند توقف Ollama دون تفاصيل تقنية طويلة."""
+Line 11509: "Ollama غير شغّال حالياً.\n"
+Line 11510: "1) افتح طرفية واكتب: ollama serve\n"
+Line 11511: "2) تأكد من تثبيت النموذج: ollama pull qwen2.5:7b\n"
+Line 11513: "(البحث المحلي/الملفات قد يعمل جزئياً بدون Ollama)"
+Line 11517: return "تعذر الوصول لـ Ollama: " + msg
+Line 12403: @app.route("/groq", methods=["GET", "POST"])
+Line 12405: def groq_page():
+Line 12406: """مسار مستقل لاستخدام GROQ (openai/gpt-oss-120b)."""
+Line 12412: if not GROQ_API_KEY:
+Line 12413: error = "اضبط GROQ_API_KEY في متغيرات البيئة."
+Line 12415: answer = ask_groq(question, model=GROQ_MODEL)
+Line 12419: <title>FBRAH — GROQ</title>
+Line 12430: <div class="header">FBRAH · مسار GROQ · """
+Line 12431: + (GROQ_MODEL or "openai/gpt-oss-120b")
+Line 12434: <p>يستخدم <b>GROQ_API_KEY</b> و <b>GROQ_MODEL</b> (افتراضي: openai/gpt-oss-120b).</p>
+Line 12439: <p style="margin-top:10px"><button type="submit">إرسال عبر GROQ</button></p>
+Line 12458: "groq_configured": bool(GROQ_API_KEY),
+Line 12459: "groq_model": GROQ_MODEL,
+Line 12565: allow_cloud_ocr = data.get("use_cloud_vision") is True and is_gemini_model(selected_ocr_model)
+Line 12566: if allow_cloud_ocr and GEMINI_API_KEY and b64:
+Line 12568: vision_model = normalize_gemini_model_id(selected_ocr_model)
+Line 12580: headers={"x-goog-api-key": GEMINI_API_KEY}
+Line 12590: app.logger.warning("Gemini OCR fallback error: %s", g_err)
+Line 12812: print(f"   🤖 Gemini Key  : {'YES (Ready)' if GEMINI_API_KEY else 'NO (Set GEMINI_API_KEY in .env)'}", flush=True)
+Line 12813: print(f"   🤖 GROQ Key    : {'YES (Ready)' if GROQ_API_KEY else 'NO (Set GROQ_API_KEY in .env)'}", flush=True)
+
+--- templates\index.html ---
+Line 1858: #webOnlyHint,
+Line 1859: #webAndLocalHint,
+Line 1888: .web-option #webOnlyHint,
+Line 1889: .web-option #webAndLocalHint,
+Line 1890: #webOnlyHint,
+Line 1891: #webAndLocalHint,
+Line 2197: <option value="groq" {% if selected_model == 'groq' or selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · openai/gpt-oss-120b</option>
+Line 2198: <option value="groq:openai/gpt-oss-120b" {% if selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · gpt-oss-120b (صريح)</option>
+Line 2199: <option value="gemini:gemini-3.8-flash" {% if selected_model == 'gemini:gemini-3.8-flash' or selected_model == 'gemini' %}selected{% endif %}>Gemini · 3.8 Flash</option>
+Line 2200: <option value="gemini:gemini-3.5-flash" {% if selected_model == 'gemini:gemini-3.5-flash' %}selected{% endif %}>Gemini · 3.5 Flash</option>
+Line 2201: <option value="gemini:gemini-3.5-flash-lite" {% if selected_model == 'gemini:gemini-3.5-flash-lite' %}selected{% endif %}>Gemini · 3.5 Flash-Lite</option>
+Line 2202: <option value="gemini:gemini-3.6-flash" {% if selected_model == 'gemini:gemini-3.6-flash' %}selected{% endif %}>Gemini · 3.6 Flash</option>
+Line 2203: <option value="gemini:gemini-3.1-pro-preview" {% if selected_model == 'gemini:gemini-3.1-pro-preview' %}selected{% endif %}>Gemini · 3.1 Pro Preview</option>
+Line 2205: {% if m.startswith('groq:') and m != 'groq:openai/gpt-oss-120b' %}
+Line 2206: <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>GROQ · {{ m[5:] }}</option>
+Line 2207: {% elif m.startswith('gemini:') and m not in ['gemini:gemini-3.8-flash', 'gemini:gemini-3.5-flash', 'gemini:gemini-3.5-flash-lite', 'gemini:gemini-3.6-flash', 'gemini:gemini-3.1-pro-preview'] %}
+Line 2208: <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>Gemini · {{ m[7:] }}</option>
+Line 2209: {% elif m != 'groq' and not m.startswith('groq:') and m != 'gemini' and not m.startswith('gemini:') %}
+Line 2210: <option value="{{ m }}" data-ollama-model="1" {% if m == selected_model %}selected{% endif %}>{{ m }}</option>
+Line 2215: <button type="button" id="refreshOllamaModelsBtn" class="sec" style="padding:5px 9px;font-size:12px;">تحديث نماذج Ollama</button>
+Line 2216: <span id="ollamaModelsStatus" role="status" aria-live="polite" style="font-size:11px;opacity:.8;"></span>
+Line 2297: <label style="font-size:12px;color:#fff44f">مزاج الصوت <select id="voiceMood" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي من النص</option><option value="neutral">محايد</option><option value="deep">عميق</option><option value="soft">ناعم</option><option value="bright">حماسي</option><option value="warm">دافئ</option><option value="sad">حزين</option><option value="firm">حازم</option></select></label> <label style="font-size:12px;color:#fff44f">جنس <select id="voiceGender" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي</option><option value="male">ذكوري</option><option value="female">نسائي</option></select></label> <label style="font-size:12px;color:#fff44f">عمر <select id="voiceAge" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="adult">بالغ</option><option value="young">يافع</option><option value="senior">كبير</option></select></label> <button type="button" id="speakAnswerBtn" onclick="speakAnswer()" data-i18n="speakAnswer">🔊 اقرأ الإجابة</button>
+Line 2406: <input type="checkbox" name="use_web" value="1" id="webOnly">
+Line 2408: <span class="hint fbrah-hint-white" id="webOnlyHint" data-i18n="webOnlyHint">يمنع البحث في الملفات والمجلدات المحلية منعاً تاماً. أولوية للمواقع الرسمية والحكومية والقانونية.</span>
+Line 2412: <input type="checkbox" name="use_web_and_local" value="1" id="webAndLocal">
+Line 2414: <span class="hint fbrah-hint-white" id="webAndLocalHint" data-i18n="webAndLocalHint">يجمع نتائج الإنترنت مع المستندات المحلية والمرفوعة والمجلدات المحددة.</span>
+Line 3034: var webOnly = document.getElementById("webOnly");
+Line 3035: var webAndLocal = document.getElementById("webAndLocal");
+Line 3042: var webOnly = document.getElementById("webOnly");
+Line 3043: var webAndLocal = document.getElementById("webAndLocal");
+Line 3048: if (webOnly && webOnly.checked) {
+Line 3065: } else if (webAndLocal && webAndLocal.checked) {
+Line 3084: var online = !!((webOnly && webOnly.checked) || (webAndLocal && webAndLocal.checked));
+Line 3087: function isCloud(v) { return /^(gemini:|groq:|gemini$|groq$)/i.test(v); }
+Line 3092: ? "لا يوجد نموذج سحابي مهيأ. تحقق من مفاتيح Gemini/GROQ."
+Line 3093: : "لا توجد نماذج Ollama مكتشفة. شغّل Ollama ثم حدّث النماذج.";
+Line 3098: chosen = candidates.find(function(o){ return /^gemini(?::|$)/i.test(o.value); }) || candidates[0];
+Line 3108: webOnly.addEventListener("change", function () {
+Line 3109: if (this.checked) webAndLocal.checked = false;
+Line 3114: webAndLocal.addEventListener("change", function () {
+Line 3115: if (this.checked) webOnly.checked = false;
+Line 3137: use_web: !!(webOnly && webOnly.checked),
+Line 3138: use_web_and_local: !!(webAndLocal && webAndLocal.checked),
+Line 3163: if (webOnly) webOnly.checked = !!prefs.use_web;
+Line 3164: if (webAndLocal) webAndLocal.checked = !!prefs.use_web_and_local && !prefs.use_web;
+Line 3165: if (webOnly && webAndLocal && webOnly.checked && webAndLocal.checked) {
+Line 3166: webAndLocal.checked = false;
+Line 3201: var refreshOllamaBtn = document.getElementById("refreshOllamaModelsBtn");
+Line 3202: var ollamaModelsStatus = document.getElementById("ollamaModelsStatus");
+Line 3203: if (refreshOllamaBtn && modelElBind) {
+Line 3204: refreshOllamaBtn.addEventListener("click", async function () {
+Line 3205: refreshOllamaBtn.disabled = true;
+Line 3206: if (ollamaModelsStatus) ollamaModelsStatus.textContent = "جارٍ الاتصال بـ Ollama...";
+Line 3208: var response = await fetch("/api/ollama/models", { credentials: "same-origin", cache: "no-store" });
+Line 3211: modelElBind.querySelectorAll('option[data-ollama-model="1"]').forEach(function (option) { option.remove(); });
+Line 3217: option.setAttribute("data-ollama-model", "1");
+Line 3225: if (ollamaModelsStatus) ollamaModelsStatus.textContent = payload.message || (payload.models.length + " نموذج محلي متاح");
+Line 3226: } else if (ollamaModelsStatus) {
+Line 3227: ollamaModelsStatus.textContent = payload.message || "لم يتم العثور على نماذج محلية.";
+Line 3231: if (ollamaModelsStatus) ollamaModelsStatus.textContent = "تعذر تحديث قائمة Ollama؛ تحقق من تشغيل الخدمة.";
+Line 3233: refreshOllamaBtn.disabled = false;
+Line 3325: webOnly: "البحث عبر الإنترنت فقط",
+Line 3326: webOnlyHint: "يمنع البحث في الملفات والمجلدات المحلية منعاً تاماً. أولوية للمواقع الرسمية والحكومية والقانونية.",
+Line 3378: speakAnswer: "🔊 اقرأ الإجابة",
+Line 3380: webAndLocalHint: "يجمع نتائج الإنترنت مع المستندات المحلية والمرفوعة والمجلدات المحددة.",
+Line 3492: webOnly: "Internet search only",
+Line 3493: webOnlyHint: "Fully disables local files and folders. Prefers official, government and legal sources.",
+Line 3545: speakAnswer: "🔊 Read answer",
+Line 3547: webAndLocalHint: "Combines internet results with local documents, uploads, and selected folders.",
+Line 3773: lab.appendChild(document.createTextNode(" " + t.webOnly));
+Line 3866: if (inp.id === "webOnly" || inp.name === "use_web") {
+Line 3870: wrap.appendChild(document.createTextNode(" " + t.webOnly + " "));
+Line 3873: h.textContent = t.webOnlyHint;
+Line 3877: if (inp.id === "webAndLocal" || inp.name === "use_web_and_local") {
+Line 4082: var sab = document.getElementById("speakAnswerBtn");
+Line 4083: if (sab) sab.textContent = t.speakAnswer;
+Line 4179: ? '<span style="color:#fff44f">Still working… if no answer in 30s, press Cancel and try Gemini/GROQ with a short question</span>'
+Line 4180: : '<span style="color:#fff44f">ما زال يعمل… إن لم تظهر نتيجة خلال 30ث اضغط إلغاء وجرّب Gemini/GROQ وسؤالاً أقصر</span>';
+Line 4314: if (fromVoice && typeof speakAnswer === "function") {
+Line 4919: enterListenAfterWake(rest0);
+Line 4933: enterListenAfterWake(rest);
+Line 5201: function enterListenAfterWake(restText) {
+Line 5804: function speakAnswer(opts) {
+Line 6726: speakAnswer({ afterSpeak: "wake" });
+Line 6733: // إذا كانت الإجابة الصوتية ستُقرأ الآن، فإن speakAnswer يعيد الاستماع بعد انتهائها.
+Line 7581: var _orig = window.enterListenAfterWake;
+Line 7582: window.enterListenAfterWake = function () {
+Line 7729: if (/إنترنت|Internet|Local|محلي|webOnly|webAndLocal/i.test(t) && el.querySelector("input[type=checkbox], input[type=radio]")) {
+Line 8322: if (typeof speakAnswer === "function") window.speakAnswer = speakAnswer;
+
+--- .env.example ---
+Line 7: # ---------------- GROQ ----------------
+Line 8: GROQ_API_KEY=
+Line 9: GROQ_MODEL=openai/gpt-oss-120b
+Line 10: # Optional comma-separated valid Groq model IDs, ordered by preference.
+Line 11: # Add only model IDs available to your Groq account; fallback tries them when cloud fallback=1.
+Line 12: GROQ_MODELS=openai/gpt-oss-120b
+Line 13: GROQ_BASE_URL=https://api.groq.com/openai/v1
+Line 15: # ---------------- GOOGLE GEMINI ----------------
+Line 16: # One key shared by the configured Gemini models / مفتاح واحد للنماذج
+Line 17: GEMINI_API_KEY=
+Line 18: GEMINI_MODEL=gemini-3.8-flash
+Line 19: GEMINI_MODELS=gemini-3.8-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.1-pro-preview
+Line 24: # ---------------- OLLAMA / LOCAL AI ----------------
+Line 25: OLLAMA_BASE_URL=http://127.0.0.1:11434
+Line 43: FBRAH_ALLOW_LOCAL_MODEL_FALLBACK=1
+Line 44: FBRAH_ALLOW_CLOUD_FALLBACK=1
+
+
+============================================================
+11. SENSITIVE FILE NAME AUDIT - NAMES ONLY
+============================================================
+REVIEW | .env | 1365 bytes
+REVIEW | .env.example | 2637 bytes
+REVIEW | backup_db.py | 1255 bytes
+REVIEW | backups\before_admin_reset_20261104_032445.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-03_23-49-21.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_00-00-30.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_00-01-34.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_02-38-50.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_03-39-51.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_04-05-22.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-04_04-24-33.db | 9117696 bytes
+REVIEW | backups\fbrah_2026-11-12_16-24-25.db | 59412480 bytes
+REVIEW | backups\fbrah_2026-11-12_16-35-49.db | 59412480 bytes
+REVIEW | backups\fbrah_2026-11-12_22-46-04.db | 59412480 bytes
+REVIEW | data\.initial_admin_password | 26 bytes
+REVIEW | data\.secret_key | 64 bytes
+REVIEW | data\chroma_legal\chroma.sqlite3 | 87859200 bytes
+REVIEW | data\qdrant_legal\collection\fbrah_legal\storage.sqlite | 178946048 bytes
+REVIEW | fbrah.db | 64733184 bytes
+REVIEW | templates\index.html.bak | 415311 bytes
+REVIEW | templates\index.html.pre_deep_clean.bak | 415311 bytes
+
+NOTE: This section checks filenames only; it does not disclose secret contents.
+
+
+============================================================
+12. FILES THAT MUST BE REVIEWED BEFORE ZIP RELEASE
+============================================================
+ZIP REVIEW REQUIRED | .env
+ZIP REVIEW REQUIRED | .env.example
+ZIP REVIEW REQUIRED | backups\before_admin_reset_20261104_032445.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-03_23-49-21.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_00-00-30.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_00-01-34.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_02-38-50.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_03-39-51.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_04-05-22.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-04_04-24-33.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-12_16-24-25.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-12_16-35-49.db
+ZIP REVIEW REQUIRED | backups\fbrah_2026-11-12_22-46-04.db
+ZIP REVIEW REQUIRED | data\.initial_admin_password
+ZIP REVIEW REQUIRED | data\.secret_key
+ZIP REVIEW REQUIRED | data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\data_level0.bin
+ZIP REVIEW REQUIRED | data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\header.bin
+ZIP REVIEW REQUIRED | data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\index_metadata.pickle
+ZIP REVIEW REQUIRED | data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\length.bin
+ZIP REVIEW REQUIRED | data\chroma_legal\67e90be6-448b-4b8b-963e-78209e7ee6ab\link_lists.bin
+ZIP REVIEW REQUIRED | data\chroma_legal\chroma.sqlite3
+ZIP REVIEW REQUIRED | data\documents\-_.pdf
+ZIP REVIEW REQUIRED | data\documents\Chapter_1.docx
+ZIP REVIEW REQUIRED | data\documents\Chapter_1_1794517734_1ec690.docx
+ZIP REVIEW REQUIRED | data\documents\Chapter_1_1794570393_e64423.docx
+ZIP REVIEW REQUIRED | data\documents\Constitution_1971.pdf
+ZIP REVIEW REQUIRED | data\documents\Constitution_1971_1794241356_280525.pdf
+ZIP REVIEW REQUIRED | data\documents\docx.docx
+ZIP REVIEW REQUIRED | data\documents\docx_1794053888_9e78ba.docx
+ZIP REVIEW REQUIRED | data\documents\النتائج\تجربة.pdf
+ZIP REVIEW REQUIRED | data\documents\النتائج\تقرير قانوني وإداري متقدم.docx
+ZIP REVIEW REQUIRED | data\documents\النتائج\تقرير قانوني وإداري متقدم.pdf
+ZIP REVIEW REQUIRED | data\documents\النتائج\تقرير قانوني وإداري متقدم.pptx
+ZIP REVIEW REQUIRED | data\documents\النتائج\تقرير قانوني وإداري متقدم.xlsx
+ZIP REVIEW REQUIRED | data\documents\النتائج\تقرير قانوني وإداري متقدم_1794065828_2ec516.docx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.docx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.pdf
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.pptx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة.xlsx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086535_bf5cda.docx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086536_e3b18b.pptx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086536_e705ea.xlsx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086537_5cc3cc.xlsx
+ZIP REVIEW REQUIRED | data\documents\النتائج\عقد بيع ابتدائي لعقار سكني بمدينة القاهرة الجديدة_1794086537_a73be9.pdf
+ZIP REVIEW REQUIRED | data\qdrant_legal\.lock
+ZIP REVIEW REQUIRED | data\qdrant_legal\collection\fbrah_legal\storage.sqlite
+ZIP REVIEW REQUIRED | data\qdrant_legal\meta.json
+ZIP REVIEW REQUIRED | fbrah.db
+ZIP REVIEW REQUIRED | templates\index.html.bak
+ZIP REVIEW REQUIRED | templates\index.html.pre_deep_clean.bak
+
+
+============================================================
+13. TEST FILE INVENTORY
+============================================================
+Test-related files: 6
+QUARANTINE_DO_NOT_RUN\test_fbrah_system.py
+QUARANTINE_DO_NOT_RUN\test_index_integrity.py
+test_fbrah_system.py
+test_index_integrity.py
+test_priority_smoke.py
+test_release_integrity.py
+Tests were inventoried only; they were NOT executed by this audit.
+
+
+============================================================
+14. RELEASE DOCUMENTATION AND CHECKSUM FILES
+============================================================
+AUDIT_REPORT_AR_2026-11-12.md | 5782 bytes
+FBRAH_AI_Release_2026-11-14.zip.sha256 | 98 bytes
+FBRAH_FULL_AUDIT_2026-11-14.txt | 176980 bytes
+FINAL_AUDIT_AR.md | 2694 bytes
+IMPLEMENTATION_REPORT_AR.md | 8876 bytes
+INSTALL_RELEASE.ps1 | 10942 bytes
+MANIFEST_SHA256.txt | 3268 bytes
+QUARANTINE_DO_NOT_RUN\FBRAH_MASTER_AUDIT.txt | 17261 bytes
+QUARANTINE_DO_NOT_RUN\RELEASE_NOTES_AR_OLD.txt | 5349 bytes
+RELEASE_GUIDE_AR.md | 9012 bytes
+RELEASE_GUIDE_EN.md | 5700 bytes
+RELEASE_NOTES_AR.txt | 5349 bytes
+RELEASE_NOTES_AR_2026-11-11.txt | 3516 bytes
+RELEASE_UPDATE_2026-11-14_AR.md | 4174 bytes
+test_release_integrity.py | 26424 bytes
+
+
+============================================================
+15. FINAL AUDIT SUMMARY
+============================================================
+Total project files: 113
+Python files: 15
+Sensitive-name matches: 21
+Test-related files: 6
+Audit report: C:\Users\hatho\Desktop\FBRAH_AI_COMPREHENSIVE_AUDIT.txt
+
+IMPORTANT:
+1. This audit did not modify project files.
+2. No commit, push, reset, checkout, clean, merge or stash was performed.
+3. No .env, database, password or secret contents were printed.
+4. Test suites and live Flask/provider checks were not executed.
+5. ZIP release readiness still requires review of source changes and exclusions.

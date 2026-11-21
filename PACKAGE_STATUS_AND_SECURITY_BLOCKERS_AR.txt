@@ -1,0 +1,19 @@
+FBRAH AI — SOURCE REVIEW PACKAGE
+Date: 2026-11-16
+
+This archive is a sanitized source package reconstructed from the uploaded project ZIP.
+It excludes .git history, environment secrets, session keys, initial admin password, databases,
+vector-index runtime stores, recordings, backups, and user-uploaded document corpora.
+
+IMPORTANT: This is NOT represented as a security-fixed production release. Source review found
+critical issues that still require code changes and runtime validation: CSRF exemptions for /api/
+and login/register/logout; static rather than live news; untrusted-news HTML insertion; GET diagnostics
+that invoke healing; self-heal accessible to any logged-in user; recording endpoint absolute-path
+exposure/path containment concerns; telemetry without CSRF/payload bounds; and speech truncation.
+Do not deploy publicly until these are fixed and tested. Preserve fallback settings:
+FBRAH_ALLOW_LOCAL_MODEL_FALLBACK=1
+FBRAH_ALLOW_CLOUD_FALLBACK=1
+Fallback must remain within the selected mode (cloud-to-cloud, local-to-local).
+
+The archive intentionally does not include secrets or private data. Restore local .env and databases
+only from trusted local backups after rotating credentials and session secrets.

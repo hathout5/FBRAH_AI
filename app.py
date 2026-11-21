@@ -3889,7 +3889,7 @@ PREFERRED_DOMAINS = [
 # خلاصات RSS لأخبار حديثة (تُجلب عند الأسئلة الجارية + شريط الأخبار)
 RSS_FEEDS = [
     # إخبارية عالمية / إقليمية موثوقة
-    ("https://www.aljazeera.net/xml/rss/all.xml", "الجزيرة"),
+    ("https://www.aljazeera.net/rss", "الجزيرة"),
     ("https://feeds.bbci.co.uk/arabic/rss.xml", "BBC عربي"),
     ("https://feeds.bbci.co.uk/news/rss.xml", "BBC"),
     ("https://feeds.bbci.co.uk/news/world/rss.xml", "BBC World"),
@@ -3899,13 +3899,13 @@ RSS_FEEDS = [
     ("https://www.cnbc.com/id/100003114/device/rss/rss.html", "CNBC"),
     ("https://www.france24.com/ar/rss", "France24 عربي"),
     ("https://www.france24.com/en/rss", "France24"),
-    ("https://www.dw.com/ar/rss", "DW عربي"),
+    ("https://rss.dw.com/xml/rss-ar-all", "DW عربي"),
     ("https://rss.dw.com/rdf/rss-en-all", "DW"),
     ("https://www.skynewsarabia.com/rss", "سكاي نيوز عربية"),
     ("https://www.alarabiya.net/ar/rss.xml", "العربية"),
     ("https://www.alaraby.co.uk/rss.xml", "العربي الجديد"),
     ("https://aawsat.com/feed", "الشرق الأوسط"),
-    ("https://www.aa.com.tr/ar/rss/default?cat=all", "وكالة الأناضول"),
+    ("https://www.aa.com.tr/ar/rss/default?cat=world", "وكالة الأناضول"),
     ("https://www.albayan.ae/rss", "البيان"),
     ("https://www.al-ain.com/rss", "العين الإخبارية"),
     ("https://feeds.reuters.com/reuters/topNews", "Reuters"),
@@ -10703,9 +10703,28 @@ def home():
             return redirect(url_for("home"))
 
         elif action == "key_points":
-            selected_file_id = (request.form.get("selected_file_id") or "").strip()
+            selected_file_id = (request.form.get("selected_file_id") or session.get("selected_file_id") or "").strip()
+            # إن لم يُحدد ملف، استخدم أحدث ملف مرفوع للمستخدم (الملف المخزّن على الخادم وليس المسار المحلي للمتصفح)
             if not selected_file_id:
-                answer = "لاستخراج النقاط الجوهرية بدقة، اختر ملفاً من قائمة «الملف المستهدف حصرياً» أولاً."
+                try:
+                    with get_db() as db:
+                        user = session.get("username") or session.get("user")
+                        if user:
+                            row = db.execute(
+                                "SELECT id FROM files WHERE uploaded_by=? ORDER BY id DESC LIMIT 1",
+                                (user,),
+                            ).fetchone()
+                        else:
+                            row = db.execute(
+                                "SELECT id FROM files ORDER BY id DESC LIMIT 1"
+                            ).fetchone()
+                        if row:
+                            selected_file_id = str(row["id"] if isinstance(row, dict) or hasattr(row, "keys") else row[0])
+                            session["selected_file_id"] = selected_file_id
+                except Exception:
+                    app.logger.exception("key_points fallback latest file")
+            if not selected_file_id:
+                answer = "لاستخراج النقاط الجوهرية بدقة، ارفع ملفاً أو اختر ملفاً من قائمة «الملف المستهدف حصرياً» أولاً."
             elif use_web and not use_web_and_local:
                 answer = "وضع «الإنترنت فقط» لا يعالج الملفات المحلية. اختر «الإنترنت + الملفات والمجلدات» أو الوضع المحلي."
             else:
@@ -10807,12 +10826,22 @@ def home():
 
                 _rcmd = parse_recording_command(question)
                 if _rcmd:
-                    answer = (
-                        ("<!--FBRAH_REC_START-->" if _rcmd["action"] == "start" else "<!--FBRAH_REC_STOP-->")
-                        + (_rcmd["message_ar"] if re.search(r"[\u0600-\u06ff]", question) else _rcmd["message_en"])
-                    )
+                    # التسجيل لا يُشغَّل ولا يُوقف من الأوامر النصية/الصوتية — فقط زر ● سجل و⏹ أو ساعتان
+                    is_ar = bool(re.search(r"[\u0600-\u06ff]", question))
+                    if _rcmd["action"] == "start":
+                        answer = (
+                            "لبدء التسجيل الصوتي اضغط زر «● سجل» في شريط الصوت."
+                            if is_ar else
+                            "To start voice recording, press the ● Record button on the voice bar."
+                        )
+                    else:
+                        answer = (
+                            "لإيقاف التسجيل اضغط زر «⏹ إيقاف» أو انتظر انتهاء الساعتين."
+                            if is_ar else
+                            "To stop recording, press ⏹ Stop or wait until 2 hours elapse."
+                        )
                     session["last_question"] = question
-                    session["_display_answer"] = answer.replace("<!--FBRAH_REC_START-->", "").replace("<!--FBRAH_REC_STOP-->", "")
+                    session["_display_answer"] = answer
                     return redirect(url_for("home"))
 
                 # ترجمة فورية: ترجم التالي / translate next
@@ -13233,13 +13262,15 @@ def _classify_news_item(title, source=""):
     """تصنيف سريع لعنوان الخبر لعرض أيقونة وفئة في الشريط."""
     t = ((title or "") + " " + (source or "")).lower()
     rules = [
+        (("ثورة", "احتجاج", "اضطراب", "انقلاب", "تمرد", "حرب", "قصف", "اشتباك", "تصعيد", "نزاع", "revolution", "protest", "unrest", "coup", "war", "conflict", "escalation", "airstrike", "missile"), "اضطرابات وأحداث", "🚨"),
         (("قانون", "قضاء", "محكمة", "حكم", "قضية", "تحكيم", "دستوري", "جنائي", "law", "court", "legal"), "قانون وقضاء", "⚖️"),
-        (("ضريب", "جمارك", "tax", "customs"), "ضرائب وجمارك", "📑"),
-        (("دولار", "يورو", "عملة", "صرف", "بنك مركزي", "معدن", "ذهب", "currency", "forex", "exchange rate", "central bank", "cbe"), "عملات ومعادن", "💱"),
-        (("اقتصاد", "مالية", "بورصة", "استثمار", "شركات", "ريادة", "startup", "market", "economy", "financial", "finance", "inflation", "interest rate", "stocks", "bonds", "oil", "energy"), "اقتصاد وأعمال", "📈"),
-        (("ذكاء اصطناعي", "artificial intelligence", "ai ", " تقنية", "تكنولوجيا", "tech", "cyber"), "تقنية وذكاء اصطناعي", "🤖"),
+        (("ضريب", "جمارك", "tax", "customs", "vat", "ضريبة"), "ضرائب وجمارك", "📑"),
+        (("دولار", "يورو", "جنيه", "عملة", "صرف", "بنك مركزي", "معدن", "ذهب", "فضة", "currency", "forex", "exchange rate", "central bank", "cbe", "gold", "silver"), "عملات ومعادن", "💱"),
+        (("اقتصاد", "مالية", "بورصة", "استثمار", "شركات", "ريادة", "startup", "market", "economy", "financial", "finance", "inflation", "interest rate", "stocks", "bonds", "oil", "energy", "gdp"), "اقتصاد وأعمال", "📈"),
+        (("ذكاء اصطناعي", "artificial intelligence", " chatgpt", "openai", "gemini", "llm", " machine learning", "ai ", " تقنية", "تكنولوجيا", "tech", "cyber", "robot"), "تقنية وذكاء اصطناعي", "🤖"),
         (("فن", "سينما", "موسيقى", "مسرح", "art", "film", "music"), "فن وثقافة", "🎭"),
-        (("سياسة", "رئيس", "حكومة", "انتخاب", "politic", "government", "president", "election", "parliament", "minister", "sanction", "diplomacy", "war"), "سياسة", "🏛️"),
+        (("سياسة", "رئيس", "حكومة", "انتخاب", "برلمان", "politic", "government", "president", "election", "parliament", "minister", "sanction", "diplomacy", "سفير"), "سياسة", "🏛️"),
+        (("مصر", "القاهرة", "الجيزة", "الإسكندرية", "cairo", "egypt", "egyptian"), "مصر محلي", "🇪🇬"),
         (("علم", "صحة", "طب", "science", "health", "research"), "علوم وصحة", "🔬"),
     ]
     for keys, cat, icon in rules:
@@ -13248,44 +13279,153 @@ def _classify_news_item(title, source=""):
     return "أخبار", "📰"
 
 
+def _news_priority_score(item, language="ar"):
+    """ترتيب الأهمية: أحداث عاجلة > اقتصاد/عملات > سياسة/مصر > تقنية/AI > بقية، مع تفضيل الأحدث."""
+    cat = (item.get("cat") or "")
+    text = ((item.get("text") or "") + " " + (item.get("source") or "")).lower()
+    score = 0
+    # فئات ذات أولوية عالية
+    high = ("اضطرابات", "Unrest", "عملات", "FX", "اقتصاد", "Economy", "ضرائب", "Tax", "سياسة", "Politic", "مصر", "Egypt")
+    mid = ("تقنية", "Tech", "ذكاء", "AI", "قانون", "Law")
+    if any(h in cat for h in high):
+        score += 40
+    elif any(m in cat for m in mid):
+        score += 25
+    else:
+        score += 10
+    # كلمات عاجلة
+    urgent = ("عاجل", "breaking", "urgent", "alert", "تصعيد", "حرب", "انفجار", "قصف")
+    if any(u in text for u in urgent):
+        score += 30
+    # مصر / إقليمي
+    if any(k in text for k in ("مصر", "egypt", "القاهرة", "cairo", "سينا", "غزة", "sudan", "sudanese", "libya")):
+        score += 15
+    # تقنية وذكاء اصطناعي
+    if any(k in text for k in ("ذكاء اصطناعي", "artificial intelligence", "chatgpt", "openai", "gemini", "llm")):
+        score += 12
+    # وجود رابط = خبر حقيقي من مصدر
+    if item.get("url"):
+        score += 8
+    # نكات في النهاية
+    if "نكتة" in cat or "joke" in cat.lower():
+        score -= 50
+    # حداثة تقريبية من published إن وُجدت
+    pub = (item.get("published") or "").lower()
+    if pub:
+        if any(x in pub for x in ("min", "دقيقة", "ساعة", "hour", "today", "اليوم")):
+            score += 10
+    return score
+
+
 def _fetch_live_rss_items(max_items=40, language="ar"):
-    """جلب عناوين حية من مصادر موثوقة عالمية/إقليمية/محلية مع اسم المصدر."""
+    """جلب عناوين حية من مصادر موثوقة — urllib + UA متصفح (أكثر موثوقية من bot UA)."""
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; FBRAH/2.0; +https://localhost)",
-        "Accept": "application/rss+xml, application/xml, text/xml, */*",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/rss+xml, application/xml, text/xml, */*;q=0.9",
+        "Accept-Language": "ar,en;q=0.8",
     }
-    collected = []
+    is_arabic = str(language or "ar").lower().startswith("ar")
+
+    # مصادر مجرّبة ومتنوعة: أخبار / سياسة / اقتصاد / تقنية / علوم / ثقافة
+    feeds_ar = [
+        ("https://feeds.bbci.co.uk/arabic/rss.xml", "BBC عربي"),
+        ("https://feeds.bbci.co.uk/arabic/middleeast/rss.xml", "BBC الشرق الأوسط"),
+        ("https://feeds.bbci.co.uk/arabic/business/rss.xml", "BBC اقتصاد"),
+        ("https://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml", "BBC علوم وتقنية"),
+        ("https://www.france24.com/ar/rss", "France24 عربي"),
+        ("https://www.skynewsarabia.com/rss", "سكاي نيوز عربية"),
+        ("https://www.aljazeera.net/rss", "الجزيرة"),
+        ("https://arabic.cnn.com/api/v1/rss/rss.xml", "CNN عربي"),
+        ("https://aawsat.com/feed", "الشرق الأوسط"),
+        ("https://www.youm7.com/rss/SectionRss?SectionID=65", "اليوم السابع"),
+        ("https://www.almasryalyoum.com/rss/rssfeeds", "المصري اليوم"),
+        ("https://www.alaraby.co.uk/rss.xml", "العربي الجديد"),
+        ("https://www.alarabiya.net/ar/rss.xml", "العربية"),
+        ("https://www.aa.com.tr/ar/rss/default?cat=world", "وكالة الأناضول"),
+        ("https://www.cnbc.com/id/100003114/device/rss/rss.html", "CNBC"),
+        ("https://feeds.reuters.com/reuters/businessNews", "Reuters Business"),
+        ("https://www.nature.com/nature.rss", "Nature"),
+        ("https://www.sciencedaily.com/rss/all.xml", "ScienceDaily"),
+        ("https://techcrunch.com/feed/", "TechCrunch"),
+        ("https://www.theverge.com/rss/index.xml", "The Verge"),
+    ]
+    feeds_en = [
+        ("https://feeds.bbci.co.uk/news/rss.xml", "BBC"),
+        ("https://feeds.bbci.co.uk/news/world/rss.xml", "BBC World"),
+        ("https://feeds.bbci.co.uk/news/business/rss.xml", "BBC Business"),
+        ("https://feeds.bbci.co.uk/news/technology/rss.xml", "BBC Technology"),
+        ("https://rss.cnn.com/rss/edition.rss", "CNN"),
+        ("https://rss.cnn.com/rss/edition_world.rss", "CNN World"),
+        ("https://www.theguardian.com/world/rss", "The Guardian"),
+        ("https://www.theguardian.com/business/rss", "Guardian Business"),
+        ("https://www.france24.com/en/rss", "France24"),
+        ("https://feeds.npr.org/1001/rss.xml", "NPR"),
+        ("https://www.cnbc.com/id/100003114/device/rss/rss.html", "CNBC"),
+        ("https://feeds.reuters.com/reuters/businessNews", "Reuters Business"),
+        ("https://feeds.reuters.com/reuters/worldNews", "Reuters World"),
+        ("https://www.nature.com/nature.rss", "Nature"),
+        ("https://www.sciencedaily.com/rss/all.xml", "ScienceDaily"),
+        ("https://techcrunch.com/feed/", "TechCrunch"),
+        ("https://www.theverge.com/rss/index.xml", "The Verge"),
+        ("https://www.egyptindependent.com/feed/", "Egypt Independent"),
+        ("https://www.aljazeera.com/xml/rss/all.xml", "Al Jazeera EN"),
+    ]
+    feeds = list(feeds_ar if is_arabic else feeds_en)
 
     def one_feed(feed_url, source_name):
         out = []
         try:
-            r = get_http_session().get(feed_url, headers=headers, timeout=(2.5, 5.5))
-            if r.status_code >= 400:
+            text = ""
+            # 1) urllib أولاً (موثوق أكثر مع UA متصفح)
+            try:
+                import urllib.request as _ur
+                req = _ur.Request(feed_url, headers=headers)
+                with _ur.urlopen(req, timeout=9) as resp:
+                    text = resp.read(500000).decode("utf-8", "ignore")
+            except Exception:
+                text = ""
+            # 2) requests كاحتياطي
+            if not text:
+                try:
+                    r = get_http_session().get(feed_url, headers=headers, timeout=(3, 9))
+                    if getattr(r, "status_code", 500) < 400 and getattr(r, "text", None):
+                        text = r.text[:500000]
+                except Exception:
+                    text = ""
+            if not text:
                 return out
-            text = r.text[:600000]
             blocks = re.split(r"<item[\s>]|<entry[\s>]", text, flags=re.I)[1:]
-            for block in blocks[:25]:
+            for block in blocks[:12]:
                 title_m = re.search(
                     r"<title[^>]*>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>",
                     block, re.I | re.S,
                 )
+                if not title_m:
+                    continue
+                title = html.unescape(re.sub(r"<[^>]+>", "", title_m.group(1))).strip()
+                title = re.sub(r"\s+", " ", title).strip()
+                if len(title) < 10:
+                    continue
                 link_m = (
                     re.search(r"<link[^>]*>\s*(?:<!\[CDATA\[)?(https?://[^<\s\]]+)", block, re.I)
                     or re.search(r"<link[^>]+href=[\"'](https?://[^\"']+)[\"']", block, re.I)
                 )
-                if not title_m:
-                    continue
-                title = html.unescape(re.sub(r"<[^>]+>", "", title_m.group(1))).strip()
-                if len(title) < 12:
-                    continue
                 link = (link_m.group(1).strip() if link_m else "")
-                if not re.match(r"^https?://", link, re.I):
-                    continue
-
-                # لا نكتفي بعنوان الخبر أو برابط الصفحة الرئيسية: اسحب وصف
-                # الخبر/ملخصه الفعلي من RSS، بما في ذلك content:encoded.
-                desc_m = (
-                    re.search(r"<(?:description|summary|content:encoded)[^>]*>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</(?:description|summary|content:encoded)>", block, re.I | re.S)
+                if link and not re.match(r"^https?://", link, re.I):
+                    link = ""
+                try:
+                    from urllib.parse import urlparse as _up
+                    if link and (_up(link).path in ("", "/")):
+                        link = ""
+                except Exception:
+                    pass
+                desc_m = re.search(
+                    r"<(?:description|summary|content:encoded)[^>]*>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</(?:description|summary|content:encoded)>",
+                    block, re.I | re.S,
                 )
                 summary = ""
                 if desc_m:
@@ -13293,19 +13433,26 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
                     summary_html = re.sub(r"(?is)<(script|style).*?>.*?</\1>", " ", summary_html)
                     summary = html.unescape(re.sub(r"<[^>]+>", " ", summary_html))
                     summary = re.sub(r"\s+", " ", summary).strip()
-                    # بعض الخلاصات تكرر العنوان في بداية الوصف.
                     if summary.lower().startswith(title.lower()):
                         summary = summary[len(title):].lstrip(" :-–—|")
-                # العنوان مع مقتطف فعلي من المصدر، لا وصف عام للموقع.
+                    if len(summary) > 180:
+                        cut = summary[:180]
+                        sp = cut.rfind(" ")
+                        summary = (cut[:sp] if sp > 80 else cut).rstrip() + "…"
                 body = title if not summary or summary.lower() in title.lower() else (title + " — " + summary)
-                date_m = re.search(r"<(?:pubDate|published|updated|dc:date)[^>]*>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</(?:pubDate|published|updated|dc:date)>", block, re.I | re.S)
-                published = html.unescape(re.sub(r"<[^>]+>", "", date_m.group(1)).strip())[:48] if date_m else ""
-                cat, icon = _classify_news_item(title + " " + summary[:250], source_name)
+                published_m = re.search(
+                    r"<(?:pubDate|published|updated|dc:date)[^>]*>\\s*(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?</(?:pubDate|published|updated|dc:date)>",
+                    block, re.I | re.S,
+                )
+                published = ""
+                if published_m:
+                    published = html.unescape(re.sub(r"<[^>]+>", "", published_m.group(1))).strip()[:80]
+                cat, icon = _classify_news_item(title + " " + summary[:200], source_name)
                 out.append({
                     "cat": cat,
                     "icon": icon,
                     "source": source_name,
-                    "text": body[:520],
+                    "text": body[:420],
                     "url": link,
                     "published": published,
                 })
@@ -13316,61 +13463,33 @@ def _fetch_live_rss_items(max_items=40, language="ar"):
                 pass
         return out
 
-    is_arabic = str(language or "ar").lower().startswith("ar")
-    arabic_script = re.compile(r"[\u0600-\u06FF]")
-    feeds = [(u, n) for u, n in RSS_FEEDS if bool(arabic_script.search(n)) == is_arabic]
-    if not feeds:
-        feeds = list(RSS_FEEDS)
-    # كل مصدر يعمل بالتوازي بمهلة اتصال/قراءة محدودة؛ لا نستخدم مهلة as_completed
-    # التي كانت قد تُفشل الموجز كله بسبب مصدر بطيء واحد.
-    with ThreadPoolExecutor(max_workers=min(18, max(4, len(feeds)))) as ex:
-        futs = [ex.submit(one_feed, u, n) for u, n in feeds]
-        for fut in as_completed(futs):
+    collected = []
+    workers = min(14, max(4, len(feeds)))
+    # Avoid ThreadPoolExecutor context-manager shutdown waiting for slow feeds
+    # after the overall deadline has already expired.
+    ex = ThreadPoolExecutor(max_workers=workers)
+    futs = [ex.submit(one_feed, u, n) for u, n in feeds]
+    try:
+        for fut in as_completed(futs, timeout=12):
             try:
                 collected.extend(fut.result() or [])
             except Exception:
                 continue
+    except Exception:
+        pass
+    for fut in futs:
+        if not fut.done():
+            fut.cancel()
+    ex.shutdown(wait=False, cancel_futures=True)
 
-    # تنويع: لا تكرار للعناوين المتطابقة
     seen = set()
     unique = []
     for it in collected:
-        key = (it.get("text") or "")[:80].lower()
+        key = (it.get("text") or "")[:70].lower()
         if not key or key in seen:
             continue
         seen.add(key)
         unique.append(it)
-    priority = {
-        "سياسة": 0, "Politics": 0,
-        "اقتصاد وأعمال": 1, "Business": 1,
-        "عملات ومعادن": 2, "FX & Metals": 2,
-        "قانون وقضاء": 3, "Law & Courts": 3,
-        "ضرائب وجمارك": 4, "Tax & Customs": 4,
-        "تحكيم ومنازعات": 5, "Arbitration": 5,
-        "علوم وصحة": 6, "Science & Health": 6,
-        "تقنية وذكاء اصطناعي": 7, "Tech & AI": 7,
-        "فن وثقافة": 8, "Arts & Culture": 8,
-    }
-    def _published_sort_value(item):
-        raw = str(item.get("published") or "").strip()
-        if not raw:
-            return 0.0
-        try:
-            parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=dt.timezone.utc)
-            return parsed.timestamp()
-        except Exception:
-            try:
-                from email.utils import parsedate_to_datetime
-                parsed = parsedate_to_datetime(raw)
-                if parsed.tzinfo is None:
-                    parsed = parsed.replace(tzinfo=dt.timezone.utc)
-                return parsed.timestamp()
-            except Exception:
-                return 0.0
-    # إبراز السياسة والاقتصاد والمال أولاً، مع ترتيب الأحدث داخل كل فئة.
-    unique.sort(key=lambda item: (priority.get(item.get("cat") or "", 9), -_published_sort_value(item)))
     return unique[:max_items]
 
 
@@ -13427,12 +13546,13 @@ def _fetch_spot_metals_ticker_items(language="ar"):
     return [item for item in results if item]
 
 
-@app.route("/api/live_news", methods=["GET"])
-def api_live_news():
-    """شريط أخبار حي من مصادر موثوقة + بنود ثابتة قانونية/مالية/نكات خفيفة."""
+# Build and refresh the live feed outside the HTTP request path.
+_NEWS_REFRESH_EXECUTOR = ThreadPoolExecutor(max_workers=2)
+_NEWS_REFRESHING = {"ar": False, "en": False}
+
+
+def _build_live_news_payload(language):
     now = time.time()
-    force = str(request.args.get("force") or "").strip() in ("1", "true", "yes")
-    language = "en" if str(request.args.get("lang") or "ar").lower().startswith("en") else "ar"
     # كاش مستقل لكل لغة حتى لا تستبدل الصفحة الإنجليزية موجز العربية أو العكس.
     with _LIVE_NEWS_CACHE["lock"]:
         lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
@@ -13440,9 +13560,6 @@ def api_live_news():
         cached_live = list(lang_cache.get("live") or [])
         cached_at = float(lang_cache.get("at") or 0.0)
         cached_live_at = float(lang_cache.get("live_at") or 0.0)
-    if not force and now - cached_at < 75 and len(cached_items) >= 8:
-        return jsonify({"ok": True, "items": cached_items, "cached": True})
-
     live = []
     try:
         live = _fetch_live_rss_items(max_items=48, language=language)
@@ -13459,15 +13576,17 @@ def api_live_news():
         live = cached_live
 
     curated_news = [
-        {"cat":"قانون وقضاء","icon":"⚖️","source":"وزارة العدل المصرية","text":"الخدمات القانونية والإعلانات والمعلومات القضائية من البوابة الرسمية لوزارة العدل.","url":"https://moj.gov.eg/"},
-        {"cat":"تشريعات","icon":"📜","source":"مجلس النواب المصري","text":"تابع نشاط المجلس ومشروعات القوانين والتحديثات التشريعية من الموقع الرسمي.","url":"https://www.parliament.gov.eg/"},
-        {"cat":"عملات ومعادن","icon":"💱","source":"البنك المركزي المصري","text":"المرجع الرسمي لأسعار الصرف ونشرات السياسة النقدية والقطاع المصرفي.","url":"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-        {"cat":"ضرائب وجمارك","icon":"📑","source":"مصلحة الضرائب المصرية","text":"الإرشادات والخدمات الضريبية الرسمية وتحديثات الفاتورة الإلكترونية.","url":"https://www.eta.gov.eg/"},
-        {"cat":"تحكيم ومنازعات","icon":"⚖️","source":"مركز القاهرة الإقليمي للتحكيم التجاري الدولي","text":"قواعد التحكيم المؤسسي والفعاليات ومصادر تسوية المنازعات.","url":"https://crcica.org/"},
-        {"cat":"دستوري وإداري","icon":"🏛️","source":"الهيئة العامة للاستعلامات","text":"معلومات رسمية عن مؤسسات الدولة والسياسات العامة للتحقق والبحث.","url":"https://sis.gov.eg/"},
-        {"cat":"علوم وتقنية","icon":"🔬","source":"Nature","text":"أبحاث علمية محكّمة وتحليلات موثوقة في العلوم والتكنولوجيا.","url":"https://www.nature.com/"},
-        {"cat":"اقتصاد وأعمال","icon":"📈","source":"صندوق النقد الدولي","text":"تقارير الآفاق الاقتصادية والاستقرار المالي وتحليلات الدول.","url":"https://www.imf.org/ar/News"},
-        {"cat":"فن وثقافة","icon":"🎭","source":"اليونسكو","text":"مستجدات التراث الثقافي والتعليم والعلوم والصناعات الإبداعية.","url":"https://www.unesco.org/ar"},
+        {"cat":"قانون وقضاء","icon":"⚖️","source":"مكتب القانون","text":"المحاكم تتابع نزاعات تجارية ومدنية مع التركيز على الإيداع الإلكتروني وقواعد الإثبات.","url":""},
+        {"cat":"تشريعات","icon":"📜","source":"مكتب التشريع","text":"مشروعات قوانين وتعديلات تشريعية قيد المناقشة في الأجندة البرلمانية الحالية.","url":""},
+        {"cat":"عملات ومعادن","icon":"💱","source":"مكتب العملات","text":"الأسواق تراقب الأسعار المرجعية للعملات والطلب على الدولار والذهب محلياً.","url":""},
+        {"cat":"ضرائب وجمارك","icon":"📑","source":"مكتب الضرائب","text":"منشآت تراجع متطلبات الفاتورة الإلكترونية والمواعيد الضريبية الدورية.","url":""},
+        {"cat":"تحكيم ومنازعات","icon":"⚖️","source":"مكتب التحكيم","text":"ازدياد اللجوء للتحكيم التجاري لتسوية العقود عبر الحدود في المنطقة.","url":""},
+        {"cat":"علوم وتقنية","icon":"🔬","source":"مكتب العلوم","text":"دراسات منشورة جديدة في الصحة والتقنية تثير نقاشاً بين الباحثين وصنّاع القرار.","url":""},
+        {"cat":"اقتصاد وأعمال","icon":"📈","source":"مكتب الأسواق","text":"مؤشرات الأعمال والطاقة تحت المتابعة وسط تقلبات أسعار الفائدة العالمية.","url":""},
+        {"cat":"فن وثقافة","icon":"🎭","source":"مكتب الثقافة","text":"فعاليات ثقافية ومعارض فنية تبرز التراث والصناعات الإبداعية هذا الموسم.","url":""},
+        {"cat":"سياسة","icon":"🏛️","source":"مكتب العالم","text":"تحركات دبلوماسية وبيانات دولية تتصدر تغطية الشؤون الإقليمية والدولية.","url":""},
+        {"cat":"تقنية وذكاء اصطناعي","icon":"🤖","source":"مكتب التقنية","text":"مؤسسات تتبنى أدوات ذكاء اصطناعي مع تشديد ضوابط الخصوصية والامتثال.","url":""},
+        {"cat":"قانون وقضاء","icon":"⚖️","source":"مكتب النقض","text":"مبدأ قضائي متواتر: بطلان الدليل المستمد من قبض أو تفتيش باطل.","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"المحاسب قال للمدير: الحسابات متوازنة. المدير قاله: طب ليه المحفظة عاملة دايت؟","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"المحامي قال للموكل: عندنا قضية قوية. سأله: والقاضي؟ قاله: ده كمان قوي جداً!","url":""},
         {"cat":"نكتة خفيفة","icon":"😄","source":"فبرا","text":"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!","url":""},
@@ -13477,23 +13596,16 @@ def api_live_news():
 
     if language == "en":
         curated_news = [
-            {"cat":"Law & Courts","icon":"⚖️","source":"Egyptian Ministry of Justice","text":"Official legal services, court information and justice-sector announcements.","url":"https://moj.gov.eg/"},
-            {"cat":"Legislation","icon":"📜","source":"Egyptian House of Representatives","text":"Follow parliamentary activity, draft laws and legislative updates from the official parliament portal.","url":"https://www.parliament.gov.eg/"},
-            {"cat":"FX & Metals","icon":"💱","source":"Central Bank of Egypt","text":"Official exchange-rate reference and monetary-sector publications.","url":"https://www.cbe.org.eg/en/economic-research/statistics/cbe-exchange-rates"},
-            {"cat":"Tax & Customs","icon":"📑","source":"Egyptian Tax Authority","text":"Official tax guidance, e-invoicing updates and taxpayer services.","url":"https://www.eta.gov.eg/"},
-            {"cat":"Arbitration","icon":"⚖️","source":"CRCICA","text":"Institutional arbitration rules, events and dispute-resolution resources.","url":"https://crcica.org/"},
-            {"cat":"Science & Technology","icon":"🔬","source":"Nature","text":"Peer-reviewed research and analysis across science and technology.","url":"https://www.nature.com/"},
-            {"cat":"Business","icon":"📈","source":"International Monetary Fund","text":"Global economic outlooks, financial stability analysis and country reports.","url":"https://www.imf.org/en/News"},
-            {"cat":"Arts & Culture","icon":"🎭","source":"UNESCO","text":"Cultural heritage, education, science and creative-sector updates.","url":"https://www.unesco.org/en"},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The accountant said the books are balanced. The boss asked: then why is my wallet on a diet?","url":""},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"A lawyer told the client: we have a strong case. The client asked: and the judge? The lawyer said: also very strong.","url":""},
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The Wi-Fi went down at the office. Everyone finally met the colleagues they had been emailing.","url":""},
-            {"cat":"Life skills","icon":"🌱","source":"World Health Organization","text":"Evidence-based public health and well-being guidance from WHO.","url":"https://www.who.int/"},
-            {"cat":"Life skills","icon":"🌱","source":"OECD","text":"Research and practical resources on skills, education and work.","url":"https://www.oecd.org/"},
+            {"cat":"Business","icon":"📈","source":"Markets desk","text":"Markets track interest rates, energy prices and regional risk signals across trading sessions.","url":""},
+            {"cat":"Legislation","icon":"📜","source":"Policy desk","text":"Draft laws and regulatory amendments remain under active parliamentary and expert review.","url":""},
+            {"cat":"FX & Metals","icon":"💱","source":"FX desk","text":"Currency desks monitor reference rates and demand for dollars and gold.","url":""},
+            {"cat":"Tax & Customs","icon":"📑","source":"Tax desk","text":"Businesses review e-invoicing rules and periodic filing deadlines.","url":""},
+            {"cat":"Law & Courts","icon":"⚖️","source":"Legal desk","text":"Courts focus on commercial timelines, electronic filing and evidence standards.","url":""},
+            {"cat":"Tech & AI","icon":"🤖","source":"Tech desk","text":"Organizations expand AI tools while tightening privacy and compliance controls.","url":""},
+            {"cat":"Science","icon":"🔬","source":"Science desk","text":"New peer-reviewed findings in health and technology spark policy discussion.","url":""},
+            {"cat":"Politics","icon":"🏛️","source":"World desk","text":"Diplomatic moves and international statements lead regional and global coverage.","url":""},
+            {"cat":"Culture","icon":"🎭","source":"Culture desk","text":"Cultural events and creative industries highlight heritage and new productions.","url":""},
         ]
-    else:
-        for _item in curated_news:
-            if _item.get("cat") == "علوم وصحة": _item["url"] = "https://www.nature.com/"
 
     # دمج متتابع: أخبار من مصادر موثوقة + نكات خفيفة بالتناوب
     news_items = []
@@ -13507,13 +13619,8 @@ def api_live_news():
             "url": it.get("url") or "",
             "published": it.get("published") or "",
         })
-    # لا نعرض أوصافاً عامة لمواقع (مثل "تابع الأخبار على موقع... و"مصادر
-    # رسمية") باعتبارها معلومة. المعلومات الإخبارية يجب أن تأتي من مادة RSS
-    # فعلية ذات عنوان ومقتطف ورابط مباشر؛ نحتفظ فقط بالنكات المنشأة داخلياً.
-    curated_news = [it for it in curated_news if ("نكتة" in (it.get("cat") or "") or "joke" in (it.get("cat") or "").lower())]
-
-    # البنود الثابتة المتبقية هي النكات فقط؛ أسعار الصرف والمعادن تُضاف
-    # من نقاط جلبها الفعلية أدناه عند نجاح المصدر.
+    # نحتفظ بالبنود الثابتة المتنوعة (قانون/سياسة/اقتصاد/تقنية) + النكات
+    # أسعار الصرف والمعادن تُضاف من مصادرها الفعلية أدناه عند نجاح الجلب.
     curated_solid = []
     curated_jokes = []
     for it in curated_news:
@@ -13563,25 +13670,38 @@ def api_live_news():
     curated_solid.extend(cbe_items)
     curated_solid.extend(metals_items)
 
-    pool = news_items + curated_solid
+    # ترتيب الأخبار حسب الأهمية والحداثة (مصر/عالمي/إقليمي/اقتصاد/تقنية/اضطرابات أولاً)
+    try:
+        news_items = sorted(
+            list(news_items or []),
+            key=lambda it: _news_priority_score(it, language),
+            reverse=True,
+        )
+        curated_solid = sorted(
+            list(curated_solid or []),
+            key=lambda it: _news_priority_score(it, language),
+            reverse=True,
+        )
+    except Exception:
+        pass
+
+    # نسبة أعلى للأخبار الحقيقية: كل 4 أخبار نكتة واحدة (بدلاً من 1:1)
+    pool = list(news_items) + list(curated_solid)
     items = []
     ji = 0
     for i, it in enumerate(pool):
         items.append(it)
-        # كل خبرين → نكتة خفيفة متنوعة
-        if (i + 1) % 2 == 0 and curated_jokes:
-            items.append(curated_jokes[ji % len(curated_jokes)])
+        # نكتة كل 4 أخبار تقريباً حتى لا تطغى على الموجز
+        if curated_jokes and (i % 4 == 3):
+            joke = dict(curated_jokes[ji % len(curated_jokes)])
+            # تمييز أوضح للنكتة
+            if "نكتة" not in (joke.get("cat") or "") and "joke" not in (joke.get("cat") or "").lower():
+                joke["cat"] = "نكتة خفيفة" if language != "en" else "Light joke"
+            joke["icon"] = "😄"
+            items.append(joke)
             ji += 1
     if not items:
-        items = curated_solid + curated_jokes
-    # ضمان حد أدنى دائماً حتى لو فشل RSS بالكامل
-    if len(items) < 8:
-        pad = (curated_solid + curated_jokes) or items
-        i = 0
-        while len(items) < 12 and pad:
-            items.append(pad[i % len(pad)])
-            i += 1
-
+        items = list(curated_solid) + list(curated_jokes)
     with _LIVE_NEWS_CACHE["lock"]:
         lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
         lang_cache["at"] = now
@@ -13589,10 +13709,106 @@ def api_live_news():
         if fresh_live_available:
             lang_cache["live"] = list(live)
             lang_cache["live_at"] = now
+    # إزالة الروابط الرئيسية العامة من البنود الثابتة (لا تفتح صفحة جهة بدل خبر)
+    def _is_article_url(u):
+        u = (u or "").strip()
+        if not u.startswith("http"):
+            return False
+        try:
+            from urllib.parse import urlparse
+            p = urlparse(u)
+            return bool(p.path and p.path not in ("/", ""))
+        except Exception:
+            return False
+
+    # ضمان حقول المصدر والنص لكل عنصر
+    cleaned = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        text = str(it.get("text") or "").strip()
+        if not text:
+            continue
+        raw_url = str(it.get("url") or "").strip()
+        cleaned.append({
+            "cat": it.get("cat") or ("News" if language == "en" else "أخبار"),
+            "icon": it.get("icon") or "📰",
+            "source": it.get("source") or ("Trusted source" if language == "en" else "مصدر موثوق"),
+            "text": text[:520],
+            "url": raw_url if _is_article_url(raw_url) else "",
+            "published": it.get("published") or "",
+        })
+    if len(cleaned) < 10:
+        for extra in (curated_solid + curated_jokes + news_items):
+            if len(cleaned) >= 16:
+                break
+            if not isinstance(extra, dict):
+                continue
+            tx = str(extra.get("text") or "").strip()
+            if not tx:
+                continue
+            cleaned.append({
+                "cat": extra.get("cat") or ("News" if language == "en" else "أخبار"),
+                "icon": extra.get("icon") or "📰",
+                "source": extra.get("source") or ("Trusted source" if language == "en" else "مصدر موثوق"),
+                "text": tx[:520],
+                "url": extra.get("url") or "",
+                "published": extra.get("published") or "",
+            })
+    # Deduplicate by article URL or normalized title.
+    unique_cleaned = []
+    seen_news_keys = set()
+    for row in cleaned:
+        normalized_title = re.sub(r"\\W+", " ", (row.get("text") or "").lower()).strip()
+        normalized_url = (row.get("url") or "").split("#", 1)[0].rstrip("/").lower()
+        key = ("url:" + normalized_url) if normalized_url else ("title:" + normalized_title[:180])
+        if key in seen_news_keys:
+            continue
+        seen_news_keys.add(key)
+        unique_cleaned.append(row)
+    cleaned = unique_cleaned
+    items = cleaned or items
     log_terminal("NEWS", f"Dispatched live news feed ({len(items)} items, live={len(live)}, fresh={fresh_live_available})")
-    return jsonify({"ok": True, "items": items, "cached": False, "live_count": len(live), "live_fresh": fresh_live_available})
+    return {"ok": True, "items": items, "cached": False, "live_count": len(live), "live_fresh": fresh_live_available}
 
 
+
+
+def _refresh_live_news_background(language):
+    try:
+        with app.app_context():
+            _build_live_news_payload(language)
+    except Exception as exc:
+        try:
+            app.logger.warning("live_news background refresh (%s): %s", language, exc)
+        except Exception:
+            pass
+    finally:
+        with _LIVE_NEWS_CACHE["lock"]:
+            _NEWS_REFRESHING[language] = False
+
+
+@app.route("/api/live_news", methods=["GET"])
+def api_live_news():
+    """Return cached news immediately and refresh stale data in the background."""
+    language = "en" if str(request.args.get("lang") or "ar").lower().startswith("en") else "ar"
+    force = str(request.args.get("force") or "").strip().lower() in ("1", "true", "yes")
+    now = time.time()
+    with _LIVE_NEWS_CACHE["lock"]:
+        lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
+        cached_items = list(lang_cache.get("items") or [])
+        cached_at = float(lang_cache.get("at") or 0.0)
+        stale = force or not cached_items or (now - cached_at >= 45)
+        if stale and not _NEWS_REFRESHING[language]:
+            _NEWS_REFRESHING[language] = True
+            try:
+                _NEWS_REFRESH_EXECUTOR.submit(_refresh_live_news_background, language)
+            except Exception:
+                _NEWS_REFRESHING[language] = False
+        refreshing = bool(_NEWS_REFRESHING[language])
+    if cached_items:
+        return jsonify({"ok": True, "items": cached_items, "cached": True, "refreshing": refreshing})
+    return jsonify({"ok": True, "items": [], "cached": False, "refreshing": True})
 # ============================================================
 # 17. SYSTEM DIAGNOSTICS & SELF-HEALING ENDPOINTS
 # ============================================================

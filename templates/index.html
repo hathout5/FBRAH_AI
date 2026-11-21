@@ -363,8 +363,14 @@
             margin-inline: 4px;
         }
         .ticker-item.ticker-joke .ticker-cat {
-            background: rgba(255, 212, 59, 0.25);
-            color: #ffe08a;
+            background: rgba(255, 212, 59, 0.45);
+            color: #fff3b0;
+            font-weight: 800;
+        }
+        .ticker-item.ticker-joke {
+            color: #ffe9a8 !important;
+            border-inline-start: 3px solid #ffd700;
+            padding-inline-start: 6px;
         }
         .ticker-badge {
             background: #d4af37;
@@ -401,46 +407,66 @@
             height: 100%;
             display: flex;
             align-items: center;
-            direction: rtl;
+            direction: ltr;
         }
         .ticker-content-wrap[dir="ltr"] { direction: ltr; }
         .ticker-marquee {
             display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
             flex: 0 0 auto;
             width: max-content;
             min-width: max-content;
             max-width: none;
             white-space: nowrap;
             align-items: center;
-            direction: rtl;
-            animation: ticker-slide-rtl var(--ticker-duration, 360s) linear infinite;
+            /* اتجاه التخطيط ثابت LTR حتى لا تنكسر حلقة الحركة */
+            direction: ltr;
+            animation: ticker-scroll var(--ticker-duration, 180s) linear infinite;
             padding: 0;
             will-change: transform;
             transform: translate3d(0,0,0);
         }
-        /* مجموعتان متطابقتان تماماً؛ انتقال نصف العرض يضمن حلقة لا تنكشف فيها مساحة فارغة. */
+        .ticker-marquee.ticker-ar {
+            /* عربي: من الشمال إلى اليمين */
+            animation-direction: reverse;
+        }
+        .ticker-marquee.ticker-en {
+            animation-direction: normal;
+        }
         .ticker-sequence {
             display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
             flex: 0 0 auto;
             width: max-content;
             min-width: max-content;
             white-space: nowrap;
             align-items: center;
-            direction: inherit;
-            padding-inline: 20px;
-        }
-        .ticker-marquee.ticker-ltr {
             direction: ltr;
-            animation-name: ticker-slide-ltr;
+            padding-inline: 24px;
         }
-        .ticker-marquee:hover { animation-play-state: inherit; }
-        @keyframes ticker-slide-rtl {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+        .ticker-item {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 6px;
+            margin-right: 28px;
+            font-size: 13px;
+            color: #f1f5f9 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
-        @keyframes ticker-slide-ltr {
-            0% { transform: translateX(-50%); }
-            100% { transform: translateX(0); }
+        .ticker-item:hover {
+            color: #ffd700 !important;
+            background: rgba(212,175,55,0.12);
+            border-radius: 4px;
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
         }
         .ticker-speed-btn {
             background: transparent;
@@ -1037,6 +1063,18 @@
             font-size: 11px !important;
             padding: 0 !important;
         }
+
+        #sendBtn.voice-wait, button#sendBtn.voice-wait {
+            opacity: 0.55 !important;
+            cursor: not-allowed !important;
+            filter: grayscale(0.3);
+        }
+        #micBtn.listening {
+            background: #0a7a2f !important;
+            color: #FFEF00 !important;
+            border-color: #FFEF00 !important;
+        }
+
         #wakeBtn, #micBtn {
             border-radius: 999px !important;
             min-height: 34px !important;
@@ -1312,6 +1350,13 @@
             border: 2px solid #f5e6b8 !important;
             font-size: 20px !important;
             box-shadow: 0 4px 14px rgba(0,0,0,.3) !important;
+            z-index: 10050 !important;
+            position: relative;
+        }
+        /* أيقونة الميكروفون العائمة فوق شريط الأخبار — يمين الشاشة */
+        #voiceBar.voice-minimized,
+        #voiceRestoreBtn, #voiceFabBtn {
+            z-index: 10050 !important;
         }
         #micBtn.listening, button.listening, .mic-fab.listening {
             background: #001F3F !important;
@@ -2445,11 +2490,11 @@
                             </select>
                         </label>
                         <label style="font-size:11px;color:#001F3F;"><input type="checkbox" id="reminderBigPanel" checked> شريط كبير</label>
-                        <div class="voice-bar-sync-hint" id="voiceSyncHint" data-i18n="voiceSync" style="color:#ffffff !important;font-weight:600;">النداء + التحدث: فعّل النداء → قل فبرا → الخانة ذهبية = تحدّث</div>
+                        <div class="voice-bar-sync-hint" id="voiceSyncHint" data-i18n="voiceSync" style="color:#ffffff !important;font-weight:600;">النداء → تحدث → إرسال: 🔔 تفعيل النداء ← قل «فبرا» ← 🎤 تحدّث ← 🚀 إرسال (أو انتظر الصمت ليُرسل تلقائياً). التسجيل الصوتي منفصل: فقط ● سجل / ⏹ إيقاف</div>
                     <div class="rec-panel" id="recPanel">
                         <div class="rec-row">
-                            <button type="button" id="recStartBtn" onclick="fbrahRecStart()">● سجل</button>
-                            <button type="button" id="recStopBtn" class="rec-stop" onclick="fbrahRecStop()" disabled>⏹ أوقف التسجيل</button>
+                            <button type="button" id="recStartBtn" onclick="fbrahRecStart(event)">● سجل</button>
+                            <button type="button" id="recStopBtn" class="rec-stop" onclick="fbrahRecStop('button')" disabled>⏹ أوقف التسجيل</button>
                             <span class="rec-timer" id="recTimer">0:00</span>
                             <span id="recStatus" style="font-size:11px;color:#001F3F;"></span>
                         </div>
@@ -2761,150 +2806,214 @@
             };
             return map[cat] || cat || "News";
         }
+        // حالة شريط الأخبار الحية (يجب أن تبقى معرفة قبل أي دالة تستخدمها)
+        var _fbrahNewsTimer = null;
+        var _fbrahNewsRequest = null;
+        var _fbrahNewsRequestLang = "";
+        var _fbrahLastGoodNews = { ar: [], en: [] };
+
         function fbrahTickerFallbackItems() {
-            // عند انقطاع الإنترنت لا نعرض روابط صفحات رئيسية على أنها أخبار.
-            // نعرض فقط نكات فبرا الموسومة بوضوح، ثم نستبدلها بمحتوى RSS الفعلي عند وصوله.
+            // موجز احتياطي: أخبار بصياغة عناوين + نكات — بلا رسائل ترويجية وبلا روابط لصفحات رئيسية
             if (fbrahIsEn()) {
                 return [
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"I asked my budget for a little flexibility. It said: try yoga; the numbers still will not stretch.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"The office printer asked for a break. It has been under more pressure than the whole team.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said I had a free afternoon. I checked again; it was a software bug.",url:""}
+                    {cat:"Business",icon:"📈",source:"Markets desk",text:"Global markets watch: investors track rates, energy prices and regional risk signals.",url:""},
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"I asked my budget for flexibility. It said: try yoga; the numbers still will not stretch.",url:""},
+                    {cat:"Tech & AI",icon:"🤖",source:"Tech desk",text:"AI tools expand in offices — compliance and data-protection rules tighten in parallel.",url:""},
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"The office printer asked for a break. It carries more pressure than the whole team.",url:""},
+                    {cat:"Law & Courts",icon:"⚖️",source:"Legal desk",text:"Courts and counsel focus on electronic filing, evidence rules and commercial dispute timelines.",url:""},
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said free afternoon. Rechecked: software bug.",url:""},
+                    {cat:"FX & Metals",icon:"💱",source:"FX desk",text:"Currency desks monitor official reference rates and demand for dollar and gold.",url:""},
+                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"Accountant: the books balance. Manager: then why is the wallet on a diet?",url:""},
+                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""},
+                    {cat:"Science",icon:"🔬",source:"Science desk",text:"Research notes: health guidance and published studies remain under active review.",url:""}
                 ];
             }
             return [
+                {cat:"اقتصاد وأعمال",icon:"📈",source:"مكتب الأسواق",text:"الأسواق تتابع أسعار الفائدة والطاقة ومؤشرات المخاطر الإقليمية عن كثب.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"واحد قال للميزانية: محتاج شوية مرونة. قالتله: جرّب اليوجا، الأرقام مش راضية تتمط.",url:""},
+                {cat:"تقنية وذكاء اصطناعي",icon:"🤖",source:"مكتب التقنية",text:"أدوات الذكاء الاصطناعي تتوسع في المكاتب مع تشديد قواعد حماية البيانات والامتثال.",url:""},
                 {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"طابعة المكتب طلبت إجازة… قالت إنها شايلة ضغط الشغل كله على الورق.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"التقويم قال لي عندك عصر فاضي… طلع ده خطأ في التحديث.",url:""}
+                {cat:"قانون وقضاء",icon:"⚖️",source:"مكتب القانون",text:"المحاكم تركز على الإيداع الإلكتروني وقواعد الإثبات ومواعيد المنازعات التجارية.",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"التقويم قال لي عندك عصر فاضي… طلع ده خطأ في التحديث.",url:""},
+                {cat:"عملات ومعادن",icon:"💱",source:"مكتب العملات",text:"مكاتب الصرف تراقب الأسعار المرجعية والطلب على الدولار والذهب.",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحاسب: الرقم صح. المدير: طب ليه الخسارة؟ المحاسب: عشان الرقم التاني أصح!",url:""},
+                {cat:"سياسة",icon:"🏛️",source:"مكتب العالم",text:"جولات دبلوماسية وبيانات دولية تحت التغطية المستمرة من مصادر متعددة.",url:""},
+                {cat:"علوم وصحة",icon:"🔬",source:"مكتب العلوم",text:"ملاحظات بحثية: إرشادات الصحة والدراسات المنشورة قيد المتابعة والمراجعة.",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحامي قال للموكل: عندنا قضية قوية. سأله: والقاضي؟ قاله: ده كمان قوي جداً!",url:""},
+                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!",url:""}
             ];
         }
         function renderTickerItems(items) {
             var marquee = document.getElementById("tickerMarquee");
-            if (!marquee || !Array.isArray(items) || !items.length) return false;
-            var wasPaused = marquee.dataset.userPaused === "1" || marquee.style.animationPlayState === "paused";
-            var isEn = fbrahIsEn();
-            marquee.classList.toggle("ticker-ltr", !!isEn);
-            marquee.classList.toggle("ticker-rtl", !isEn);
-            marquee.setAttribute("dir", isEn ? "ltr" : "rtl");
+            if (!marquee) return false;
+            if (!Array.isArray(items) || !items.length) {
+                if (typeof fbrahTickerHasRealItems === "function" && fbrahTickerHasRealItems(marquee)) return false;
+                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
+            }
+            if (!items.length) return false;
+
+            if (items.length > 48) items = items.slice(0, 48);
+
+            var wasPaused = marquee.dataset.userPaused === "1";
+            var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
+
+            marquee.classList.remove("ticker-ltr", "ticker-rtl");
+            marquee.classList.toggle("ticker-en", !!isEn);
+            marquee.classList.toggle("ticker-ar", !isEn);
+            marquee.setAttribute("dir", "ltr");
+
             var tickerWrap = marquee.parentElement;
             if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
-            // حركة مستقلة عن اتجاه كتابة النص: العربي يسير يساراً إلى يمين، والإنجليزي يميناً إلى يسار.
-            marquee.style.animationName = isEn ? "ticker-slide-rtl" : "ticker-slide-ltr";
-            marquee.replaceChildren();
 
-            function addItem(sequence, item) {
-                if (!item || typeof item !== "object") return;
-                var span = document.createElement("span");
-                var isJoke = /نكتة|joke|Light joke/i.test(item.cat || "") || item.icon === "😄";
-                span.className = "ticker-item" + (isJoke ? " ticker-joke" : "");
-                var src = String(item.source || (isEn ? "Verified source" : "مصدر موثوق"));
-                var body = String(item.text || "").trim();
-                var url = String(item.url || "").trim();
-                if (!body) return;
-                if (src && body.indexOf("[" + src + "]") === 0) body = body.replace("[" + src + "]", "").trim();
-                body = body.replace(/^\[[^\]]+\]\s*/, "");
-                var catLabel = fbrahTickerCatLabel(item.cat || (isEn ? "News" : "خبر"));
-                var catNode = document.createElement("span");
-                catNode.className = "ticker-cat";
-                catNode.textContent = catLabel;
-                span.appendChild(catNode);
-                var srcNode = document.createElement("span");
-                srcNode.className = "ticker-source";
-                srcNode.textContent = (isEn ? "Source: " : "المصدر: ") + src;
-                span.appendChild(srcNode);
-                var bodyNode = document.createElement("span");
-                bodyNode.textContent = (item.icon || "▪") + " " + body + (item.published ? " · " + item.published : "");
-                span.appendChild(bodyNode);
+            function isArticleUrl(u) {
+                if (!u || !/^https?:\/\//i.test(u)) return false;
+                // ارفض الصفحات الرئيسية العامة حتى لا يفتح «الموقع» بدل الخبر
+                try {
+                    var path = (new URL(u)).pathname || "/";
+                    if (path === "/" || path === "") return false;
+                } catch (e) { return false; }
+                return true;
+            }
 
-                if (url && /^https?:\/\//i.test(url)) {
-                    span.title = (isEn ? "Open original source in a new tab: " : "افتح المصدر الأصلي في تبويب جديد: ") + src;
-                    span.style.cursor = "pointer";
-                    span.setAttribute("role", "link");
-                    span.setAttribute("tabindex", "0");
-                    span.setAttribute("data-url", url);
-                    function openTickerSource(ev) {
-                        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-                        fbrahLogToTerminal("USER", "Clicked news ticker item", {news: body.substring(0, 60), source: src, url: url});
-                        // فتح المصدر لا يغيّر حالة الحركة أو يعيد بناء الشريط.
-                        try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e) {}
+            function buildSequence() {
+                var seq = document.createElement("div");
+                seq.className = "ticker-sequence";
+                items.forEach(function (item) {
+                    if (!item || typeof item !== "object") return;
+                    var body = String(item.text || "").trim();
+                    if (!body) return;
+                    var src = String(item.source || (isEn ? "Source" : "مصدر")).trim();
+                    var url = String(item.url || "").trim();
+                    var isJoke = /نكتة|joke|Light joke/i.test(item.cat || "") || item.icon === "😄";
+                    var cat = (typeof fbrahTickerCatLabel === "function")
+                        ? fbrahTickerCatLabel(item.cat || (isEn ? "News" : "خبر"))
+                        : (item.cat || (isEn ? "News" : "خبر"));
+
+                    var span = document.createElement("span");
+                    span.className = "ticker-item" + (isJoke ? " ticker-joke" : "");
+
+                    var catEl = document.createElement("span");
+                    catEl.className = "ticker-cat";
+                    catEl.textContent = cat;
+                    span.appendChild(catEl);
+
+                    var bodyEl = document.createElement("span");
+                    bodyEl.textContent = (item.icon || "▪") + " " + body;
+                    span.appendChild(bodyEl);
+
+                    var srcEl = document.createElement("span");
+                    srcEl.className = "ticker-source";
+                    srcEl.textContent = isEn ? (" — Source: " + src) : (" — المصدر: " + src);
+                    span.appendChild(srcEl);
+
+                    if (isArticleUrl(url)) {
+                        span.title = (isEn ? "Open article: " : "افتح الخبر: ") + src;
+                        span.style.cursor = "pointer";
+                        span.setAttribute("data-url", url);
+                    } else if (isJoke) {
+                        span.title = isEn ? "FBRAH joke" : "نكتة فبرا";
+                    } else {
+                        span.title = src;
                     }
-                    span.addEventListener("click", openTickerSource);
-                    span.addEventListener("keydown", function(ev) {
-                        if (ev.key === "Enter" || ev.key === " ") openTickerSource(ev);
-                    });
-                } else if (isJoke) {
-                    span.title = isEn ? "A light joke by FBRAH" : "نكتة خفيفة من فبرا";
-                    span.addEventListener("click", function() {
-                        var q = document.getElementById("question");
-                        if (q) {
-                            q.value = isEn ? ("Write a fresh light Egyptian joke similar in style to: " + body) : ("اكتب نكتة مصرية جديدة خفيفة على نفس النمط: " + body);
-                            q.focus();
-                        }
-                    });
-                }
-                sequence.appendChild(span);
+                    seq.appendChild(span);
+                });
+                return seq;
             }
 
-            var first = document.createElement("div");
-            first.className = "ticker-sequence";
-            first.setAttribute("aria-label", isEn ? "News and information" : "الأخبار والمعلومات");
-            items.forEach(function(item) { addItem(first, item); });
-            // لا نترك فجوة كبيرة عندما تعيد المصادر عدداً قليلاً من الأخبار:
-            // نكرر عناصر الموجز الحقيقي (مع المصدر والرابط نفسيهما) حتى يغطي المسار العرض.
-            // لا ننشئ أخباراً أو معلومات جديدة، والحد الأقصى يمنع تضخماً غير محدود.
-            marquee.appendChild(first);
-            var tickerViewportWidth = tickerWrap ? tickerWrap.clientWidth : 0;
-            var fillPass = 0;
-            while (tickerViewportWidth > 0 && first.scrollWidth < tickerViewportWidth * 1.35 && fillPass < 8) {
-                items.forEach(function(item) { addItem(first, item); });
-                fillPass += 1;
+            var first = buildSequence();
+            if (!first.childNodes.length) {
+                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
+                if (!items.length) return false;
+                first = buildSequence();
             }
+
+            marquee.replaceChildren();
+            marquee.appendChild(first);
+
+            var vw = tickerWrap ? tickerWrap.clientWidth : 800;
+            if (first.scrollWidth < Math.max(vw, 400) * 1.1) {
+                var seed = Array.prototype.slice.call(first.childNodes);
+                seed.forEach(function (n) { first.appendChild(n.cloneNode(true)); });
+            }
+
             var second = first.cloneNode(true);
-            // إعادة ربط أحداث النقر في النسخة الثانية لأن cloneNode لا ينسخ المستمعات.
-            var secondItems = second.querySelectorAll(".ticker-item");
-            secondItems.forEach(function(node, index) {
-                var original = items[index % items.length] || {};
-                var url = String(original.url || "").trim();
-                var isJoke = /نكتة|joke|Light joke/i.test(original.cat || "") || original.icon === "😄";
-                if (url && /^https?:\/\//i.test(url)) {
-                    node.addEventListener("click", function(ev) {
-                        ev.preventDefault(); ev.stopPropagation();
-                        try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e) {}
-                    });
-                    node.addEventListener("keydown", function(ev) {
-                        if (ev.key === "Enter" || ev.key === " ") {
-                            ev.preventDefault();
-                            try { window.open(url, "_blank", "noopener,noreferrer"); } catch (e) {}
-                        }
-                    });
-                } else if (isJoke) {
-                    node.addEventListener("click", function() {
-                        var q = document.getElementById("question");
-                        if (q) { q.value = isEn ? "Write a fresh light Egyptian joke." : "اكتب نكتة مصرية جديدة خفيفة."; q.focus(); }
-                    });
-                }
-            });
             marquee.appendChild(second);
+
+            // معالج نقر واحد بالتفويض — يمنع فتح المصدر مرتين
+            if (marquee.dataset.clickBound !== "1") {
+                marquee.dataset.clickBound = "1";
+                marquee.addEventListener("click", function (ev) {
+                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+                    if (!node) return;
+                    var u = node.getAttribute("data-url") || "";
+                    if (!/^https?:\/\//i.test(u)) return;
+                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
+                    try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
+                });
+            }
+
+            // توقف الشريط عند مرور الماوس على الخبر، واستئناف عند الإبعاد
+            // لا يلغي الإيقاف اليدوي (زر ⏸)
+            if (marquee.dataset.hoverBound !== "1") {
+                marquee.dataset.hoverBound = "1";
+                marquee.addEventListener("mouseenter", function () {
+                    if (marquee.dataset.userPaused === "1") return;
+                    marquee.style.animationPlayState = "paused";
+                    marquee.dataset.hoverPaused = "1";
+                });
+                marquee.addEventListener("mouseleave", function () {
+                    if (marquee.dataset.userPaused === "1") return;
+                    if (marquee.dataset.hoverPaused === "1") {
+                        marquee.style.animationPlayState = "running";
+                        marquee.dataset.hoverPaused = "0";
+                    }
+                });
+            }
+
             marquee.style.animationPlayState = wasPaused ? "paused" : "running";
             marquee.dataset.userPaused = wasPaused ? "1" : "0";
+
+            try {
+                var badge = document.querySelector("#tickerDragHandle .ticker-title");
+                if (badge) {
+                    badge.textContent = isEn
+                        ? ("⚡ FBRAH | News (" + items.length + ")")
+                        : ("⚡ فبرا | موجز (" + items.length + ")");
+                }
+            } catch (eB) {}
+
+            try {
+                requestAnimationFrame(function () {
+                    if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
+                });
+            } catch (eT) {}
             return true;
         }
 
-        var _fbrahNewsTimer = null;
-        var _fbrahNewsRequest = null;
-        var _fbrahNewsRequestLang = "";
-        var _fbrahLastGoodNews = { ar: null, en: null };
+        function fbrahTickerHasRealItems(marquee) {
+            if (!marquee) return false;
+            var nodes = marquee.querySelectorAll(".ticker-item");
+            if (!nodes || !nodes.length) return false;
+            for (var i = 0; i < nodes.length; i++) {
+                var txt = (nodes[i].textContent || "").trim();
+                // تجاهل رسالة التحميل فقط
+                if (txt && !/جاري تحميل|Loading latest|Loading news/i.test(txt)) return true;
+            }
+            return false;
+        }
         function fetchLiveNews(force) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return;
             var feedLang = fbrahIsEn() ? "en" : "ar";
-            var hasVisibleItems = !!marquee.querySelector(".ticker-item");
+            var hasReal = fbrahTickerHasRealItems(marquee);
 
-            // لا تمسح الأخبار الحالية عند بدء التحديث؛ نعرض البديل فقط في أول تشغيل.
-            if (!hasVisibleItems) {
-                var cached = _fbrahLastGoodNews[feedLang];
-                if (cached && cached.length) renderTickerItems(cached);
+            // لا تمسح الشريط أثناء التحديث — اعرض احتياطياً فقط إذا كان فارغاً فعلاً
+            if (!hasReal) {
+                var cached0 = _fbrahLastGoodNews[feedLang];
+                if (cached0 && cached0.length) renderTickerItems(cached0);
                 else renderTickerItems(fbrahTickerFallbackItems());
             }
+
             if (_fbrahNewsRequest && _fbrahNewsRequestLang === feedLang) return;
             if (_fbrahNewsRequest && _fbrahNewsRequestLang !== feedLang) {
                 try { _fbrahNewsRequest.abort(); } catch (eAbort) {}
@@ -2925,27 +3034,37 @@
                     if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
                     var items = data && Array.isArray(data.items) ? data.items.filter(function(x){ return x && typeof x.text === "string" && x.text.trim(); }) : [];
                     if (items.length) {
+                        var sig = items.map(function(x){ return (x.text||"").slice(0,60); }).join("|");
+                        var prevSig = marquee.dataset.itemsSig || "";
                         _fbrahLastGoodNews[feedLang] = items.slice();
-                        renderTickerItems(items);
-                    } else if (!marquee.querySelector(".ticker-item")) {
+                        // أعد البناء عند تغيّر الموجز أو فراغ الشريط أو تحديث إجباري
+                        if (force || sig !== prevSig || !fbrahTickerHasRealItems(marquee)) {
+                            marquee.dataset.itemsSig = sig;
+                            renderTickerItems(items);
+                        }
+                    } else if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
-                    // عند غياب موجز جديد نحتفظ بآخر موجز صالح بدلاً من تفريغ الشريط أو استبداله.
                 })
                 .catch(function(){
                     clearTimeout(timer);
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
                     if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
-                    if (!marquee.querySelector(".ticker-item")) {
+                    if (!fbrahTickerHasRealItems(marquee)) {
                         renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
                     }
                 });
         }
         function startLiveNewsAutoRefresh() {
             try { if (_fbrahNewsTimer) clearInterval(_fbrahNewsTimer); } catch (e) {}
+            var _fbrahNewsTick = 0;
             _fbrahNewsTimer = setInterval(function () {
-                try { fetchLiveNews(false); } catch (e1) {}
-            }, 90000);
+                try {
+                    _fbrahNewsTick += 1;
+                    // كل 45 ثانية تحديث؛ كل ثالثة مرة إجبار من المصدر
+                    fetchLiveNews(_fbrahNewsTick % 3 === 0);
+                } catch (e1) {}
+            }, 45000);
             if (window._fbrahNewsVisibilityHandler) {
                 document.removeEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
             }
@@ -2974,9 +3093,18 @@ function toggleTickerPause() {
         function setTickerSpeed(level) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return;
-            // ثلاث سرعات أبطأ لقراءة مريحة للجمل والمصادر
-            var map = { slow: "720s", normal: "540s", fast: "390s" };
-            var dur = map[level] || map.slow;
+            level = level || "slow";
+            var isEn = (typeof fbrahIsEn === "function" && fbrahIsEn());
+            // مدة الدورة حسب نصف عرض المحتوى لسرعة قراءة ثابتة
+            var pxMap = isEn
+                ? { slow: 38, normal: 58, fast: 85 }
+                : { slow: 42, normal: 65, fast: 95 };
+            var px = pxMap[level] || pxMap.slow;
+            var half = Math.max((marquee.scrollWidth || 1200) / 2, 700);
+            var sec = Math.max(100, Math.min(800, Math.round(half / px)));
+            var dur = sec + "s";
+            marquee.dataset.speedLevel = level;
+            marquee.style.animationName = "ticker-scroll";
             marquee.style.setProperty("--ticker-duration", dur);
             marquee.style.animationDuration = dur;
             try { localStorage.setItem("fbrahTickerSpeed", level); } catch (e) {}
@@ -2984,7 +3112,15 @@ function toggleTickerPause() {
                 b.classList.toggle("active", b.getAttribute("data-speed") === level);
             });
         }
+        function fbrahRetuneTickerSpeed() {
+            var marquee = document.getElementById("tickerMarquee");
+            if (!marquee) return;
+            var level = marquee.dataset.speedLevel || "slow";
+            try { level = localStorage.getItem("fbrahTickerSpeed") || level; } catch (e) {}
+            setTickerSpeed(level);
+        }
         window.setTickerSpeed = setTickerSpeed;
+        window.fbrahRetuneTickerSpeed = fbrahRetuneTickerSpeed;
         (function initTickerSpeed() {
             try {
                 var s = localStorage.getItem("fbrahTickerSpeed") || "slow";
@@ -3619,7 +3755,7 @@ function toggleTickerPause() {
                 sentimentPos: "المشاعر: إيجابي ≈",
                 sentimentNeg: "المشاعر: سلبي — راعِ إعادة الصياغة",
                 sentimentMix: "المشاعر: مختلط",
-                voiceSync: "النداء + التحدث: فعّل النداء → قل فبرا → الخانة ذهبية = تحدّث",
+                voiceSync: "النداء → تحدث → إرسال: 🔔 تفعيل ← قل فبرا ← 🎤 تحدّث ← 🚀 إرسال. التسجيل منفصل: ● سجل فقط",
                 bigPanel: "شريط كبير",
                 untilStop: "حتى الإيقاف",
                 statusUploading: "جاري الرفع",
@@ -3789,7 +3925,7 @@ function toggleTickerPause() {
                 sentimentPos: "Sentiment: positive ≈",
                 sentimentNeg: "Sentiment: negative — consider rephrasing",
                 sentimentMix: "Sentiment: mixed",
-                voiceSync: "Wake + talk: enable wake → say FBRAH → gold box = speak",
+                voiceSync: "Wake → Talk → Send: 🔔 enable → say FBRAH → 🎤 talk → 🚀 send. Recording is separate: ● Record only",
                 bigPanel: "Large banner",
                 untilStop: "Until stopped",
                 statusUploading: "Uploading",
@@ -5143,12 +5279,82 @@ function toggleTickerPause() {
         function stripWakePhrase(text) {
             var t = (text || "").trim();
             // لا تلمس كلمة فبراير
-            if (/فبراير|february/i.test(t)) return t;
-            t = t.replace(/(^|[\s،,])يا?\s*ف\s*ب\s*ر\s*ا(?:ه|ي)?(?![ا-ي])/gi, " ");
-            t = t.replace(/\bfbrah\b/gi, " ");
-            t = t.replace(/(^|[\s،,])يا?\s*(فبرا|خبرا|صبرا|فبره)(?![ا-ي])/gi, " ");
+            if (/^\s*فبراير\b/i.test(t) || /^\s*february\b/i.test(t)) return t;
+            // إزالة كل أشكال النداء من أي موضع (لا تظهر في خانة البحث)
+            t = t.replace(/ف\s*ب\s*ر\s*ا\s*[هيي]?/gi, " ");
+            t = t.replace(/\b(f\s*b\s*r\s*a\s*h?|fbrah|fbra|feebra|fibra|febra|phbra)\b/gi, " ");
+            t = t.replace(/(^|[\s،,\.:؛])يا?\s*(فبرا|فبراه|فبراي|فبره|فبرة|فيبرا|خبرا|صبرا|صبره)(?![ا-ي])/gi, " ");
+            t = t.replace(/^(يا\s*)?(فبرا|فبراه|فبراي|خبرا|صبرا|صبره|fbrah|fbra)\s*[,،:\-–—]*\s*/i, "");
+            t = t.replace(/\s+(يا\s*)?(فبرا|فبراه|خبرا|صبرا|fbrah|fbra)\s*$/i, "");
             return t.replace(/\s+/g, " ").trim();
         }
+        // حالة التقاط الصوت: لا يُفعَّل الإرسال حتى اكتمال الطلب
+        var voiceCaptureActive = false;
+        var voiceCaptureReady = false;
+        function setSendEnabled(on, reason) {
+            try {
+                var sendBtn = document.getElementById("sendBtn");
+                if (!sendBtn) return;
+                if (on) {
+                    sendBtn.disabled = false;
+                    sendBtn.classList.remove("voice-wait");
+                    sendBtn.title = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "Send question" : "إرسال السؤال";
+                } else {
+                    // لا تعطّل إن كان المستخدم يكتب يدوياً بدون جلسة صوت نشطة
+                    if (!voiceCaptureActive) return;
+                    sendBtn.disabled = true;
+                    sendBtn.classList.add("voice-wait");
+                    sendBtn.title = reason || ((typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "Waiting until voice question is complete…"
+                        : "بانتظار اكتمال الطلب الصوتي…");
+                }
+            } catch (e) {}
+        }
+        function markVoiceCaptureStart() {
+            voiceCaptureActive = true;
+            voiceCaptureReady = false;
+            setSendEnabled(false);
+        }
+        function markVoiceCaptureReady() {
+            voiceCaptureReady = true;
+            voiceCaptureActive = false;
+            setSendEnabled(true);
+        }
+        function clearVoiceCapture() {
+            voiceCaptureActive = false;
+            voiceCaptureReady = false;
+            setSendEnabled(true);
+        }
+
+        // منع الإرسال أثناء التقاط الصوت حتى يكتمل الطلب
+        (function guardSendUntilVoiceReady() {
+            function onSendAttempt(ev) {
+                try {
+                    if (!voiceCaptureActive || voiceCaptureReady) return;
+                    var t = ev.target;
+                    if (!t) return;
+                    var isSend = (t.id === "sendBtn") || (t.closest && t.closest("#sendBtn"));
+                    var isForm = (t.id === "mainForm") || (t.closest && t.closest("#mainForm") && ev.type === "submit");
+                    if (isSend || (ev.type === "submit" && document.getElementById("mainForm") && ev.target === document.getElementById("mainForm"))) {
+                        // السماح إن كتب المستخدم يدوياً نصاً واضحاً أثناء التعطيل
+                        var q = document.getElementById("question");
+                        var typed = q ? stripWakePhrase(q.value || "").trim() : "";
+                        if (typed.length >= 3 && !isListening) {
+                            markVoiceCaptureReady();
+                            return;
+                        }
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        setVoiceStatus(fbrahLang()==="en"
+                            ? "Please finish speaking — send unlocks when the question is complete."
+                            : "أكمل التحدث أولاً — يُفعَّل الإرسال بعد اكتمال الطلب الصوتي.");
+                    }
+                } catch (e) {}
+            }
+            document.addEventListener("click", onSendAttempt, true);
+            document.addEventListener("submit", onSendAttempt, true);
+        })();
 
         function analyzeSentiment(text) {
             text = (text || "").toLowerCase();
@@ -5173,7 +5379,18 @@ function toggleTickerPause() {
             if (silenceSubmitTimer) { clearTimeout(silenceSubmitTimer); silenceSubmitTimer = null; }
             try { if (recognition) recognition.stop(); } catch (e) {}
             var btn = document.getElementById("micBtn");
-            if (btn) btn.classList.remove("listening");
+            if (btn) {
+                btn.classList.remove("listening");
+                try {
+                    btn.style.background = "";
+                    btn.style.borderColor = "";
+                    btn.style.color = "";
+                    btn.style.boxShadow = "";
+                    btn.textContent = (typeof fbrahT === "function") ? fbrahT("talk", "🎤 تحدث") : "🎤 تحدث";
+                } catch (e2) {}
+            }
+            // لا تُبقِ الإرسال معطلاً إن أوقف المستخدم الاستماع يدوياً
+            try { if (typeof clearVoiceCapture === "function") clearVoiceCapture(); } catch (e3) {}
         }
 
         var voiceSubmitLock = false;
@@ -5194,8 +5411,14 @@ function toggleTickerPause() {
                 return;
             }
             voiceSubmitLock = true;
-            // إن بدأ النداء بفبرا/خبرا وأكمل السؤال: أرسل السؤال كاملاً (الخادم يزيل النداء)
-            // لا تُرسل «فبرا» وحدها إن وُجدت بقية الجملة
+            // إزالة النداء نهائياً من النص ومن خانة البحث
+            text = stripWakePhrase(text || "").trim();
+            if (!text || /^(يا\s*)?(فبرا|فبراه|خبرا|صبرا|صبره|fbrah|fbra)$/i.test(text)) {
+                voiceSubmitLock = false;
+                setVoiceStatus(fbrahLang()==="en" ? "No question after wake — speak your request" : "لا يوجد سؤال بعد النداء — تحدّث بطلبك");
+                return;
+            }
+            markVoiceCaptureReady();
             var qEl = document.getElementById("question");
             if (qEl) qEl.value = text;
             try {
@@ -5331,8 +5554,9 @@ function toggleTickerPause() {
                             }
                         } catch (e3) {}
                         if (rest.length > 2) {
-                            voiceAccum = rest;
-                            document.getElementById("question").value = voiceAccum;
+                            voiceAccum = stripWakePhrase(rest || "");
+                            var _qb = document.getElementById("question");
+                            if (_qb) _qb.value = voiceAccum; // بدون اسم فبرا
                             setVoiceUiState("listen");
                             var micB2 = document.getElementById("micBtn");
                             if (micB2) micB2.classList.add("listening");
@@ -5424,15 +5648,21 @@ function toggleTickerPause() {
                 setVoiceStatus(fbrahT("vsHear","✓ يسمع:") + " " + stripped);
 
                 if (silenceSubmitTimer) clearTimeout(silenceSubmitTimer);
-                // انتظر صمتاً أطول لاستكمال الجملة بعد النداء
+                // انتظر صمتاً كافياً لاستكمال الجملة — ثم فعّل الإرسال
                 silenceSubmitTimer = setTimeout(function () {
                     var q = stripWakePhrase(lastTranscript || voiceAccum || "").trim();
-                    if (q && q.length > 1 && !/^(يا\s*)?(فبرا|فبراه|خبرا|صبرا)$/i.test(q)) {
+                    if (q && q.length > 1 && !/^(يا\s*)?(فبرا|فبراه|خبرا|صبرا|صبره|fbrah|fbra)$/i.test(q)) {
+                        var qBox2 = document.getElementById("question");
+                        if (qBox2) qBox2.value = q; // بدون اسم فبرا
+                        markVoiceCaptureReady();
+                        setVoiceStatus((fbrahLang()==="en" ? "✓ Ready to send: " : "✓ جاهز للإرسال: ") + q.slice(0, 80));
+                        // إرسال تلقائي بعد التأكد من اكتمال الصوت
                         submitVoiceQuestion(q);
                     } else {
-                        setVoiceStatus(fbrahLang()==="en" ? "Question incomplete — speak after wake" : "لم يكتمل السؤال — أعد التحدث بعد النداء");
+                        setVoiceStatus(fbrahLang()==="en" ? "Question incomplete — continue speaking" : "لم يكتمل السؤال — واصل التحدث");
+                        setSendEnabled(false);
                     }
-                }, 2200);
+                }, 3000);
             };
 
             recognition.onerror = function (e) {
@@ -5573,8 +5803,11 @@ function toggleTickerPause() {
             } catch (e) {}
         }
         function enterListenAfterWake(restText) {
-            restText = (restText || "").trim();
+            // لا تُعرض كلمة النداء أبداً في خانة البحث
+            restText = stripWakePhrase(restText || "").trim();
+            if (/^(يا\s*)?(فبرا|فبراه|خبرا|صبرا|صبره|fbrah|fbra)$/i.test(restText)) restText = "";
             fbrahLogToTerminal("VOICE", "Wake word recognized — mic listening active", {phrase: restText});
+            markVoiceCaptureStart();
             wakeListening = false;
             isListening = true;
             voiceAccum = restText.length > 2 ? restText : "";
@@ -5583,28 +5816,32 @@ function toggleTickerPause() {
             var micB = document.getElementById("micBtn");
             if (micB) {
                 micB.classList.add("listening");
-                micB.style.background = "#001F3F";
-                micB.style.borderColor = "#d4af37";
+                micB.style.background = "#0a7a2f";
+                micB.style.borderColor = "#FFEF00";
                 micB.style.color = "#FFEF00";
-                micB.textContent = fbrahLang()==="en" ? "🎤 Listening..." : "🎤 جاري الاستماع...";
+                micB.style.boxShadow = "0 0 0 3px rgba(255,239,0,.35), 0 4px 16px rgba(10,122,47,.45)";
+                micB.textContent = fbrahLang()==="en" ? "🎤 Listening… speak now" : "🎤 يستمع — تحدّث الآن";
             }
-            try {
-                var taW = document.getElementById("question");
-                if (taW) { taW.classList.add("voice-wake"); setTimeout(function(){ try{ taW.classList.remove("voice-wake"); }catch(e){} }, 2500); }
-            } catch (eW) {}
             var ta = document.getElementById("question");
             if (ta) {
+                // فارغة عند النداء فقط — أو السؤال بعد إزالة النداء
                 ta.value = voiceAccum;
+                try { ta.classList.add("voice-wake"); } catch (e0) {}
+                setTimeout(function () { try { ta.classList.remove("voice-wake"); } catch (e1) {} }, 2800);
                 try { ta.focus(); } catch (e) {}
             }
-            setVoiceStatus(fbrahT("vsTimeTalk", "✓ حان وقت التحدث — اسأل الآن"));
+            setVoiceStatus(fbrahT("vsTimeTalk", "✓ حان وقت التحدث — اسأل الآن (الإرسال بعد اكتمال الصوت)"));
             // إعادة تشغيل محرك التعرف من الصفر بعد النداء
-            try { hardStopMic(); } catch (e) {}
+            try {
+                isListening = false; // مؤقت لإيقاف دورة النداء
+                if (recognition) recognition.stop();
+            } catch (e) {}
             isListening = true;
             wakeListening = false;
             var rec = getRecognition();
             if (!rec) {
                 setVoiceStatus(fbrahLang()==="en" ? "Speech recognition unavailable — type your question" : "التعرف غير متاح — اكتب السؤال");
+                clearVoiceCapture();
                 return;
             }
             try {
@@ -5622,13 +5859,17 @@ function toggleTickerPause() {
                     if (n < 5) setTimeout(function () { tryStart(n + 1); }, 300);
                 }
             }
-            setTimeout(function () { tryStart(0); }, 250);
+            setTimeout(function () { tryStart(0); }, 280);
+            // إن جاء جزء من السؤال مع النداء: انتظر صمتاً أطول قبل الإرسال
             if (restText.length > 2) {
                 if (silenceSubmitTimer) clearTimeout(silenceSubmitTimer);
                 silenceSubmitTimer = setTimeout(function () {
                     var q = stripWakePhrase(voiceAccum || "").trim();
-                    if (q && q.length > 1 && !isClearBoxCommand(q)) submitVoiceQuestion(q);
-                }, 2400);
+                    if (q && q.length > 1 && !isClearBoxCommand(q)) {
+                        markVoiceCaptureReady();
+                        submitVoiceQuestion(q);
+                    }
+                }, 3200);
             }
         }
         function startWakeListener() {
@@ -5725,23 +5966,76 @@ function toggleTickerPause() {
             }
         }
 
+        // أنماط نطق متنوعة: لهجات عربية + أعماق صوتية + إيقاع
+        var __fbrahSpeechStyleIdx = 0;
+        var FBRAH_SPEECH_STYLES = [
+            { id: "eg_warm",   lang: "ar-EG", pitch: 1.05, rate: 0.95, label: "مصرية دافئة" },
+            { id: "eg_firm",   lang: "ar-EG", pitch: 0.88, rate: 0.98, label: "مصرية حازمة" },
+            { id: "sa_deep",   lang: "ar-SA", pitch: 0.75, rate: 0.90, label: "خليجية عميقة" },
+            { id: "sa_bright", lang: "ar-SA", pitch: 1.12, rate: 1.05, label: "خليجية واضحة" },
+            { id: "ae_soft",   lang: "ar-AE", pitch: 1.10, rate: 0.92, label: "إماراتية ناعمة" },
+            { id: "msa_news",  lang: "ar-SA", pitch: 0.95, rate: 1.00, label: "فصحى إخبارية" },
+            { id: "msa_calm",  lang: "ar-EG", pitch: 1.00, rate: 0.88, label: "فصحى هادئة" },
+            { id: "en_us",     lang: "en-US", pitch: 1.00, rate: 1.00, label: "English US" },
+            { id: "en_gb",     lang: "en-GB", pitch: 0.95, rate: 0.96, label: "English UK" }
+        ];
+        function nextSpeechStyle(preferLang) {
+            var styles = FBRAH_SPEECH_STYLES.slice();
+            var pref = (preferLang || "ar").slice(0, 2).toLowerCase();
+            styles = styles.filter(function (s) { return (s.lang || "").slice(0, 2).toLowerCase() === pref; });
+            if (!styles.length) styles = FBRAH_SPEECH_STYLES.slice();
+            __fbrahSpeechStyleIdx = (__fbrahSpeechStyleIdx + 1) % styles.length;
+            return styles[__fbrahSpeechStyleIdx];
+        }
+        function moodToPitchRate(mood) {
+            var map = {
+                neutral: { pitch: 1.0, rate: 1.0 },
+                deep:    { pitch: 0.72, rate: 0.88 },
+                soft:    { pitch: 1.18, rate: 0.90 },
+                bright:  { pitch: 1.22, rate: 1.10 },
+                warm:    { pitch: 1.06, rate: 0.94 },
+                sad:     { pitch: 0.82, rate: 0.80 },
+                firm:    { pitch: 0.90, rate: 1.02 }
+            };
+            return map[mood] || map.neutral;
+        }
         function pickVoice(lang) {
-            var _gPref = (typeof getVoiceGender==='function' && getVoiceGender()) || 'auto';
-            function scoreVoiceGender(v){var n=((v&&v.name)||'').toLowerCase();var s=0;if(_gPref==='female'&&/female|woman|zira|samantha|hana|noura/.test(n))s+=6;if(_gPref==='male'&&/male|david|mark|adam|mohammed/.test(n))s+=6;if(_gPref==='female'&&/male|david|mark/.test(n))s-=4;if(_gPref==='male'&&/female|zira|samantha/.test(n))s-=4;return s;}
-
-            var voices = window.speechSynthesis.getVoices() || [];
-            var genderEl = document.getElementById("ttsGender");
-            var gender = genderEl ? genderEl.value : "auto";
+            var _gPref = (typeof getVoiceGender === "function" && getVoiceGender()) || "auto";
+            var voices = [];
+            try { voices = window.speechSynthesis.getVoices() || []; } catch (e) { voices = []; }
+            var genderEl = document.getElementById("ttsGender") || document.getElementById("voiceGender");
+            var gender = genderEl ? genderEl.value : _gPref;
+            var langPref = (lang || "ar-EG").toLowerCase();
+            var dialectHints = [
+                { re: /ar-eg|egypt|naayf|hoda|maged|egyptian/i, bonus: 8 },
+                { re: /ar-sa|saudi|arabia|hoda|naayf/i, bonus: 6 },
+                { re: /ar-ae|uae|emirates/i, bonus: 5 },
+                { re: /ar-kw|kuwait/i, bonus: 4 },
+                { re: /ar-ma|morocco/i, bonus: 3 },
+                { re: /ar-lb|lebanon/i, bonus: 3 }
+            ];
             function score(v) {
-                var n = (v.name || "").toLowerCase();
+                var n = ((v && v.name) || "").toLowerCase();
+                var vl = ((v && v.lang) || "").toLowerCase();
                 var s = 0;
-                if (v.lang === lang) s += 5;
-                else if (v.lang && v.lang.indexOf(lang.split("-")[0]) === 0) s += 3;
-                if (gender === "female" && /(female|woman|zira|susan|samantha|noura|hana)/i.test(n)) s += 4;
-                if (gender === "male" && /(male|man|david|mark|george|hassan)/i.test(n)) s += 4;
+                if (vl === langPref) s += 10;
+                else if (vl.indexOf(langPref.slice(0, 2)) === 0) s += 5;
+                for (var i = 0; i < dialectHints.length; i++) {
+                    if (dialectHints[i].re.test(vl + " " + n)) s += dialectHints[i].bonus;
+                }
+                if (gender === "female" && /female|woman|zira|susan|samantha|noura|hana|zira|aria/i.test(n)) s += 5;
+                if (gender === "male" && /male|man|david|mark|george|hassan|adam|mohammed|guy/i.test(n)) s += 5;
+                if (gender === "female" && /male|david|mark|guy\b/i.test(n)) s -= 4;
+                if (gender === "male" && /female|zira|samantha/i.test(n)) s -= 4;
+                // تنويع: أضف عشوائية خفيفة لكسر التكرار
+                s += Math.random() * 2.5;
                 return s;
             }
             var ranked = voices.slice().sort(function (a, b) { return score(b) - score(a); });
+            // اختر من أفضل 3 إن وُجدت لتنويع الصوت
+            if (ranked.length >= 3) {
+                return ranked[Math.floor(Math.random() * Math.min(3, ranked.length))];
+            }
             return ranked.length ? ranked[0] : null;
         }
 
@@ -5946,14 +6240,24 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 if (ttsEl) ttsEl.value = lang;
             } catch (eTL) {}
             var baseRate = (typeof getRate === "function" && getRate()) || 1;
+            // أسلوب ولهجة متغيّران لكل قراءة (عمق/إيقاع/لهجة)
+            var runStyle = null;
+            try { runStyle = (typeof nextSpeechStyle === "function") ? nextSpeechStyle(lang) : null; } catch (eRS) {}
+            if (runStyle) {
+                if (runStyle.lang && (lang || "").indexOf("ar") === 0) lang = runStyle.lang;
+                baseRate = Math.max(0.72, Math.min(1.28, baseRate * (runStyle.rate || 1)));
+                try {
+                    if (st) st.textContent = ((lang.indexOf("ar") === 0) ? "أسلوب النطق: " : "Speech style: ") + (runStyle.label || runStyle.id);
+                } catch (eL) {}
+            }
             var idx = 0;
 
             function go() {
                 if (thisRun !== speechRunToken) return;
                 if (idx >= queue.length) {
                     if (st) st.textContent = (lang.indexOf("ar") === 0)
-                        ? ("انتهى النطق — " + queue.length + " مقطع")
-                        : ("Done — " + queue.length + " parts");
+                        ? ("انتهى النطق — " + queue.length + " مقطع" + (runStyle ? (" · " + runStyle.label) : ""))
+                        : ("Done — " + queue.length + " parts" + (runStyle ? (" · " + runStyle.label) : ""));
                     if (opts.afterSpeak === "wake") {
                         try { setTimeout(function () { startWakeListener(); }, 400); } catch (eW) {}
                     }
@@ -5964,12 +6268,20 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 var item = queue[idx++];
                 var pr = pitchRateForProfile(item.gender, item.age, item.mood);
                 var chunkLang = (typeof detectLangForTts === "function") ? detectLangForTts(item.say) : lang;
+                // تنويع خفيف بين المقاطع داخل نفس القراءة
+                var pitchJitter = 0.96 + (Math.random() * 0.08);
+                var rateJitter = 0.97 + (Math.random() * 0.06);
                 var u = new SpeechSynthesisUtterance(item.say);
                 u.lang = chunkLang || lang;
-                u.rate = Math.max(0.6, Math.min(1.35, baseRate * pr.rate));
-                try { u.pitch = pr.pitch; } catch (e2) {}
+                if (runStyle && runStyle.lang && (u.lang || "").indexOf("ar") === 0) u.lang = runStyle.lang;
+                u.rate = Math.max(0.6, Math.min(1.35, baseRate * pr.rate * rateJitter));
+                try {
+                    var pitchBase = pr.pitch * (runStyle && runStyle.pitch ? runStyle.pitch : 1) * pitchJitter;
+                    u.pitch = Math.max(0.6, Math.min(1.4, pitchBase));
+                } catch (e2) {}
                 var v = pickVoiceForProfile(u.lang, item.gender, item.age);
                 if (!v) v = pickVoiceForLang(u.lang);
+                if (!v && typeof pickVoice === "function") v = pickVoice(u.lang);
                 if (!v && (u.lang || "").indexOf("ar") === 0) {
                     try {
                         var vs = window.speechSynthesis.getVoices() || [];
@@ -7707,11 +8019,19 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             stream: null,
             startedAt: 0,
             timerIv: null,
-            maxMs: 120 * 60 * 1000,
+            maxMs: 120 * 60 * 1000,  // ساعتان — لا يتوقف إلا بعدهما أو بزر الإيقاف
             recording: false,
             transcript: "",
-            apiBase: "/api/recordings"
+            apiBase: "/api/recordings",
+            _userArmed: false  // true فقط بعد ضغط زر ● سجل
         };
+        // منع أي استئناف تلقائي للتسجيل عند تحميل الصفحة — التسجيل فقط بزر ● سجل
+        try {
+            localStorage.removeItem("fbrahRecActive");
+            localStorage.removeItem("fbrahRecStart");
+        } catch (eClr) {}
+        // لا تستأنف النداء الصوتي تلقائياً عند التحميل (يمنع ظهور الميكروفون كـ«تسجيل تلقائي»)
+        try { sessionStorage.removeItem("fbrahWakeEnabled"); } catch (eW0) {}
         async function fbrahRecProbe() {
             var bases = ["/api/recordings", "/recordings/api"];
             for (var i = 0; i < bases.length; i++) {
@@ -7738,7 +8058,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             var sec = (Date.now() - fbrahRec.startedAt) / 1000;
             el.textContent = fbrahRecFmt(sec);
             if (Date.now() - fbrahRec.startedAt >= fbrahRec.maxMs) {
-                fbrahRecStop();
+                fbrahRecStop("max_duration_2h");
             }
         }
         function fbrahRecHeaders() {
@@ -7844,7 +8164,21 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 setVoiceStatus(fbrahLang() === "en" ? "Recording deleted" : "تم حذف التسجيل");
             } catch (e) {}
         }
-        async function fbrahRecStart() {
+        async function fbrahRecStart(ev) {
+            // لا يبدأ التسجيل إلا من ضغطة زر صريحة (Gesture)
+            try {
+                if (ev && ev.type && !/^click|pointerup|touchend$/i.test(ev.type)) {
+                    console.warn("FBRAH: blocked non-gesture record start", ev.type);
+                    return;
+                }
+            } catch (eG) {}
+            // إن استُدعيت بدون حدث (من كود داخلي) — ارفض إلا إذا مرّت عبر الزر
+            if (!ev && !fbrahRec._allowProgrammaticStart) {
+                console.warn("FBRAH: blocked programmatic record start");
+                return;
+            }
+            fbrahRec._userArmed = true;
+            fbrahRec._allowProgrammaticStart = false;
             if (fbrahRec.recording) return;
             var st = document.getElementById("recStatus");
             try {
@@ -7873,7 +8207,14 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             try {
                 fbrahRec.mediaRec = mime ? new MediaRecorder(fbrahRec.stream, { mimeType: mime }) : new MediaRecorder(fbrahRec.stream);
             } catch (e) {
-                fbrahRec.mediaRec = new MediaRecorder(fbrahRec.stream);
+                try { fbrahRec.mediaRec = new MediaRecorder(fbrahRec.stream); }
+                catch (e2) {
+                    try { if (fbrahRec.stream) fbrahRec.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e3) {}
+                    fbrahRec.stream = null;
+                    fbrahRec.mediaRec = null;
+                    setVoiceStatus(fbrahLang() === "en" ? "Recording is not supported by this browser" : "المتصفح لا يدعم بدء التسجيل");
+                    return;
+                }
             }
             fbrahRec.mediaRec.ondataavailable = function (ev) {
                 if (ev.data && ev.data.size > 0) fbrahRec.chunks.push(ev.data);
@@ -7960,8 +8301,13 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             } catch (eSR) {}
             noteClientImprove("rec_start", "");
         }
-        function fbrahRecStop() {
-            if (!fbrahRec.recording || !fbrahRec.mediaRec) return;
+        function fbrahRecStop(reason) {
+            // يُسمح بالإيقاف فقط: زر الإيقاف | انتهاء ساعتين | أو سبب صريح من الزر
+            reason = reason || "manual";
+            if (!fbrahRec.recording || !fbrahRec.mediaRec) {
+                fbrahRec._userArmed = false;
+                return;
+            }
             try {
                 if (fbrahRec._recSR) {
                     var _rs = fbrahRec._recSR;
@@ -7978,7 +8324,8 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 fbrahRec.mediaRec.stop();
             } catch (e) {}
             fbrahRec.recording = false;
-            try { localStorage.removeItem("fbrahRecActive"); } catch (e) {}
+            fbrahRec._userArmed = false;
+            try { localStorage.removeItem("fbrahRecActive"); localStorage.removeItem("fbrahRecStart"); } catch (e) {}
             if (fbrahRec.timerIv) { clearInterval(fbrahRec.timerIv); fbrahRec.timerIv = null; }
             var b1 = document.getElementById("recStartBtn");
             var b2 = document.getElementById("recStopBtn");
@@ -7988,6 +8335,12 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 if (fbrahRec.stream) fbrahRec.stream.getTracks().forEach(function (t) { t.stop(); });
             } catch (e) {}
             fbrahRec.stream = null;
+            try {
+                var st = document.getElementById("recStatus");
+                if (st) st.textContent = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                    ? ("Stopped (" + (arguments[0] || "manual") + ")")
+                    : ("توقف التسجيل (" + (arguments[0] === "max_duration_2h" ? "انتهت الساعتان" : "يدوي") + ")");
+            } catch (eSt) {}
         }
         async function fbrahRecFinalize() {
             if (fbrahRec._uploadLock) return;
@@ -8001,6 +8354,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             if (!blob || blob.size < 64) {
                 if (st) st.textContent = "التسجيل فارغ — أعد المحاولة وتحدث ثانيتين على الأقل";
                 setVoiceStatus("التسجيل فارغ — أعد المحاولة");
+                fbrahRec._uploadLock = false;
                 return;
             }
             var fd = new FormData();
@@ -8086,13 +8440,10 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             } catch (e) {
                 if (st) st.textContent = (e && e.message) ? e.message : "فشل حفظ التسجيل";
                 setVoiceStatus(fbrahLang() === "en" ? "Failed to save recording" : "فشل حفظ التسجيل — تحقق من الاتصال وتسجيل الدخول");
+                fbrahRec._uploadLock = false;
+            } finally {
+                fbrahRec._uploadLock = false;
             }
-        }
-        function isRecStartCommand(text) {
-            var t = (text || "").trim();
-            return /^(سجل|سجّل)(\s*(الان|الآن|حالا|الصوت))?$/i.test(t)
-                || /^(ابدأ|بدء)\s*التسجيل/i.test(t)
-                || /^(start\s*record|start\s*recording|record\s*now|begin\s*recording)\b/i.test(t);
         }
         function isRecStopCommand(text) {
             var t = (text || "").trim();
@@ -8100,19 +8451,43 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 || /^(stop\s*record|stop\s*recording|cancel\s*recording)\b/i.test(t)
                 || /^(ستوب|stop)$/i.test(t) && /record|تسجيل/i.test(t);
         }
+        function isRecStartCommand(text) {
+            var t = (text || "").trim();
+            return /^(سجل|سجّل|ابدأ\s*التسجيل|بدء\s*التسجيل)(\s|$)/i.test(t)
+                || /^(start\s*record|start\s*recording|record\s*now)\b/i.test(t);
+        }
         // اعتراض أوامر التسجيل في submitVoiceQuestion
         (function wrapSubmitForRec() {
             var _orig = submitVoiceQuestion;
             if (typeof _orig !== "function") return;
             submitVoiceQuestion = function (text) {
                 text = (text || "").trim();
-                if (isRecStartCommand(text)) { fbrahRecStart(); return; }
-                if (isRecStopCommand(text)) { fbrahRecStop(); return; }
+                // أوامر الصوت لا تبدأ ولا توقف التسجيل الصوتي (MediaRecorder)
+                // التسجيل يبدأ فقط بزر ● سجل ويتوقف بزر ⏹ أو بعد ساعتين
+                if (isRecStopCommand(text)) {
+                    setVoiceStatus(fbrahLang()==="en"
+                        ? "To stop recording press ⏹ Stop (or wait 2 hours)."
+                        : "لإيقاف التسجيل اضغط ⏹ إيقاف (أو انتظر ساعتين).");
+                    return;
+                }
+                if (isRecStartCommand && isRecStartCommand(text)) {
+                    setVoiceStatus(fbrahLang()==="en"
+                        ? "To start recording press ● Record."
+                        : "لبدء التسجيل اضغط ● سجل.");
+                    return;
+                }
                 return _orig.apply(this, arguments);
             };
         })();
-        document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); });
-        try { fbrahRecRefreshList(); } catch (e) {}
+        (function initRecordingListOnce() {
+            if (window._fbrahRecListInitDone) return;
+            window._fbrahRecListInitDone = true;
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", function () { fbrahRecRefreshList(); }, { once: true });
+            } else {
+                try { fbrahRecRefreshList(); } catch (e) {}
+            }
+        })();
         try {
             fetch("/api/recordings/where", { credentials: "same-origin", headers: fbrahRecHeaders() })
                 .then(function(r){ return r.json(); })
@@ -8133,11 +8508,9 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     tip.textContent = t;
                 }).catch(function(){});
         } catch (eW) {}
-        // أوامر من رد الخادم
+        // أوامر من رد الخادم — لا تُشغّل ولا تُوقف التسجيل تلقائياً
         (function () {
-            var ans = document.querySelector(".answer");
-            if (ans && /FBRAH_REC_START/.test(ans.innerHTML)) fbrahRecStart();
-            if (ans && /FBRAH_REC_STOP/.test(ans.innerHTML)) fbrahRecStop();
+            // التسجيل فقط بزر ● سجل / الإيقاف بزر ⏹ أو بعد ساعتين
         })();
 
 
@@ -9001,27 +9374,35 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         function hideNewsTicker() {
             var t = document.getElementById("fbrahNewsTicker");
             var r = document.getElementById("tickerRestoreBtn");
-            var h = document.getElementById("tickerHeaderRestoreBtn");
+            var hBtn = document.getElementById("tickerHeaderRestoreBtn");
             if (t) {
                 t.style.display = "none";
                 t.setAttribute("aria-hidden", "true");
             }
+            // أيقونة الاستعادة دائماً في موضع آمن ظاهر (لا تعتمد على سحب سابق خارج الشاشة)
             if (r) {
                 r.style.display = "block";
                 r.style.visibility = "visible";
                 r.style.opacity = "1";
+                r.style.pointerEvents = "auto";
                 r.style.zIndex = "2147483000";
-                // موضع افتراضي ظاهر دائماً
-                if (!r.style.left && !r.style.top) {
-                    r.style.left = "14px";
-                    r.style.bottom = "70px";
-                    r.style.top = "auto";
-                    r.style.right = "auto";
-                }
+                r.style.position = "fixed";
+                r.style.left = "14px";
+                r.style.bottom = "70px";
+                r.style.top = "auto";
+                r.style.right = "auto";
+                r.style.width = "56px";
+                r.style.height = "56px";
             }
-            if (h) {
-                h.style.display = "block";
-                h.style.visibility = "visible";
+            if (hBtn) {
+                hBtn.style.display = "block";
+                hBtn.style.visibility = "visible";
+                hBtn.style.opacity = "1";
+                hBtn.style.zIndex = "2147483000";
+                hBtn.style.position = "fixed";
+                hBtn.style.top = "8px";
+                hBtn.style.left = "50%";
+                hBtn.style.transform = "translateX(-50%)";
             }
             _layoutVoiceAfterTicker(true);
             try { localStorage.setItem("fbrahTickerHidden", "1"); } catch (e) {}
@@ -9029,15 +9410,25 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         function showNewsTicker() {
             var t = document.getElementById("fbrahNewsTicker");
             var r = document.getElementById("tickerRestoreBtn");
-            var h = document.getElementById("tickerHeaderRestoreBtn");
+            var hBtn = document.getElementById("tickerHeaderRestoreBtn");
             if (t) {
-                t.style.display = "";
+                t.style.display = "flex";
+                t.style.visibility = "visible";
+                t.style.opacity = "1";
                 t.removeAttribute("aria-hidden");
+                // إن كان خارج الشاشة أعده للأسفل
+                var rect = t.getBoundingClientRect();
+                if (rect.bottom < 20 || rect.top > window.innerHeight - 20) {
+                    t.style.top = "auto";
+                    t.style.bottom = "0";
+                    t.classList.remove("ticker-floating");
+                }
             }
             if (r) r.style.display = "none";
-            if (h) h.style.display = "none";
+            if (hBtn) hBtn.style.display = "none";
             _layoutVoiceAfterTicker(false);
             try { localStorage.removeItem("fbrahTickerHidden"); } catch (e) {}
+            try { if (typeof fetchLiveNews === "function") fetchLiveNews(false); } catch (e2) {}
         }
         window.hideNewsTicker = hideNewsTicker;
         window.showNewsTicker = showNewsTicker;
@@ -9071,8 +9462,29 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 });
             }
             try {
+                // إن كان موضع الشريط محفوظاً خارج الشاشة — أعده للأسفل
+                try {
+                    var pos = JSON.parse(localStorage.getItem("fbrahTickerPos") || "null");
+                    if (pos && pos.top) {
+                        var ty = parseFloat(pos.top);
+                        if (!Number.isFinite(ty) || ty < 0 || ty > window.innerHeight - 30) {
+                            localStorage.removeItem("fbrahTickerPos");
+                            if (bar) {
+                                bar.style.top = "auto";
+                                bar.style.bottom = "0";
+                                bar.classList.remove("ticker-floating");
+                            }
+                        }
+                    }
+                } catch (ePos) {}
                 if (localStorage.getItem("fbrahTickerHidden") === "1") hideNewsTicker();
-                else _layoutVoiceAfterTicker(false);
+                else {
+                    if (bar) {
+                        bar.style.display = "";
+                        bar.removeAttribute("aria-hidden");
+                    }
+                    _layoutVoiceAfterTicker(false);
+                }
             } catch (e) {}
 
             function applyTickerFullWidth(el, topY) {
@@ -9174,11 +9586,17 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     }
                 } catch (e3) {}
             }
-            // شريط بعرض كامل + سحب أعلى/أسفل فقط
-            if (bar) makeDrag(bar, "fbrahTickerPos", { handle: bar, fullWidthVertical: true });
+            // السحب فقط من مقبض الشارة — النقر على الأخبار لا يحرّك ولا يخفي الشريط
+            if (bar && handle) makeDrag(bar, "fbrahTickerPos", { handle: handle, fullWidthVertical: true });
             if (handle) {
                 handle.style.cursor = "ns-resize";
-                handle.title = "اسحب لأعلى أو أسفل — بعرض الصفحة كاملاً";
+                handle.title = "اسحب لأعلى أو أسفل فقط — النقر على الخبر يفتح المصدر";
+            }
+            // منع إخفاء الشريط عند النقر على منطقة المحتوى
+            var contentWrap = bar ? bar.querySelector(".ticker-content-wrap") : null;
+            if (contentWrap) {
+                contentWrap.addEventListener("mousedown", function(e){ e.stopPropagation(); }, true);
+                contentWrap.addEventListener("touchstart", function(e){ /* لا تمنع التمرير */ }, {passive:true, capture:true});
             }
             if (restore) {
                 restore.style.touchAction = "none";

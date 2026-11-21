@@ -1,0 +1,2159 @@
+﻿FBRAH AI - FINAL CSRF AND AUTHORIZATION REVIEW
+Date: 2026-11-14 03:57:48
+Project: C:\Users\hatho\Desktop\Amit\Fbrah AI\Fbrah Ai G
+PowerShell: 5.1.26100.9818
+Read-only diagnostic. No application or database changes.
+
+===========================================================================
+FILE: app.py
+===========================================================================
+Total lines: 12839
+--- Lines 210 to 270 ---
+210:     os.remove(_t)
+211: except Exception:
+212:     UPLOAD_DIR = os.path.join(DATA_DIR, "documents")
+213:     OUTPUT_DIR = os.path.join(UPLOAD_DIR, "النتائج")
+214:     os.makedirs(UPLOAD_DIR, exist_ok=True)
+215:     os.makedirs(OUTPUT_DIR, exist_ok=True)
+216:     print("UPLOAD_DIR fallback ->", UPLOAD_DIR, flush=True)
+217: 
+218: 
+219: app = Flask(__name__)
+220: 
+221: secret_key = [REDACTED]"FBRAH_SECRET_KEY") or "").strip()
+222: _key_file = os.path.join(DATA_DIR, ".secret_key")
+223: if not secret_key:
+224:     if os.path.isfile(_key_file):
+225:         try:
+226:             with open(_key_file, "r", encoding="utf-8") as kf:
+227:                 secret_key = [REDACTED]).strip()
+228:         except OSError:
+229:             secret_key = ""
+230: if not secret_key or len(secret_key) < 32:
+231:     secret_key = [REDACTED])
+232:     try:
+233:         with open(_key_file, "w", encoding="utf-8") as kf:
+234:             kf.write(secret_key)
+235:     except OSError:
+236:         pass
+237:     app.logger.warning(
+238:         "تم حفظ مفتاح الجلسة في data/.secret_key (أو عيّن FBRAH_SECRET_KEY)."
+239:     )
+240: app.secret_key = [REDACTED]
+241: 
+242: app.config["TEMPLATES_AUTO_RELOAD"] = True
+243: app.config["PERMANENT_SESSION_LIFETIME"] = dt.timedelta(days=7)
+244: app.jinja_env.auto_reload = True
+245: app.config.update(
+246:     MAX_CONTENT_LENGTH=MAX_UPLOAD_MB * 1024 * 1024,
+247:     SESSION_COOKIE_HTTPONLY=True,
+248:     SESSION_COOKIE_SAMESITE="Lax",
+249:     SESSION_COOKIE_SECURE=os.environ.get("FBRAH_HTTPS") == "1",
+250:     UPLOAD_FOLDER=UPLOAD_DIR,  # may be adjusted after write-test
+251: 
+252:     OUTPUT_FOLDER=OUTPUT_DIR,
+253:     DATABASE=DB_PATH
+254: )
+255: 
+256: 
+257: def _get_local_library_roots():
+258:     """مصادر الملفات المحلية المسموح بفهرستها: مجلد الرفع + مكاتب المحاماة + مسارات إضافية."""
+259:     roots = []
+260:     seen = set()
+261: 
+262:     def add_root(root_id, label, path):
+263:         raw_path = str(path or "").strip()
+264:         if not raw_path:
+265:             return
+266:         path = os.path.abspath(os.path.expanduser(raw_path))
+267:         if not os.path.isdir(path):
+268:             return
+269:         normalized = os.path.normcase(os.path.normpath(path))
+270:         if normalized in seen:
+--- Lines 380 to 430 ---
+380:         }
+381:         badge = badges.get(cat, f"[{cat}]")
+382:         line = f"{badge} [PID:{os.getpid()}] 🕒 {now_str} | {message}"
+383:         if details:
+384:             if isinstance(details, dict):
+385:                 d_parts = [f"{k}: {v}" for k, v in details.items() if v is not None and str(v).strip()]
+386:                 if d_parts:
+387:                     line += "\n    ↳ " + " | ".join(d_parts)
+388:             else:
+389:                 line += f"\n    ↳ {details}"
+390:         print(line, flush=True)
+391:     except Exception:
+392:         try:
+393:             print(f"[{category}] {message}", flush=True)
+394:         except Exception:
+395:             pass
+396: 
+397: 
+398: @app.before_request
+399: def _fbrah_log_request():
+400:     request._start_time = time.time()
+401:     path = request.path
+402:     # تجنب إغراق التيرمنال بالأصول الثابتة ونبضات التذكير
+403:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+404:         user = session.get("user") or "ضيف / Anonymous"
+405:         log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+406: 
+407: 
+408: @app.after_request
+409: def _fbrah_log_response(response):
+410:     start = getattr(request, "_start_time", None)
+411:     latency = f"{(time.time() - start)*1000:.1f}ms" if start else "N/A"
+412:     path = request.path
+413:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+414:         log_terminal("HTTP", f"{request.method} {path} -> Status {response.status_code} ({latency})")
+415:     return response
+416: 
+417: 
+418: # ============================================================
+419: # SELF-HEALING & DIAGNOSTICS ENGINE
+420: # ============================================================
+421: 
+422: class FbrahSelfHealingEngine:
+423:     """محرك فحص وتشخيص وإصلاح ذاتي تلقائي للمنظومة وقواعد البيانات والمجلدات والـ RAG."""
+424:     @staticmethod
+425:     def diagnose_and_heal():
+426:         results = {
+427:             "status": "healthy",
+428:             "timestamp": dt.datetime.now().isoformat(),
+429:             "issues_found": [],
+430:             "fixes_applied": [],
+--- Lines 9050 to 9120 ---
+9050:         line = line.strip()
+9051:         if not line:
+9052:             y -= 8
+9053:             continue
+9054: 
+9055:         step = 85 if rtl else 95
+9056:         chunks = [line[i:i + step] for i in range(0, len(line), step)]
+9057:         for chunk in chunks:
+9058:             if y < 60:
+9059:                 pdf.showPage()
+9060:                 page_num += 1
+9061:                 draw_decorations()
+9062:                 y = height - 85
+9063:                 pdf.setFont(font_name, 10)
+9064:                 pdf.setFillColorRGB(20/255, 35/255, 55/255)
+9065: 
+9066:             shaped_chunk = shape_text(chunk)
+9067:             if rtl:
+9068:                 pdf.drawRightString(width - margin_x, y, shaped_chunk)
+9069:             else:
+9070:                 pdf.drawString(margin_x, y, shaped_chunk)
+9071:             y -= 15
+9072: 
+9073:     pdf.save()
+9074:     log_terminal("FILE", f"Generated Professional PDF: {os.path.basename(path)}")
+9075:     return os.path.basename(path)
+9076: 
+9077: 
+9078: # ============================================================
+9079: # 9. AUTHENTICATION
+9080: # ============================================================
+9081: 
+9082: def login_required(fn):
+9083:     @wraps(fn)
+9084:     def wrapped(*args, **kwargs):
+9085:         if "user" not in session:
+9086:             is_ajax = (
+9087:                 request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+9088:                 or "application/json" in request.headers.get("Accept", "").lower()
+9089:                 or request.path.startswith("/api/")
+9090:             )
+9091:             if is_ajax:
+9092:                 return jsonify({"ok": False, "message": "انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة."}), 401
+9093:             return redirect(url_for("login", next=request.full_path if request.query_string else request.path))
+9094:         return fn(*args, **kwargs)
+9095:     return wrapped
+9096: 
+9097: 
+9098: def admin_required(fn):
+9099:     @wraps(fn)
+9100:     def wrapped(*args, **kwargs):
+9101:         if "user" not in session or session.get("role") != "admin":
+9102:             return "غير مصرح", 403
+9103:         return fn(*args, **kwargs)
+9104:     return wrapped
+9105: 
+9106: 
+9107: LOGIN_HTML = """<!doctype html>
+9108: <html lang="ar" dir="rtl" id="loginHtml">
+9109: <head>
+9110: <meta charset="utf-8">
+9111: <meta name="viewport" content="width=device-width,initial-scale=1">
+9112: <title>FBRAH — تسجيل الدخول | Login</title>
+9113: <style>
+9114: :root{
+9115:   --gold:#D4AF37; --gold-soft:#F5E6B8; --gold-hover:#FFD700;
+9116:   --navy:#0A192F; --navy-2:#0F2744; --navy-3:#162A45;
+9117:   --slate:#F8FAFC; --ink:#0F172A; --muted:#475569;
+9118:   --line:rgba(212,175,55,.35);
+9119: }
+9120: *{box-sizing:border-box}
+--- Lines 9170 to 9250 ---
+9170: .foot{text-align:center; margin-top:16px; font-size:13.5px; color:var(--muted)}
+9171: .foot a{color:var(--navy); font-weight:800; text-decoration:none; border-bottom:1.5px solid var(--gold); padding-bottom:1px}
+9172: .foot a:hover{color:#0284C7}
+9173: .bar{height:4px; background:linear-gradient(90deg,var(--gold),#38BDF8,var(--gold))}
+9174: html[lang="en"] body{direction:ltr}
+9175: html[lang="en"] .body,html[lang="en"] label,html[lang="en"] .foot{text-align:left}
+9176: html[lang="en"] h1, html[lang="en"] .panel{text-align:center}
+9177: </style>
+9178: </head>
+9179: <body>
+9180: <div class="shell">
+9181:   <div class="card">
+9182:     <div class="bar"></div>
+9183:     <div class="top">
+9184:       <div class="lang-switch">
+9185:         <button type="button" id="langAr" class="active" onclick="setLang('ar')">عربي</button>
+9186:         <button type="button" id="langEn" onclick="setLang('en')">EN</button>
+9187:       </div>
+9188:       <div class="logo" aria-label="FBRAH"><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></div>
+9189:       <p class="tag" data-i="tag">مساعد فبرا القانوني والبحثي الذكي · كحلي × ذهبي</p>
+9190:     </div>
+9191:     <div class="body">
+9192:       <h1 data-i="title">تسجيل الدخول</h1>
+9193:       <div class="panel" data-i="hint">أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور</div>
+9194:       <div class="msg">__MESSAGE__</div>
+9195:       <form method="post" autocomplete="on"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+9196:         <div class="field">
+9197:           <label for="username" data-i="user">اسم المستخدم / البريد / الهاتف</label>
+9198:           <input id="username" name="username" required autofocus placeholder="admin">
+9199:         </div>
+9200:         <div class="field">
+9201:           <label for="password" data-i="pass">كلمة المرور</label>
+9202:           <input id="password" name="password" type="password" required placeholder="••••••••">
+9203:         </div>
+9204:         <button class="btn" type="submit" data-i="btn">دخول إلى FBRAH</button>
+9205:       </form>
+9206:       <div class="foot"><span data-i="noAcc">ليس لديك حساب؟</span> <a href="/register" data-i="reg">إنشاء حساب جديد</a></div>
+9207:     </div>
+9208:   </div>
+9209: </div>
+9210: <script>
+9211: var I={
+9212:  ar:{title:"تسجيل الدخول",user:"اسم المستخدم / البريد / الهاتف",pass:"كلمة المرور",btn:"دخول إلى FBRAH",noAcc:"ليس لديك حساب؟",reg:"إنشاء حساب جديد",hint:"أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور",tag:"مساعد فبرا القانوني والبحثي الذكي · كحلي × ذهبي"},
+9213:  en:{title:"Sign in",user:"Username / email / phone",pass:"Password",btn:"Sign in to FBRAH",noAcc:"Don't have an account?",reg:"Create an account",hint:"Enter username, email or phone, then password",tag:"FBRAH AI Legal & Research Assistant · Navy × Gold"}
+9214: };
+9215: function setLang(lang){
+9216:   lang = lang==="en"?"en":"ar";
+9217:   document.documentElement.lang=lang;
+9218:   document.documentElement.dir=lang==="en"?"ltr":"rtl";
+9219:   var t=I[lang];
+9220:   document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i"); if(t[k]) el.textContent=t[k];});
+9221:   var userInp = document.getElementById("username");
+9222:   var passInp = document.getElementById("password");
+9223:   if(userInp) userInp.placeholder = lang==="en" ? "username or email" : "admin أو اسم المستخدم";
+9224:   var btnAr = document.getElementById("langAr");
+9225:   var btnEn = document.getElementById("langEn");
+9226:   if(btnAr) btnAr.className=lang==="ar"?"active":"";
+9227:   if(btnEn) btnEn.className=lang==="en"?"active":"";
+9228:   try{localStorage.setItem("fbrah_login_lang",lang);}catch(e){}
+9229: }
+9230: try{var L=localStorage.getItem("fbrah_login_lang"); if(L) setLang(L);}catch(e){}
+9231: </script>
+9232: </body>
+9233: </html>
+9234: """
+9235: 
+9236: 
+9237: REGISTER_HTML = """<!doctype html>
+9238: <html lang="ar" dir="rtl" id="registerHtml">
+9239: <head>
+9240: <meta charset="utf-8">
+9241: <meta name="viewport" content="width=device-width,initial-scale=1">
+9242: <title>FBRAH — إنشاء حساب | Register</title>
+9243: <style>
+9244: :root{
+9245:   --gold:#D4AF37; --gold-soft:#F5E6B8; --gold-hover:#FFD700;
+9246:   --navy:#0A192F; --navy-2:#0F2744; --navy-3:#162A45;
+9247:   --slate:#F8FAFC; --ink:#0F172A; --muted:#475569;
+9248:   --line:rgba(212,175,55,.35);
+9249: }
+9250: *{box-sizing:border-box}
+--- Lines 9340 to 9450 ---
+9340:           <label for="regPassword2" data-i="pass2">تأكيد كلمة المرور</label>
+9341:           <input id="regPassword2" name="password2" type="password" required minlength="12" maxlength="256" placeholder="••••••••">
+9342:         </div>
+9343:         <button class="btn" type="submit" data-i="btn">تسجيل الحساب</button>
+9344:       </form>
+9345:       <div class="foot"><span data-i="hasAcc">لديك حساب بالفعل؟</span> <a href="/login" data-i="backLogin">العودة لتسجيل الدخول</a></div>
+9346:     </div>
+9347:   </div>
+9348: </div>
+9349: <script>
+9350: var R_I={
+9351:  ar:{title:"إنشاء حساب جديد",user:"اسم المستخدم (3 أحرف على الأقل)",email:"البريد الإلكتروني (اختياري)",phone:"رقم الهاتف (اختياري)",pass:"كلمة المرور (6 خانات على الأقل)",pass2:"تأكيد كلمة المرور",btn:"تسجيل الحساب",hasAcc:"لديك حساب بالفعل؟",backLogin:"العودة لتسجيل الدخول",tag:"إنشاء حساب مستخدم جديد لمنظومة فبرا"},
+9352:  en:{title:"Create Account",user:"Username (min 3 characters)",email:"Email (Optional)",phone:"Phone (Optional)",pass:"Password (min 6 characters)",pass2:"Confirm Password",btn:"Register Account",hasAcc:"Already have an account?",backLogin:"Return to Sign In",tag:"Create a new user account for FBRAH AI"}
+9353: };
+9354: function setRegLang(lang){
+9355:   lang = lang==="en"?"en":"ar";
+9356:   document.documentElement.lang=lang;
+9357:   document.documentElement.dir=lang==="en"?"ltr":"rtl";
+9358:   var t=R_I[lang];
+9359:   document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i"); if(t[k]) el.textContent=t[k];});
+9360:   var u = document.getElementById("regUsername");
+9361:   if(u) u.placeholder = lang==="en" ? "Enter username" : "اسم المستخدم";
+9362:   var bAr = document.getElementById("regLangAr");
+9363:   var bEn = document.getElementById("regLangEn");
+9364:   if(bAr) bAr.className=lang==="ar"?"active":"";
+9365:   if(bEn) bEn.className=lang==="en"?"active":"";
+9366:   try{localStorage.setItem("fbrah_login_lang",lang);}catch(e){}
+9367: }
+9368: try{var L=localStorage.getItem("fbrah_login_lang"); if(L) setRegLang(L);}catch(e){}
+9369: </script>
+9370: </body>
+9371: </html>
+9372: """
+9373: 
+9374: 
+9375: 
+9376: @app.route("/login", methods=["GET", "POST"])
+9377: def login():
+9378:     message = ""
+9379:     if request.method == "POST":
+9380:         login_id = request.form.get("username", "").strip()
+9381:         password = [REDACTED]"password", "")
+9382:         with get_db() as db:
+9383:             row = db.execute(
+9384:                 """
+9385:                 SELECT * FROM users
+9386:                 WHERE username=? OR email=? OR phone=?
+9387:                 """,
+9388:                 (login_id, login_id, login_id)
+9389:             ).fetchone()
+9390:             if row and verify_password(password, row["password_hash"]):
+9391:                 if not (row["password_hash"] or "").startswith("pbkdf2_sha256$"):
+9392:                     db.execute(
+9393:                         "UPDATE users SET password_hash=? WHERE id=?",
+9394:                         (hash_password(password), row["id"])
+9395:                     )
+9396:                 _csrf_after_login = secrets.token_urlsafe(32)
+9397:                 session.clear()
+9398:                 session["_fbrah_csrf"] = _csrf_after_login
+9399:                 session.permanent = True
+9400:                 session["user"] = row["username"]
+9401:                 session["role"] = row["role"]
+9402:                 return redirect(url_for("home"))
+9403:         message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+9404:     return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+9405: 
+9406: 
+9407: @app.route("/register", methods=["GET", "POST"])
+9408: def register():
+9409:     message = ""
+9410:     if request.method == "POST":
+9411:         username = request.form.get("username", "").strip()
+9412:         password = [REDACTED]"password", "")
+9413:         password2 = request.form.get("password2", "")
+9414:         email = request.form.get("email", "").strip() or None
+9415:         phone = request.form.get("phone", "").strip() or None
+9416:         if not username or len(username) < 3:
+9417:             message = "<p style='color:#b00020'>اسم المستخدم يجب ألا يقل عن 3 أحرف.</p>"
+9418:         elif password != password2:
+9419:             message = "<p style='color:#b00020'>كلمتا المرور غير متطابقتين.</p>"
+9420:         elif len(password) < 12 or len(password) > 256:
+9421:             message = "<p style='color:#b00020'>كلمة المرور يجب أن تكون بين 12 و256 حرفاً.</p>"
+9422:         else:
+9423:             try:
+9424:                 with get_db() as db:
+9425:                     db.execute(
+9426:                         """
+9427:                         INSERT INTO users
+9428:                         (username,password_hash,email,phone,role,created_at)
+9429:                         VALUES(?,?,?,?,?,?)
+9430:                         """,
+9431:                         (
+9432:                             username,
+9433:                             hash_password(password),
+9434:                             email,
+9435:                             phone,
+9436:                             "user",
+9437:                             dt.datetime.now().isoformat(timespec="seconds")
+9438:                         )
+9439:                     )
+9440:                 message = (
+9441:                     "<p style='color:green'>تم إنشاء الحساب. يمكنك تسجيل الدخول.</p>"
+9442:                 )
+9443:             except sqlite3.IntegrityError:
+9444:                 message = (
+9445:                     "<p style='color:#b00020'>"
+9446:                     "اسم المستخدم أو البريد أو الهاتف مسجل بالفعل.</p>"
+9447:                 )
+9448:     return REGISTER_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+9449: 
+9450: 
+--- Lines 12120 to 12340 ---
+12120:         audio_name = f"{results_base}{ext}"
+12121:         audio_paths = _copy_to_results(src, audio_name)
+12122:         tr = _save_transcript_files(results_base, "", labels, ui_lang)
+12123:         it = dict(it)
+12124:         it["results_audio"] = audio_name
+12125:         it["transcript_file"] = tr.get("docx_name") or tr.get("txt_name")
+12126:         it["transcript_txt"] = tr.get("txt_name")
+12127:         it["transcript_docx"] = tr.get("docx_name")
+12128:         it["title"] = labels["audio_title"]
+12129:         it["audio_paths"] = audio_paths
+12130:         changed.append(it)
+12131:         out.append({"id": rid, "ok": bool(audio_paths), "audio": audio_name, "paths": audio_paths})
+12132:     _save_recordings_meta(changed)
+12133:     return jsonify({"ok": True, "exported": out, "results_dirs": _results_dirs()})
+12134: 
+12135: 
+12136: @app.route("/api/recordings/<rid>", methods=["DELETE"])
+12137: @app.route("/recordings/api/<rid>", methods=["DELETE"])
+12138: @login_required
+12139: def api_recordings_delete(rid):
+12140:     if rid in ("where", "export-all", "api"):
+12141:         return jsonify({"ok": False, "message": "use /api/recordings/where"}), 404
+12142:     user = session.get("user") or "admin"
+12143:     all_items = _load_recordings_meta()
+12144:     keep = []
+12145:     deleted = None
+12146:     for x in all_items:
+12147:         if x.get("id") == rid and x.get("user") == user:
+12148:             deleted = x
+12149:             try:
+12150:                 fp = os.path.join(RECORDINGS_DIR, x.get("filename") or "")
+12151:                 if x.get("filename") and os.path.isfile(fp):
+12152:                     os.remove(fp)
+12153:             except Exception:
+12154:                 pass
+12155:             for folder in _results_dirs():
+12156:                 for key in ("results_audio", "transcript_file", "transcript_txt", "transcript_docx"):
+12157:                     name = x.get(key)
+12158:                     if not name:
+12159:                         continue
+12160:                     try:
+12161:                         fp = os.path.join(folder, name)
+12162:                         if os.path.isfile(fp):
+12163:                             os.remove(fp)
+12164:                     except Exception:
+12165:                         pass
+12166:         else:
+12167:             keep.append(x)
+12168:     if not deleted:
+12169:         return jsonify({"ok": False, "error": "not_found", "message": "Not found"}), 404
+12170:     _save_recordings_meta(keep)
+12171:     return jsonify({"ok": True, "items": list_user_recordings(user), "message": "Deleted"})
+12172: 
+12173: 
+12174: @app.route("/api/recordings/<rid>/download")
+12175: @app.route("/recordings/api/<rid>/download")
+12176: @login_required
+12177: def api_recordings_download(rid):
+12178:     """
+12179:     تنزيل للمتصفح + إعادة حفظ نسخة في النتائج على القرص.
+12180:     ملاحظة: مجلد Downloads في المتصفح سلوك المتصفح؛ النتائج = حفظ خادم على القرص.
+12181:     """
+12182:     user = session.get("user") or "admin"
+12183:     kind = (request.args.get("kind") or "audio").lower()
+12184:     ui_lang = _ui_lang_from_request()
+12185:     for x in _load_recordings_meta():
+12186:         if x.get("id") != rid or x.get("user") != user:
+12187:             continue
+12188:         lang = ui_lang or x.get("ui_lang") or "ar"
+12189:         labels, stamp, when = _recording_display_names(lang)
+12190: 
+12191:         if kind in ("docx", "transcript", "word", "txt"):
+12192:             candidates = []
+12193:             if kind == "txt":
+12194:                 candidates = [x.get("transcript_txt"), x.get("transcript_file")]
+12195:             else:
+12196:                 candidates = [x.get("transcript_docx"), x.get("transcript_file"), x.get("transcript_txt")]
+12197:             for fn in candidates:
+12198:                 if not fn:
+12199:                     continue
+12200:                 for folder in list(_results_dirs()) + [RECORDINGS_DIR]:
+12201:                     fp = os.path.join(folder, fn)
+12202:                     if os.path.isfile(fp):
+12203:                         nice = fn
+12204:                         _copy_to_results(fp, nice)
+12205:                         return send_from_directory(folder, fn, as_attachment=True, download_name=nice)
+12206:             return jsonify({"ok": False, "message": "Transcript missing"}), 404
+12207: 
+12208:         # audio
+12209:         src_name = x.get("filename")
+12210:         src_folder = RECORDINGS_DIR
+12211:         if x.get("results_audio"):
+12212:             for folder in _results_dirs():
+12213:                 fp = os.path.join(folder, x["results_audio"])
+12214:                 if os.path.isfile(fp):
+12215:                     src_name, src_folder = x["results_audio"], folder
+12216:                     break
+12217:         if not src_name or not os.path.isfile(os.path.join(src_folder, src_name)):
+12218:             return jsonify({"ok": False, "message": "Audio missing"}), 404
+12219:         ext = os.path.splitext(src_name)[1] or ".webm"
+12220:         nice = f"{labels['base']}{ext}"
+12221:         full = os.path.join(src_folder, src_name)
+12222:         _copy_to_results(full, nice)
+12223:         as_att = request.args.get("play") != "1"
+12224:         return send_from_directory(src_folder, src_name, as_attachment=as_att, download_name=nice)
+12225:     return jsonify({"ok": False, "message": "Not found"}), 404
+12226: 
+12227: 
+12228: 
+12229: 
+12230: @app.route("/api/recordings/<rid>/export", methods=["POST"])
+12231: @app.route("/recordings/api/<rid>/export", methods=["POST"])
+12232: @login_required
+12233: def api_recordings_export(rid):
+12234:     """إعادة تصدير تسجيل قديم إلى مجلدات النتائج بأسماء صحيحة + تفريغ."""
+12235:     try:
+12236:         return _api_recordings_export_impl(rid)
+12237:     except Exception as e:
+12238:         app.logger.exception("export failed")
+12239:         return jsonify({"ok": False, "message": "export error: " + str(e)[:200]}), 500
+12240: 
+12241: 
+12242: def _find_recording_audio(item, rid, user):
+12243:     """يبحث عن ملف الصوت في عدة أماكن."""
+12244:     candidates = []
+12245:     fn = item.get("filename") or ""
+12246:     if fn:
+12247:         candidates.append(os.path.join(RECORDINGS_DIR, fn))
+12248:     # نمط admin_<rid>.webm
+12249:     for ext in (".webm", ".ogg", ".wav", ".mp3", ".m4a", ".mp4"):
+12250:         candidates.append(os.path.join(RECORDINGS_DIR, f"{user}_{rid}{ext}"))
+12251:         candidates.append(os.path.join(RECORDINGS_DIR, f"{rid}{ext}"))
+12252:     if item.get("results_audio"):
+12253:         for d in _results_dirs():
+12254:             candidates.append(os.path.join(d, item["results_audio"]))
+12255:     # بحث بالـ rid داخل مجلد التسجيلات
+12256:     try:
+12257:         for name in os.listdir(RECORDINGS_DIR):
+12258:             if rid and rid in name and name.lower().endswith((".webm", ".ogg", ".wav", ".mp3", ".m4a", ".mp4")):
+12259:                 candidates.append(os.path.join(RECORDINGS_DIR, name))
+12260:     except Exception:
+12261:         pass
+12262:     for p in candidates:
+12263:         if p and os.path.isfile(p) and os.path.getsize(p) > 32:
+12264:             return p
+12265:     return None
+12266: 
+12267: 
+12268: def _api_recordings_export_impl(rid):
+12269:     user = session.get("user") or "admin"
+12270:     ui_lang = _ui_lang_from_request()
+12271:     all_items = _load_recordings_meta()
+12272:     item = None
+12273:     for x in all_items:
+12274:         if str(x.get("id")) == str(rid) and x.get("user") == user:
+12275:             item = dict(x)
+12276:             break
+12277:     if not item:
+12278:         # أنشئ عنصراً من الملف إن وُجد بالقرص
+12279:         src_guess = _find_recording_audio({"filename": ""}, rid, user)
+12280:         if not src_guess:
+12281:             return jsonify({
+12282:                 "ok": False,
+12283:                 "message": (
+12284:                     "Recording not found in index or on disk."
+12285:                     if ui_lang == "en"
+12286:                     else "التسجيل غير موجود في الفهرس أو على القرص. سجّل من جديد بعد تحديث app.py"
+12287:                 ),
+12288:             }), 404
+12289:         item = {
+12290:             "id": rid,
+12291:             "user": user,
+12292:             "filename": os.path.basename(src_guess),
+12293:             "title": rid,
+12294:         }
+12295: 
+12296:     labels, stamp, when = _recording_display_names(ui_lang)
+12297:     results_base = labels["base"]
+12298:     src = _find_recording_audio(item, rid, user)
+12299:     if not src:
+12300:         return jsonify({
+12301:             "ok": False,
+12302:             "message": (
+12303:                 "Audio file missing on disk. Path was: "
+12304:                 + str(os.path.join(RECORDINGS_DIR, item.get("filename") or ""))
+12305:                 if ui_lang == "en"
+12306:                 else "ملف الصوت غير موجود على القرص. المسار المتوقع: "
+12307:                 + str(os.path.join(RECORDINGS_DIR, item.get("filename") or ""))
+12308:             ),
+12309:         }), 404
+12310: 
+12311:     ext = os.path.splitext(src)[1] or ".webm"
+12312:     audio_name = f"{results_base}{ext}"
+12313:     audio_paths = _copy_to_results(src, audio_name)
+12314: 
+12315:     transcript = (request.form.get("transcript") or "").strip()
+12316:     if request.is_json:
+12317:         try:
+12318:             transcript = (request.get_json(silent=True) or {}).get("transcript") or transcript
+12319:         except Exception:
+12320:             pass
+12321:     transcript = str(transcript or "").strip()
+12322:     tr = _save_transcript_files(results_base, transcript, labels, ui_lang)
+12323: 
+12324:     item["title"] = labels["audio_title"]
+12325:     item["results_audio"] = audio_name
+12326:     item["transcript_file"] = tr.get("docx_name") or tr.get("txt_name")
+12327:     item["transcript_txt"] = tr.get("txt_name")
+12328:     item["transcript_docx"] = tr.get("docx_name")
+12329:     item["ui_lang"] = ui_lang
+12330:     item["results_dirs"] = _results_dirs()
+12331:     item["audio_paths"] = audio_paths
+12332:     item["txt_paths"] = tr.get("txt_paths") or []
+12333:     item["docx_paths"] = tr.get("docx_paths") or []
+12334: 
+12335:     new_all = []
+12336:     found = False
+12337:     for x in all_items:
+12338:         if str(x.get("id")) == str(rid) and x.get("user") == user:
+12339:             new_all.append(item)
+12340:             found = True
+--- Lines 12690 to 12810 ---
+12690:         ("قانون وقضاء", "⚖️", "https://news.google.com/rss/search?q=القانون+القضاء+المحاكم+مصر&hl=ar&gl=EG&ceid=EG:ar"),
+12691:         ("اقتصاد ومال", "📈", "https://news.google.com/rss/search?q=الاقتصاد+المالية+البنك+المركزي+مصر&hl=ar&gl=EG&ceid=EG:ar"),
+12692:         ("سياسة", "🌍", "https://news.google.com/rss/search?q=سياسة+الشرق+الأوسط+العالم&hl=ar&gl=EG&ceid=EG:ar"),
+12693:         ("أخبار دولية", "📰", "https://news.google.com/rss/search?q=أخبار+عالمية&hl=ar&gl=EG&ceid=EG:ar"),
+12694:         ("أسواق وتقنية", "💹", "https://news.google.com/rss/search?q=الأسواق+الذهب+العملات+التكنولوجيا&hl=ar&gl=EG&ceid=EG:ar"),
+12695:         ("Legal & Business", "⚖️", "https://news.google.com/rss/search?q=law+business+economy+markets&hl=en-US&gl=US&ceid=US:en"),
+12696:     ]
+12697: 
+12698:     def _read_feed(feed):
+12699:         category, icon, feed_url = feed
+12700:         try:
+12701:             import xml.etree.ElementTree as ET
+12702:             response = get_http_session().get(
+12703:                 feed_url, timeout=(2.5, 4.0),
+12704:                 headers={"User-Agent": "FBRAH-AI-News/1.0"}
+12705:             )
+12706:             response.raise_for_status()
+12707:             if len(response.content) > 1_500_000:
+12708:                 return []
+12709:             root = ET.fromstring(response.content)
+12710:             rows = []
+12711:             for item in root.findall(".//item")[:8]:
+12712:                 title = (item.findtext("title") or "").strip()
+12713:                 link = (item.findtext("link") or "").strip()
+12714:                 source_node = item.find("source")
+12715:                 source = (source_node.text or "").strip() if source_node is not None else "Google News"
+12716:                 if not title or not link or not link.startswith("https://"):
+12717:                     continue
+12718:                 rows.append({
+12719:                     "cat": category, "icon": icon, "text": title[:500],
+12720:                     "source": source[:100], "url": link,
+12721:                 })
+12722:             return rows
+12723:         except Exception as exc:
+12724:             app.logger.info("News RSS source unavailable (%s): %s", category, type(exc).__name__)
+12725:             return []
+12726: 
+12727:     items = []
+12728:     with ThreadPoolExecutor(max_workers=4) as pool:
+12729:         futures = [pool.submit(_read_feed, feed) for feed in feeds]
+12730:         for future in as_completed(futures):
+12731:             try:
+12732:                 items.extend(future.result())
+12733:             except Exception:
+12734:                 continue
+12735: 
+12736:     # إزالة التكرار مع إبقاء رابط الناشر لكل خبر.
+12737:     seen = set()
+12738:     unique = []
+12739:     for item in items:
+12740:         key = re.sub(r"\W+", "", item["text"].lower())
+12741:         if key and key not in seen:
+12742:             seen.add(key)
+12743:             unique.append(item)
+12744:     unique = unique[:40]
+12745:     with _LIVE_NEWS_LOCK:
+12746:         _LIVE_NEWS_CACHE["at"] = now
+12747:         _LIVE_NEWS_CACHE["items"] = unique
+12748:     log_terminal("NEWS", "Fetched source-attributed RSS headlines", {"count": len(unique)})
+12749:     return jsonify({"ok": True, "items": unique, "cached": False})
+12750: 
+12751: 
+12752: # ============================================================
+12753: # 17. SYSTEM DIAGNOSTICS & SELF-HEALING ENDPOINTS
+12754: # ============================================================
+12755: 
+12756: @app.route("/api/system_diagnostics", methods=["GET"])
+12757: @login_required
+12758: def api_system_diagnostics():
+12759:     """فحص حالة أساسي للقراءة فقط؛ لا يشغّل إصلاحات ولا يغير الملفات."""
+12760:     return jsonify({
+12761:         "ok": True,
+12762:         "mode": "read_only",
+12763:         "authenticated": bool(session.get("user")),
+12764:         "rag_backend": str(FBRAH_VECTOR_BACKEND),
+12765:         "upload_limit_mb": MAX_UPLOAD_MB,
+12766:         "ocr_max_pages": OCR_MAX_PAGES,
+12767:     })
+12768: 
+12769: 
+12770: @app.route("/api/self_heal", methods=["POST"])
+12771: @login_required
+12772: @admin_required
+12773: def api_self_heal():
+12774:     """تشغيل الإصلاح التلقائي الذاتي للمدير فقط."""
+12775:     res = FbrahSelfHealingEngine.diagnose_and_heal()
+12776:     log_terminal("HEAL", "Manual self-healing trigger executed", {"status": res["status"]})
+12777:     return jsonify(res)
+12778: 
+12779: 
+12780: # ============================================================
+12781: # 18. APPLICATION BOOTSTRAPPER & SERVER RUNNER
+12782: # ============================================================
+12783: 
+12784: # Register the security extension only after DB/auth helpers and all routes exist.
+12785: try:
+12786:     from security_hardening import init_security_hardening
+12787:     init_security_hardening(app, get_db, hash_password)
+12788: except Exception:
+12789:     app.logger.exception("FBRAH security hardening initialization failed")
+12790:     raise
+12791: 
+12792: 
+12793: if __name__ == "__main__":
+12794:     try:
+12795:         sys.stdout.reconfigure(line_buffering=True)
+12796:     except Exception:
+12797:         pass
+12798: 
+12799:     try:
+12800:         threading.Thread(target=_startup_index, daemon=True).start()
+12801:     except Exception as _e:
+12802:         print("startup index error:", _e, flush=True)
+12803: 
+12804:     host = os.environ.get("FBRAH_HOST", "0.0.0.0")
+12805:     port = int(os.environ.get("PORT", os.environ.get("FBRAH_PORT", "5005")))
+12806: 
+12807:     print("\n" + "="*60, flush=True)
+12808:     print("   🚀 FBRAH AI — Enterprise Intelligence System", flush=True)
+12809:     print(f"   🆔 Process PID : {os.getpid()}", flush=True)
+12810:     print(f"   🌐 Local URL   : http://127.0.0.1:{port}", flush=True)
+
+===========================================================================
+FILE: security_hardening.py
+===========================================================================
+Total lines: 358
+--- Lines 1 to 215 ---
+1: # -*- coding: utf-8 -*-
+2: """FBRAH security extension: CSRF, safe password reset by email, and headers.
+3: 
+4: This module is intentionally independent of the application's business logic.
+5: It uses the existing SQLite connection factory and password hasher supplied by
+6: app.py. No password or reset token is logged or stored in plaintext.
+7: """
+8: from __future__ import annotations
+9: 
+10: import hashlib
+11: import hmac
+12: import os
+13: import re
+14: import secrets
+15: import smtplib
+16: import ssl
+17: import time
+18: from datetime import datetime, timedelta, timezone
+19: from email.message import EmailMessage
+20: from functools import wraps
+21: from urllib.parse import urlparse
+22: 
+23: from flask import (Blueprint, abort, current_app, jsonify, make_response,
+24:                    redirect, render_template_string, request, session, url_for)
+25: 
+26: 
+27: CSRF_SESSION_KEY = "_fbrah_csrf"
+28: CSRF_HEADER = "X-FBRAH-CSRF"
+29: RESET_TTL_MINUTES = 20
+30: RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+31: RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+32: 
+33: 
+34: def _utcnow():
+35:     return datetime.now(timezone.utc)
+36: 
+37: 
+38: def _token_hash(token: str) -> str:
+39:     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+40: 
+41: 
+42: def _db_exec(get_db, sql, params=()):
+43:     with get_db() as db:
+44:         cur = db.execute(sql, params)
+45:         db.commit()
+46:         return cur
+47: 
+48: 
+49: def _send_reset_email(email: str, reset_url: str) -> bool:
+50:     host = (os.environ.get("FBRAH_SMTP_HOST") or "").strip()
+51:     sender = (os.environ.get("FBRAH_SMTP_FROM") or "").strip()
+52:     username = (os.environ.get("FBRAH_SMTP_USER") or "").strip()
+53:     password = [REDACTED]"FBRAH_SMTP_PASSWORD") or ""
+54:     if not host or not sender:
+55:         current_app.logger.error("Password reset email is not configured (SMTP host/from missing).")
+56:         return False
+57:     try:
+58:         port = int(os.environ.get("FBRAH_SMTP_PORT", "465"))
+59:         timeout = min(max(int(os.environ.get("FBRAH_SMTP_TIMEOUT", "10")), 3), 30)
+60:         msg = EmailMessage()
+61:         msg["Subject"] = "FBRAH — Password reset / إعادة تعيين كلمة المرور"
+62:         msg["From"] = sender
+63:         msg["To"] = email
+64:         msg.set_content(
+65:             "طلب إعادة تعيين كلمة مرور FBRAH. الرابط صالح لمدة 20 دقيقة ولمرة واحدة فقط:\n\n"
+66:             + reset_url + "\n\nإذا لم تطلب ذلك فتجاهل الرسالة. لا تشارك الرابط مع أحد."
+67:         )
+68:         context = ssl.create_default_context()
+69:         if port == 465:
+70:             with smtplib.SMTP_SSL(host, port, timeout=timeout, context=context) as smtp:
+71:                 if username:
+72:                     smtp.login(username, password)
+73:                 smtp.send_message(msg)
+74:         else:
+75:             with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+76:                 smtp.ehlo()
+77:                 smtp.starttls(context=context)
+78:                 smtp.ehlo()
+79:                 if username:
+80:                     smtp.login(username, password)
+81:                 smtp.send_message(msg)
+82:         return True
+83:     except Exception:
+84:         current_app.logger.exception("Password reset email delivery failed.")
+85:         return False
+86: 
+87: 
+88: def init_security_hardening(app, get_db, hash_password):
+89:     """Register hardening hooks and password-reset routes exactly once."""
+90:     if app.extensions.get("fbrah_security_hardening"):
+91:         return
+92:     app.extensions["fbrah_security_hardening"] = True
+93:     bp = Blueprint("fbrah_security", __name__)
+94: 
+95:     with app.app_context():
+96:         with get_db() as db:
+97:             db.execute("""CREATE TABLE IF NOT EXISTS fbrah_password_reset_tokens (
+98:                 token_hash TEXT PRIMARY KEY,
+99:                 user_id INTEGER NOT NULL,
+100:                 expires_at TEXT NOT NULL,
+101:                 used_at TEXT,
+102:                 created_at TEXT NOT NULL
+103:             )""")
+104:             db.execute("CREATE INDEX IF NOT EXISTS idx_fbrah_reset_user ON fbrah_password_reset_tokens(user_id)")
+105:             db.execute("""CREATE TABLE IF NOT EXISTS fbrah_auth_throttle (
+106:                 bucket TEXT PRIMARY KEY,
+107:                 attempts INTEGER NOT NULL DEFAULT 0,
+108:                 window_started REAL NOT NULL,
+109:                 blocked_until REAL NOT NULL DEFAULT 0
+110:             )""")
+111:             db.commit()
+112: 
+113:     @app.context_processor
+114:     def _fbrah_csrf_template_context():
+115:         return {"csrf_token": [REDACTED], "")}
+116: 
+117:     @app.before_request
+118:     def _fbrah_csrf_guard():
+119:         if not session.get(CSRF_SESSION_KEY):
+120:             session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+121:         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+122:             supplied = request.headers.get(CSRF_HEADER, "")
+123:             if not supplied:
+124:                 supplied = request.form.get("_csrf_token", "")
+125:             expected = session.get(CSRF_SESSION_KEY, "")
+126:             if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+127:                 if request.path in ("/api/client_telemetry", "/api/client_log"):
+128:                     # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+129:                     origin = request.headers.get("Origin", "")
+130:                     origin_parts = urlparse(origin)
+131:                     host_parts = urlparse(request.host_url)
+132:                     if (
+133:                         not origin_parts.scheme
+134:                         or origin_parts.scheme != host_parts.scheme
+135:                         or origin_parts.netloc.casefold() != host_parts.netloc.casefold()
+136:                         or origin_parts.username
+137:                         or origin_parts.password
+138:                     ):
+139:                         abort(400, description="CSRF validation failed")
+140:                 else:
+141:                     if request.path.startswith("/api/") or request.is_json:
+142:                         return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+143:                     abort(400, description="CSRF validation failed")
+144: 
+145:     @app.after_request
+146:     def _fbrah_security_headers(response):
+147:         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+148:         response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+149:         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+150:         response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+151:         response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+152:         if request.path.startswith(("/forgot-password", "/reset-password/")):
+153:             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+154:             response.headers["Pragma"] = "no-cache"
+155:             response.headers["Referrer-Policy"] = "no-referrer"
+156:         if request.is_secure or os.environ.get("FBRAH_HTTPS") == "1":
+157:             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+158:         # Inject the synchronizer token into server-rendered forms, and into a meta tag
+159:         # used by same-origin fetch requests. Only HTML responses are touched.
+160:         if response.mimetype == "text/html" and response.direct_passthrough is False:
+161:             try:
+162:                 body = response.get_data(as_text=True)
+163:                 token = session.get(CSRF_SESSION_KEY, "")
+164:                 meta = '<meta name="fbrah-csrf" content="' + token + '">'
+165:                 if 'name="fbrah-csrf"' not in body:
+166:                     body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+167: 
+168:                 hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+169: 
+170:                 def _inject_csrf_once(match):
+171:                     form_html = match.group(0)
+172:                     # Keep an existing token field; inject only when it is absent.
+173:                     if re.search(
+174:                         r'name\s*=\s*["\']_csrf_token["\']',
+175:                         form_html,
+176:                         flags=re.I,
+177:                     ):
+178:                         return form_html
+179: 
+180:                     return re.sub(
+181:                         r"(<form\b[^>]*>)",
+182:                         lambda form_match: form_match.group(1) + hidden,
+183:                         form_html,
+184:                         count=1,
+185:                         flags=re.I,
+186:                     )
+187: 
+188:                 body = re.sub(
+189:                     r"<form\b[^>]*>.*?</form>",
+190:                     _inject_csrf_once,
+191:                     body,
+192:                     flags=re.I | re.S,
+193:                 )
+194: 
+195:                 helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+196:                 if "X-FBRAH-CSRF" not in body:
+197:                     body = body.replace("</body>", helper + "</body>")
+198:                 response.set_data(body)
+199:             except Exception:
+200:                 current_app.logger.exception("Could not inject CSRF token into HTML response")
+201:         return response
+202: 
+203:     def _throttle_state(bucket):
+204:         now = time.time()
+205:         with get_db() as db:
+206:             row = db.execute("SELECT attempts,window_started,blocked_until FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
+207:             if not row:
+208:                 db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,0,?,0)", (bucket, now))
+209:                 db.commit()
+210:                 return False
+211:             if float(row["blocked_until"] or 0) > now:
+212:                 return True
+213:             return False
+214: 
+215:     def _consume_throttle(bucket, limit=5, window_seconds=3600, block_seconds=3600):
+--- Lines 216 to 358 ---
+216:         now = time.time()
+217:         with get_db() as db:
+218:             row = db.execute("SELECT attempts,window_started,blocked_until FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
+219:             if row and float(row["blocked_until"] or 0) > now:
+220:                 return False
+221:             started = float(row["window_started"] or now) if row else now
+222:             attempts = int(row["attempts"] or 0) if row else 0
+223:             if now - started > window_seconds:
+224:                 started, attempts = now, 0
+225:             attempts += 1
+226:             blocked = now + block_seconds if attempts >= limit else 0
+227:             db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,?,?,?) ON CONFLICT(bucket) DO UPDATE SET attempts=excluded.attempts,window_started=excluded.window_started,blocked_until=excluded.blocked_until", (bucket, attempts, started, blocked))
+228:             db.commit()
+229:             return True
+230: 
+231:     @app.before_request
+232:     def _fbrah_login_throttle():
+233:         if request.path == "/login" and request.method == "POST":
+234:             ip = request.remote_addr or "unknown"
+235:             ident = (request.form.get("username") or "").strip().lower()[:160]
+236:             if _throttle_state("ip:" + ip) or _throttle_state("id:" + hashlib.sha256(ident.encode()).hexdigest()):
+237:                 return make_response("تم تجاوز عدد محاولات الدخول. انتظر 15 دقيقة ثم أعد المحاولة.", 429)
+238: 
+239:     @app.after_request
+240:     def _fbrah_login_throttle_result(response):
+241:         if request.path == "/login" and request.method == "POST":
+242:             ip = request.remote_addr or "unknown"
+243:             ident = (request.form.get("username") or "").strip().lower()[:160]
+244:             buckets = ["ip:" + ip, "id:" + hashlib.sha256(ident.encode()).hexdigest()]
+245:             if "user" in session:
+246:                 with get_db() as db:
+247:                     db.executemany("DELETE FROM fbrah_auth_throttle WHERE bucket=?", [(b,) for b in buckets])
+248:                     db.commit()
+249:             elif response.status_code == 200:
+250:                 now = time.time()
+251:                 with get_db() as db:
+252:                     for bucket in buckets:
+253:                         row = db.execute("SELECT attempts,window_started FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
+254:                         if not row:
+255:                             db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,1,?,0)", (bucket, now))
+256:                         else:
+257:                             started = float(row["window_started"] or now)
+258:                             attempts = 1 if now-started > 900 else int(row["attempts"] or 0)+1
+259:                             blocked = now+900 if attempts >= 8 else 0
+260:                             db.execute("UPDATE fbrah_auth_throttle SET attempts=?,window_started=?,blocked_until=? WHERE bucket=?", (attempts, now if attempts == 1 else started, blocked, bucket))
+261:                     db.commit()
+262:         return response
+263: 
+264:     @bp.route("/forgot-password", methods=["GET", "POST"])
+265:     def forgot_password():
+266:         message = ""
+267:         if request.method == "POST":
+268:             login_id = (request.form.get("username") or "").strip()[:160]
+269:             # Identical response regardless of account existence or email configuration.
+270:             ip_bucket = "reset-ip:" + (request.remote_addr or "unknown")
+271:             allowed = _consume_throttle(ip_bucket, limit=5, window_seconds=3600, block_seconds=3600)
+272:             if login_id and allowed:
+273:                 with get_db() as db:
+274:                     user = db.execute("SELECT id,email FROM users WHERE username=? OR email=?", (login_id, login_id)).fetchone()
+275:                 if user and user["email"]:
+276:                     raw = secrets.token_urlsafe(40)
+277:                     digest = _token_hash(raw)
+278:                     expires = (_utcnow() + timedelta(minutes=RESET_TTL_MINUTES)).isoformat()
+279:                     created = _utcnow().isoformat()
+280:                     with get_db() as db:
+281:                         db.execute("UPDATE fbrah_password_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL", (created, user["id"]))
+282:                         db.execute("INSERT INTO fbrah_password_reset_tokens(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)", (digest, user["id"], expires, created))
+283:                         db.commit()
+284:                     public_base = (os.environ.get("FBRAH_PUBLIC_BASE_URL") or "").strip().rstrip("/")
+285:                     parsed_base = urlparse(public_base)
+286:                     delivered = False
+287:                     if (public_base and parsed_base.scheme in ("https", "http") and parsed_base.netloc
+288:                             and not parsed_base.username and not parsed_base.password
+289:                             and not parsed_base.query and not parsed_base.fragment
+290:                             and parsed_base.path in ("", "/")
+291:                             and (parsed_base.scheme == "https" or parsed_base.hostname in ("localhost", "127.0.0.1"))):
+292:                         reset_path = url_for("fbrah_security.reset_password", token=raw, _external=False)
+293:                         delivered = _send_reset_email(user["email"], public_base + reset_path)
+294:                     else:
+295:                         current_app.logger.error("Password reset link delivery disabled: set FBRAH_PUBLIC_BASE_URL to the canonical public HTTPS URL.")
+296:                     if not delivered:
+297:                         # لا تترك رمزاً صالحاً لم يُسلّم إلى صاحب الحساب.
+298:                         with get_db() as db:
+299:                             db.execute(
+300:                                 "DELETE FROM fbrah_password_reset_tokens WHERE token_hash=? AND used_at IS NULL",
+301:                                 (digest,),
+302:                             )
+303:                             db.commit()
+304:             message = RESET_MESSAGE_AR
+305:         return render_template_string(_RESET_REQUEST_HTML, message=message)
+306: 
+307:     @bp.route("/reset-password/<token>", methods=["GET", "POST"])
+308:     def reset_password(token):
+309:         if not re.fullmatch(r"[A-Za-z0-9_-]{40,100}", token or ""):
+310:             abort(404)
+311:         digest = _token_hash(token)
+312:         message = ""
+313:         if request.method == "POST":
+314:             pw = request.form.get("password") or ""
+315:             pw2 = request.form.get("password2") or ""
+316:             if len(pw) < 12 or len(pw) > 256:
+317:                 message = "يجب أن تكون كلمة المرور بين 12 و256 حرفاً."
+318:             elif pw != pw2:
+319:                 message = "تأكيد كلمة المرور غير متطابق."
+320:             else:
+321:                 now = _utcnow().isoformat()
+322:                 with get_db() as db:
+323:                     row = db.execute(
+324:                         "SELECT user_id FROM fbrah_password_reset_tokens "
+325:                         "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+326:                         (digest, now),
+327:                     ).fetchone()
+328:                     if not row:
+329:                         abort(400, description="رابط إعادة التعيين غير صالح أو منتهي الصلاحية.")
+330:                     # Claim the one-time token first; concurrent submissions cannot both win.
+331:                     claimed = db.execute(
+332:                         "UPDATE fbrah_password_reset_tokens SET used_at=? "
+333:                         "WHERE token_hash=? AND used_at IS NULL AND expires_at>?",
+334:                         (now, digest, now),
+335:                     )
+336:                     if claimed.rowcount != 1:
+337:                         abort(400, description="رابط إعادة التعيين استُخدم بالفعل أو انتهت صلاحيته.")
+338:                     updated = db.execute(
+339:                         "UPDATE users SET password_hash=? WHERE id=?",
+340:                         (hash_password(pw), row["user_id"]),
+341:                     )
+342:                     if updated.rowcount != 1:
+343:                         abort(400, description="تعذر تحديث الحساب المرتبط برابط الاستعادة.")
+344:                     db.execute(
+345:                         "UPDATE fbrah_password_reset_tokens SET used_at=? "
+346:                         "WHERE user_id=? AND used_at IS NULL",
+347:                         (now, row["user_id"]),
+348:                     )
+349:                     db.commit()
+350:                 session.clear()
+351:                 return redirect(url_for("login"))
+352:         return render_template_string(_RESET_PASSWORD_HTML, message=message)
+353: 
+354:     app.register_blueprint(bp)
+355: 
+356: 
+357: _RESET_REQUEST_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استعادة كلمة المرور — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>استعادة كلمة المرور</h2><p>أدخل اسم المستخدم أو البريد الإلكتروني المسجل.</p><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>اسم المستخدم أو البريد</label><input name='username' required maxlength='160' autocomplete='username'><button type='submit'>إرسال رابط الاستعادة</button></form><p><a href='/login'>العودة لتسجيل الدخول</a></p></main></body></html>"""
+358: _RESET_PASSWORD_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>تعيين كلمة مرور جديدة — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>تعيين كلمة مرور جديدة</h2><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>كلمة المرور الجديدة (12 حرفاً على الأقل)</label><input type='password' name='password' minlength='12' required autocomplete='new-password'><label>تأكيد كلمة المرور</label><input type='password' name='password2' minlength='12' required autocomplete='new-password'><button type='submit'>حفظ كلمة المرور</button></form></main></body></html>"""
+
+===========================================================================
+FILE: templates/index.html
+===========================================================================
+Total lines: 8863
+--- Lines 1 to 100 ---
+1: <!DOCTYPE html>
+2: <html lang="ar" dir="rtl">
+3: <head>
+4:     <meta charset="UTF-8">
+5:     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+6:     <title>FBRAH</title>
+7:     <style>
+8:         :root {
+9:             --fbrah-navy-deep: #0a192f;
+10:             --fbrah-navy-primary: #0f2744;
+11:             --fbrah-navy-surface: #162a45;
+12:             --fbrah-navy-border: #1b3a60;
+13:             --fbrah-blue-accent: #1e88e5;
+14:             --fbrah-gold: #d4af37;
+15:             --fbrah-gold-light: #f3cf7a;
+16:             --fbrah-gold-dark: #b89020;
+17:             --fbrah-bg: #f0f4f9;
+18:             --fbrah-card-bg: #ffffff;
+19:             --fbrah-text-main: #0f1e36;
+20:             --fbrah-text-muted: #5a6b82;
+21:             --fbrah-border: #dbe4ef;
+22:             --fbrah-shadow: 0 4px 20px rgba(10, 25, 47, 0.08);
+23:             --fbrah-radius: 12px;
+24:         }
+25:         * { box-sizing: border-box; }
+26:         body {
+27:             --fbrah-font-scale: 1;
+28:             font-size: calc(15px * var(--fbrah-font-scale));
+29:             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", "Tajawal", "IBM Plex Sans Arabic", Ebrima, Calibri, sans-serif;
+30:             margin: 0;
+31:             padding-bottom: 45px; /* مساحة للشريط السفلي */
+32:             background: var(--fbrah-bg);
+33:             color: var(--fbrah-text-main);
+34:             min-height: 100vh;
+35:         }
+36:         .top-bar {
+37:             background: linear-gradient(90deg, #d4af37 0%, #ecd58a 50%, #d4af37 100%);
+38:             color: #0a192f;
+39:             padding: 6px 18px;
+40:             font-size: 13px;
+41:             display: flex;
+42:             justify-content: space-between;
+43:             align-items: center;
+44:             font-weight: 600;
+45:             direction: ltr;
+46:             border-bottom: 1px solid rgba(10, 25, 47, 0.15);
+47:         }
+48:         .top-bar span { font-weight: 600; }
+49:         #datetime {
+50:             direction: ltr !important;
+51:             unicode-bidi: isolate;
+52:             font-variant-numeric: tabular-nums;
+53:             letter-spacing: 0.3px;
+54:             font-weight: 600;
+55:         }
+56:         #weather { direction: ltr; unicode-bidi: isolate; }
+57:         textarea[name="question"]:focus {
+58:             outline: none;
+59:             border-color: #168AAD;
+60:             box-shadow: 0 0 0 3px rgba(22,138,173,0.15);
+61:         }
+62:         .ux-hint {
+63:             font-size: 11px;
+64:             color: #8b6914;
+65:             margin: 4px 0 8px;
+66:             line-height: 1.5;
+67:         }
+68:         .ux-hint kbd {
+69:             background: #001F3F;
+70:             color: #d4af37;
+71:             padding: 1px 6px;
+72:             border-radius: 4px;
+73:             font-size: 10px;
+74:         }
+75: 
+76:         .header {
+77:             background: #001F3F;
+78:             color: #e8e8e8;
+79:             padding: 8px 20px;
+80:             display: flex;
+81:             justify-content: space-between;
+82:             align-items: center;
+83:             flex-wrap: wrap;
+84:             gap: 8px;
+85:         }
+86:         .logo { font-size: 40px; font-weight: 700; letter-spacing: 1px; }
+87:         .l1 { color: #d4af37; }
+88:         .l2 { color: #09a4f1; }
+89:         .l3 { color: #FFEF00; }
+90:         .l4 { color: #228B22; }
+91:         .l5 { color: #ff8a7a; }
+92:         .header-links { display: flex; gap: 14px; font-size: 13px; align-items: center; }
+93:         .header a { color: #d4af37; text-decoration: none; font-weight: 600; }
+94:         .header a:hover { text-decoration: underline; }
+95:         .container { max-width: 920px; margin: 10px auto; padding: 0 12px; }
+96:         .card {
+97:             background: white;
+98:             border-radius: 10px;
+99:             padding: 14px 16px;
+100:             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+--- Lines 2140 to 2200 ---
+2140:         .answer table { display:block; max-width:100%; overflow-x:auto; border-collapse:collapse; }
+2141:         #voiceBar #micBtn.listening, #micBtn.listening {
+2142:             background:#001F3F !important; color:#FFEF00 !important;
+2143:             border:2px solid #d4af37 !important;
+2144:             box-shadow:0 0 0 3px rgba(212,175,55,.18), 0 0 16px rgba(0,31,63,.25);
+2145:         }
+2146:         #wakeBtn.active { background:#001F3F !important; color:#FFEF00 !important; border-color:#d4af37 !important; }
+2147:         #penPanel { resize: both; min-width: 280px; min-height: 240px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; }\n        #penCanvas { touch-action:none; user-select:none; -webkit-user-select:none; cursor:crosshair; }
+2148:         #penPanel .pen-btns button:disabled { opacity:.55; cursor:not-allowed; }
+2149:         @media (prefers-reduced-motion: reduce) {
+2150:             .ticker-marquee, .ticker-pulse { animation:none !important; }
+2151:             *, *::before, *::after { scroll-behavior:auto !important; }
+2152:         }
+2153: </style>
+2154: </head>
+2155: <body>
+2156:     <div class="top-bar">
+2157:         <span id="datetime"></span>
+2158:         <span id="weather">جاري تحميل الطقس...</span>
+2159:     </div>
+2160:     <div class="header">
+2161:         <div class="logo" dir="ltr" lang="en" style="direction:ltr;unicode-bidi:isolate">
+2162:             <bdi><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></bdi>
+2163:         </div>
+2164:         <div class="header-links">
+2165:             <div class="lang-switch" title="Language / اللغة">
+2166:                 <button type="button" id="langArBtn" class="active" onclick="setFbrahLang('ar')">عربي</button>
+2167:                 <button type="button" id="langEnBtn" onclick="setFbrahLang('en')">EN</button>
+2168:             </div>
+2169:             <button type="button" id="layoutEditBtn" data-i18n="layoutEdit">تحرير التخطيط</button>
+2170: 
+2171:             <span id="welcomeText" data-i18n="welcome">مرحباً</span> <b id="userNameLabel">{{ user }}</b>
+2172:             {% if role == 'admin' %}
+2173:             <a href="{{ url_for('admin_users') }}" id="adminUsersLink" data-i18n="users">المستخدمين</a>
+2174:             {% endif %}
+2175:             <a href="/account" title="الحساب" id="accountLink" data-i18n="account">حسابي</a>
+2176:             <form method="post" action="{{ url_for('logout') }}" style="display:inline"><button type="submit" id="logoutLink" data-i18n="logout">خروج</button></form>
+2177:         </div>
+2178:     </div>
+2179:     <div class="container">
+2180:         <div class="card">
+2181:             <div class="title-row" id="titleRow">
+2182:                 <div class="fbrah-ui-chip" id="fbrahUiChip">واجهة عربية · جودة عالية</div>
+2183:                 <h2>اسأل <span dir="ltr" style="direction:ltr;unicode-bidi:isolate;display:inline-block"><bdi><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></bdi></span></h2>
+2184:                 <div class="font-controls" title="تكبير وتصغير الخط">
+2185:                     <button type="button" id="fontDecBtn" aria-label="تصغير الخط">أ−</button>
+2186:                     <span id="fontSizeLabel">100%</span>
+2187:                     <button type="button" id="fontIncBtn" aria-label="تكبير الخط">أ+</button>
+2188:                     <button type="button" id="fontResetBtn" aria-label="الخط الافتراضي" style="font-size:11px;min-width:auto;padding:4px 6px;">إعادة</button>
+2189:                 </div>
+2190:                 <span class="title-hint fbrah-hint-white" id="voiceDockHint" data-i18n="voiceDock">شريط الصوت بالاسفل — انقره أو اسحبه أو صغّره كما تشاء</span>
+2191:             </div>
+2192:             <form method="post" enctype="multipart/form-data" id="mainForm">
+2193:                 <input type="hidden" name="action_capture" id="actionCapture" value="">
+2194:                 <div class="field">
+2195:                     <label class="label-model">الموديل</label>
+2196:                     <select name="model" id="model">
+2197:                         <option value="groq" {% if selected_model == 'groq' or selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · openai/gpt-oss-120b</option>
+2198:                         <option value="groq:openai/gpt-oss-120b" {% if selected_model == 'groq:openai/gpt-oss-120b' %}selected{% endif %}>GROQ · gpt-oss-120b (صريح)</option>
+2199:                         <option value="gemini:gemini-3.8-flash" {% if selected_model == 'gemini:gemini-3.8-flash' or selected_model == 'gemini' %}selected{% endif %}>Gemini · 3.8 Flash</option>
+2200:                         <option value="gemini:gemini-3.5-flash" {% if selected_model == 'gemini:gemini-3.5-flash' %}selected{% endif %}>Gemini · 3.5 Flash</option>
+--- Lines 4300 to 4380 ---
+4300:             answer.className = "answer";
+4301:             answer.setAttribute("role", "status");
+4302:             answer.textContent = answerText;
+4303:             block.appendChild(answer);
+4304:             var webOption = form.querySelector(".web-option");
+4305:             form.insertBefore(block, webOption || null);
+4306:             if (loading) loading.style.display = "none";
+4307:             form.classList.remove("searching");
+4308:             document.body.classList.remove("searching-active");
+4309:             if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = (FBRAH_I18N[fbrahLang()]||FBRAH_I18N.ar).send; }
+4310:             try {
+4311:                 sessionStorage.removeItem(SEARCH_START_KEY);
+4312:                 sessionStorage.removeItem(SEARCH_FINAL_KEY);
+4313:             } catch (e) {}
+4314:             if (fromVoice && typeof speakAnswer === "function") {
+4315:                 setVoiceStatus(fbrahT("vsSpeakAns","نطق الإجابة الصوتية…"));
+4316:                 if (window.speechSynthesis) {
+4317:                     window.speechSynthesis.cancel();
+4318:                     var utterance = preferArabicVoice(new SpeechSynthesisUtterance(answerText));
+4319:                     utterance.lang = getTtsLang();
+4320:                     utterance.rate = getRate();
+4321:                     var voice = typeof pickVoice === "function" ? pickVoice(utterance.lang) : null;
+4322:                     if (voice) utterance.voice = voice;
+4323:                     window.speechSynthesis.speak(utterance);
+4324:                 }
+4325:             }
+4326:         }
+4327: 
+4328:         form.addEventListener("submit", async function (event) {
+4329:             try { if (typeof saveFbrahPrefs === "function") saveFbrahPrefs(); } catch (e) {}
+4330:             var s = event.submitter;
+4331:             var action = s ? s.value : "ask";
+4332: 
+4333:             // Send feedback asynchronously so the answer stays visible.
+4334:             if (action === "feedback_up" || action === "feedback_down") {
+4335:                 event.preventDefault();
+4336:                 if (s) s.disabled = true;
+4337:                 if (feedbackStatus) feedbackStatus.textContent = "جارٍ حفظ التقييم...";
+4338:                 try {
+4339:                     var payload = new FormData();
+4340:                     var questionField = form.querySelector('[name="fb_question"]');
+4341:                     var answerField = form.querySelector('[name="fb_answer"]');
+4342:                     var modelField = form.querySelector('[name="fb_model"]');
+4343:                     var commentField = form.querySelector('[name="fb_comment"]');
+4344:                     payload.set("question", questionField ? questionField.value : "");
+4345:                     payload.set("answer", answerField ? answerField.value : "");
+4346:                     payload.set("model", modelField ? modelField.value : "");
+4347:                     payload.set("comment", commentField ? commentField.value : "");
+4348:                     payload.set("rating", action === "feedback_up" ? "1" : "-1");
+4349:                     var response = await fetch("/feedback", {
+4350:                         method: "POST",
+4351:                         body: payload,
+4352:                         credentials: "same-origin",
+4353:                         headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+4354:                     });
+4355:                     var raw = await response.text();
+4356:                     var result = null;
+4357:                     try { result = JSON.parse(raw); } catch (parseError) {
+4358:                         if (response.redirected || response.status === 401 || response.status === 403 || /تسجيل الدخول|login/i.test(raw)) {
+4359:                             throw new Error("انتهت جلسة الدخول. سجّل الدخول ثم أعد التقييم.");
+4360:                         }
+4361:                         console.error("FBRAH feedback endpoint returned non-JSON:", response.status, raw.slice(0, 300));
+4362:                         throw new Error("وصل رد غير متوقع من الخادم. لم يتم تأكيد الحفظ؛ يمكنك إعادة المحاولة.");
+4363:                     }
+4364:                     if (!response.ok || !result || result.ok !== true) {
+4365:                         throw new Error((result && result.message) || "تعذر حفظ التقييم. حاول مرة أخرى.");
+4366:                     }
+4367:                     // أزل أداة التقييم بالكامل بعد تأكيد الحفظ، مع إبقاء الإجابة دون تغيير.
+4368:                     var bar = form.querySelector(".feedback-bar");
+4369:                     if (bar) {
+4370:                         var confirmation = document.createElement("div");
+4371:                         confirmation.className = "feedback-confirmation";
+4372:                         confirmation.setAttribute("role", "status");
+4373:                         confirmation.textContent = result.message || "شكرًا لك، تم حفظ التقييم.";
+4374:                         bar.parentNode.insertBefore(confirmation, bar.nextSibling);
+4375:                         bar.remove();
+4376:                         confirmation.scrollIntoView({ behavior: "smooth", block: "nearest" });
+4377:                     }
+4378:                 } catch (error) {
+4379:                     if (s) s.disabled = false;
+4380:                     if (feedbackStatus) feedbackStatus.textContent =
+--- Lines 6940 to 7100 ---
+6940:         });
+6941:         setTimeout(function () { try { refreshDialogueContinuity(); } catch (e) {} }, 400);
+6942: 
+6943: 
+6944: 
+6945:         // ========== تسجيل صوتي (10 × 120 دقيقة) ==========
+6946:         var fbrahRec = {
+6947:             mediaRec: null,
+6948:             chunks: [],
+6949:             stream: null,
+6950:             startedAt: 0,
+6951:             timerIv: null,
+6952:             maxMs: 120 * 60 * 1000,
+6953:             recording: false,
+6954:             transcript: "",
+6955:             apiBase: "/api/recordings"
+6956:         };
+6957:         async function fbrahRecProbe() {
+6958:             var bases = ["/api/recordings", "/recordings/api"];
+6959:             for (var i = 0; i < bases.length; i++) {
+6960:                 try {
+6961:                     var r = await fetch(bases[i], { credentials: "same-origin", headers: fbrahRecHeaders() });
+6962:                     if (r.status !== 404) {
+6963:                         fbrahRec.apiBase = bases[i];
+6964:                         return bases[i];
+6965:                     }
+6966:                 } catch (e) {}
+6967:             }
+6968:             return null;
+6969:         }
+6970:         function fbrahRecFmt(sec) {
+6971:             sec = Math.max(0, Math.floor(sec));
+6972:             var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+6973:             function z(n) { return (n < 10 ? "0" : "") + n; }
+6974:             if (h > 0) return h + ":" + z(m) + ":" + z(s);
+6975:             return m + ":" + z(s);
+6976:         }
+6977:         function fbrahRecUpdateTimer() {
+6978:             var el = document.getElementById("recTimer");
+6979:             if (!el || !fbrahRec.startedAt) return;
+6980:             var sec = (Date.now() - fbrahRec.startedAt) / 1000;
+6981:             el.textContent = fbrahRecFmt(sec);
+6982:             if (Date.now() - fbrahRec.startedAt >= fbrahRec.maxMs) {
+6983:                 fbrahRecStop();
+6984:             }
+6985:         }
+6986:         function fbrahRecHeaders() {
+6987:             return {
+6988:                 "X-Requested-With": "XMLHttpRequest",
+6989:                 "Accept": "application/json"
+6990:             };
+6991:         }
+6992:         async function fbrahRecRefreshList() {
+6993:             var ul = document.getElementById("recList");
+6994:             if (!ul) return;
+6995:             try {
+6996:                 if (!fbrahRec._probed) {
+6997:                     await fbrahRecProbe();
+6998:                     fbrahRec._probed = true;
+6999:                 }
+7000:                 var r = await fetch(fbrahRec.apiBase, { credentials: "same-origin", headers: fbrahRecHeaders() });
+7001:                 if (r.status === 404) {
+7002:                     ul.innerHTML = "<li style=\"color:#760d0d\">مسار التسجيل غير مفعّل — انسخ app.py الجديد وأعد تشغيل python app.py</li>";
+7003:                     return;
+7004:                 }
+7005:                 if (r.status === 401) {
+7006:                     ul.innerHTML = "<li style=\"color:#760d0d\">سجّل الدخول أولاً</li>";
+7007:                     return;
+7008:                 }
+7009:                 var data = await r.json();
+7010:                 ul.innerHTML = "";
+7011:                 if (!(data.items || []).length) {
+7012:                     ul.innerHTML = "<li style=\"color:#fff44f;font-weight:600\">لا توجد تسجيلات — ● سجل ثم ⏹ أوقف. للمسح: زر 🗑 مسح بجانب كل تسجيل</li>";
+7013:                     return;
+7014:                 }
+7015:                 (data.items || []).forEach(function (it) {
+7016:                     var li = document.createElement("li");
+7017:                     li.style.flexDirection = "column";
+7018:                     li.style.alignItems = "stretch";
+7019:                     var dur = fbrahRecFmt(it.duration_sec || 0);
+7020:                     var base = fbrahRec.apiBase;
+7021:                     var audioUrl = base + "/" + it.id + "/download?play=1";
+7022:                     var dlUrl = base + "/" + it.id + "/download";
+7023:                     var docUrl = base + "/" + it.id + "/download?kind=docx";
+7024:                     var wordBtn = it.transcript_file
+7025:                         ? ("<a href=\"" + docUrl + "\" style=\"background:#228B22;color:#fff;padding:4px 10px;border-radius:6px;text-decoration:none;font-weight:700\">📄 Word</a> ")
+7026:                         : "";
+7027:                     li.innerHTML =
+7028:                         "<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%\">" +
+7029:                         "<strong style=\"flex:1\">" + (it.title || it.id) + "</strong>" +
+7030:                         "<span style=\"color:#666\">" + dur + "</span></div>" +
+7031:                         "<audio controls preload=\"metadata\" src=\"" + audioUrl + "\" style=\"width:100%;margin:4px 0\"></audio>" +
+7032:                         "<div style=\"display:flex;flex-wrap:wrap;gap:6px\">" +
+7033:                         "<a href=\"" + dlUrl + "\" download style=\"background:#001F3F;color:#d4af37;padding:4px 10px;border-radius:6px;text-decoration:none;font-weight:700\">⬇ تنزيل الصوت</a> " +
+7034:                         wordBtn +
+7035:                         "<button type=\"button\" onclick=\"fbrahRecExport('" + it.id + "')\" style=\"background:#d4af37;color:#001F3F;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:700\">📁 " + (fbrahLang()==="en"?"To Results":"إلى النتائج") + "</button> " +
+7036:                         "<button type=\"button\" onclick=\"fbrahRecDelete('" + it.id + "')\" style=\"background:#760d0d;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:700\">🗑 " + (fbrahLang()==="en"?"Delete":"مسح") + "</button>" +
+7037:                         "</div>";
+7038:                     ul.appendChild(li);
+7039:                 });
+7040:             } catch (e) {
+7041:                 ul.innerHTML = "<li style=\"color:#760d0d\">تعذر تحميل القائمة — أعد تشغيل السيرفر بعد تحديث app.py</li>";
+7042:             }
+7043:         }
+7044:         async function fbrahRecExport(rid) {
+7045:             try {
+7046:                 if (!fbrahRec._probed) {
+7047:                     try { await fbrahRecProbe(); fbrahRec._probed = true; } catch (e0) {}
+7048:                 }
+7049:                 var fd = new FormData();
+7050:                 fd.append("ui_lang", typeof fbrahLang === "function" ? fbrahLang() : "ar");
+7051:                 var url = (fbrahRec.apiBase || "/api/recordings") + "/" + encodeURIComponent(rid) + "/export";
+7052:                 var r = await fetch(url, {
+7053:                     method: "POST",
+7054:                     body: fd,
+7055:                     credentials: "same-origin",
+7056:                     headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest" }
+7057:                 });
+7058:                 var raw = await r.text();
+7059:                 var data = {};
+7060:                 try { data = JSON.parse(raw); } catch (e) { data = { message: raw.slice(0, 300) }; }
+7061:                 if (r.ok && data.ok) {
+7062:                     var msg = data.message || "OK";
+7063:                     (function(){
+7064:                         var short = (fbrahLang()==="en") ? "Saved to Results." : "تم الحفظ في النتائج.";
+7065:                         if (msg && msg.length > 80) setVoiceStatus(short); else setVoiceStatus(msg || short);
+7066:                     })();
+7067:                     var tip = document.getElementById("recPathsTip");
+7068:                     if (tip) tip.textContent = msg;
+7069:                     alert(msg);
+7070:                     fbrahRecRefreshList();
+7071:                     fbrahRec._uploadLock = false;
+7072:                 } else {
+7073:                     fbrahRec._uploadLock = false;
+7074:                     var err = (data && data.message) ? data.message : ("HTTP " + r.status + " — " + raw.slice(0, 200));
+7075:                     alert((fbrahLang()==="en" ? "Export failed:\n" : "فشل التصدير:\n") + err);
+7076:                 }
+7077:             } catch (e) {
+7078:                 alert((fbrahLang()==="en" ? "Export error: " : "خطأ التصدير: ") + String(e));
+7079:             }
+7080:         }
+7081:         async function fbrahRecDelete(rid) {
+7082:             if (!rid) return;
+7083:             try {
+7084:                 await fetch((fbrahRec.apiBase || "/api/recordings") + "/" + rid, { method: "DELETE", credentials: "same-origin", headers: fbrahRecHeaders() });
+7085:                 fbrahRecRefreshList();
+7086:                 setVoiceStatus(fbrahLang() === "en" ? "Recording deleted" : "تم حذف التسجيل");
+7087:             } catch (e) {}
+7088:         }
+7089:         async function fbrahRecStart() {
+7090:             if (fbrahRec.recording) return;
+7091:             var st = document.getElementById("recStatus");
+7092:             try {
+7093:                 var chk = await fetch("/api/recordings", { credentials: "same-origin" });
+7094:                 var meta = await chk.json();
+7095:                 if ((meta.items || []).length >= (meta.max || 10)) {
+7096:                     if (st) st.textContent = fbrahT("recMax", "الحد الأقصى 10");
+7097:                     setVoiceStatus(fbrahT("recMax", "الحد الأقصى 10"));
+7098:                     return;
+7099:                 }
+7100:             } catch (e) {}
+--- Lines 8060 to 8130 ---
+8060:         })();
+8061: 
+8062: 
+8063:         // —— التسجيل يستمر أثناء البحث ورفع الملفات (لا إعادة تحميل الصفحة) ——
+8064:         (function fbrahKeepRecordingAcrossActions() {
+8065:             function isRecActive() {
+8066:                 try {
+8067:                     return !!(window.fbrahRec && fbrahRec.recording && fbrahRec.mediaRec &&
+8068:                         fbrahRec.mediaRec.state === "recording");
+8069:                 } catch (e) { return false; }
+8070:             }
+8071:             window.addEventListener("beforeunload", function (ev) {
+8072:                 if (!isRecActive()) return;
+8073:                 ev.preventDefault();
+8074:                 ev.returnValue = "";
+8075:             });
+8076:             var form = document.getElementById("mainForm");
+8077:             if (!form) return;
+8078:             var busyAjax = false;
+8079:             form.addEventListener("submit", function (event) {
+8080:                 if (!isRecActive()) return;
+8081:                 if (busyAjax) { event.preventDefault(); return; }
+8082:                 event.preventDefault();
+8083:                 // لا نستخدم stopPropagation حتى لا تتجمد بقية المستمعات
+8084:                 busyAjax = true;
+8085:                 var submitter = event.submitter;
+8086:                 var fd;
+8087:                 try { fd = new FormData(form); } catch (e) { busyAjax = false; return; }
+8088:                 if (submitter && submitter.name) {
+8089:                     try { fd.set(submitter.name, submitter.value || "1"); } catch (e2) {}
+8090:                 } else if (submitter && submitter.value) {
+8091:                     try { fd.set("action", submitter.value); } catch (e3) {}
+8092:                 }
+8093:                 var loading = document.getElementById("loading");
+8094:                 var sendBtn = document.getElementById("sendBtn");
+8095:                 try {
+8096:                     form.classList.add("searching");
+8097:                     if (loading) loading.style.display = "block";
+8098:                     if (sendBtn) sendBtn.disabled = true;
+8099:                 } catch (e4) {}
+8100:                 fetch(form.getAttribute("action") || window.location.pathname || "/", {
+8101:                     method: "POST",
+8102:                     body: fd,
+8103:                     credentials: "same-origin",
+8104:                     headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "text/html" }
+8105:                 }).then(function (resp) { return resp.text().then(function (text) { return { ok: resp.ok, text: text }; }); })
+8106:                 .then(function (res) {
+8107:                     try {
+8108:                         var doc = new DOMParser().parseFromString(res.text, "text/html");
+8109:                         var newAns = doc.querySelector("#answerBlock, .answer-block, .answer");
+8110:                         var curAns = document.querySelector("#answerBlock, .answer-block, .answer");
+8111:                         if (newAns && curAns) curAns.innerHTML = newAns.innerHTML;
+8112:                         if (typeof setVoiceStatus === "function") {
+8113:                             setVoiceStatus(
+8114:                                 (typeof fbrahLang === "function" && fbrahLang() === "en")
+8115:                                     ? "Done — recording still on"
+8116:                                     : "تم — التسجيل مستمر"
+8117:                             );
+8118:                         }
+8119:                     } catch (e5) {}
+8120:                 }).catch(function () {
+8121:                     try {
+8122:                         if (typeof setVoiceStatus === "function") {
+8123:                             setVoiceStatus("تعذر إرسال الطلب — التسجيل مستمر");
+8124:                         }
+8125:                     } catch (e6) {}
+8126:                 }).finally(function () {
+8127:                     busyAjax = false;
+8128:                     try {
+8129:                         form.classList.remove("searching");
+8130:                         document.body.classList.remove("searching");
+
+===========================================================================
+FILE: templates/admin_users.html
+===========================================================================
+Total lines: 287
+--- Lines 175 to 285 ---
+175: }
+176: </style>
+177: </head>
+178: <body>
+179: <header class="header">
+180:   <div class="brand">
+181:     <span class="g">F</span><span class="b">B</span><span class="y">R</span><span class="gr">A</span><span class="r">H</span>
+182:     <span style="font-size:14px;font-weight:600;color:#d4af37;margin-right:8px;">— إدارة المستخدمين</span>
+183:   </div>
+184:   <a href="{{ url_for('home') }}">العودة للرئيسية</a>
+185: </header>
+186: 
+187: <div class="container">
+188:   <div class="panel-note" id="langNote">FBRAH Admin · Navy / Gold · Panel #404040</div>
+189:   {% if msg %}
+190:   <div class="msg">{{ msg }}</div>
+191:   {% endif %}
+192: 
+193:   <div class="card">
+194:     <h2>إضافة مستخدم</h2>
+195:     <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
+196:     <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+197:       <input type="hidden" name="action" value="add">
+198:       <div class="form-row">
+199:         <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
+200:         <input name="password" type="password" placeholder="كلمة المرور" required minlength="12" autocomplete="new-password">
+201:         <select name="role">
+202:           <option value="user">مستخدم</option>
+203:           <option value="admin">مدير</option>
+204:         </select>
+205:         <button type="submit" class="btn-green">إضافة</button>
+206:       </div>
+207:     </form>
+208:   </div>
+209: 
+210:   <div class="card">
+211:     <h2>قائمة المستخدمين</h2>
+212:     <p class="hint">يمكن تعديل اسم المستخدم وكلمة المرور والدور من هنا. حساب <strong>admin</strong> لا يُحذف ولا يُعاد تسميته.</p>
+213:     <table>
+214:       <thead>
+215:         <tr>
+216:           <th>#</th>
+217:           <th>اسم المستخدم</th>
+218:           <th>البريد</th>
+219:           <th>الهاتف</th>
+220:           <th>الدور</th>
+221:           <th>تاريخ الإنشاء</th>
+222:           <th>تعديل / إجراء</th>
+223:         </tr>
+224:       </thead>
+225:       <tbody>
+226:         {% for u in users %}
+227:         <tr>
+228:           <td data-label="#">{{ u.id }}</td>
+229:           <td data-label="اسم المستخدم"><strong>{{ u.username }}</strong></td>
+230:           <td data-label="البريد">{{ u.email or '—' }}</td>
+231:           <td data-label="الهاتف">{{ u.phone or '—' }}</td>
+232:           <td data-label="الدور">
+233:             {% if u.role == 'admin' %}
+234:             <span class="badge badge-admin">مدير</span>
+235:             {% else %}
+236:             <span class="badge badge-user">مستخدم</span>
+237:             {% endif %}
+238:           </td>
+239:           <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
+240:           <td data-label="تعديل">
+241:             {% if u.username != 'admin' %}
+242:             <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+243:               <input type="hidden" name="action" value="rename_user">
+244:               <input type="hidden" name="user_id" value="{{ u.id }}">
+245:               <input name="new_username" placeholder="اسم جديد" minlength="3" required>
+246:               <button type="submit" class="btn-navy">تغيير الاسم</button>
+247:             </form>
+248:             {% endif %}
+249: 
+250:             <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+251:               <input type="hidden" name="action" value="change_password">
+252:               <input type="hidden" name="user_id" value="{{ u.id }}">
+253:               <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
+254:               <button type="submit" class="btn-navy">تغيير المرور</button>
+255:             </form>
+256: 
+257:             {% if u.username != 'admin' %}
+258:             <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+259:               <input type="hidden" name="action" value="change_role">
+260:               <input type="hidden" name="user_id" value="{{ u.id }}">
+261:               <select name="role">
+262:                 <option value="user" {% if u.role == 'user' %}selected{% endif %}>مستخدم</option>
+263:                 <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>مدير</option>
+264:               </select>
+265:               <button type="submit" class="btn-green">تحديث الدور</button>
+266:             </form>
+267: 
+268:             <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+269:               <input type="hidden" name="action" value="delete">
+270:               <input type="hidden" name="user_id" value="{{ u.id }}">
+271:               <button type="submit" class="btn-danger">حذف</button>
+272:             </form>
+273:             {% else %}
+274:             <span class="hint" style="margin:0">حساب المدير الأساسي — يمكن تغيير كلمة المرور فقط</span>
+275:             {% endif %}
+276:           </td>
+277:         </tr>
+278:         {% else %}
+279:         <tr><td colspan="7">لا يوجد مستخدمون.</td></tr>
+280:         {% endfor %}
+281:       </tbody>
+282:     </table>
+283:   </div>
+284: </div>
+285: <footer>FBRAH — إدارة المستخدمين · ألوان الواجهة الرسمية</footer>
+
+===========================================================================
+SECURITY REFERENCES
+===========================================================================
+--- app.py ---
+398: @app.before_request
+408: @app.after_request
+9082: def login_required(fn):
+9376: @app.route("/login", methods=["GET", "POST"])
+9377: def login():
+9397: session.clear()
+9400: session["user"] = row["username"]
+9407: @app.route("/register", methods=["GET", "POST"])
+9451: @app.route("/logout", methods=["POST"])
+9453: session.clear()
+9509: @login_required
+9523: @app.route("/", methods=["GET", "POST"])
+9524: @login_required
+9823: session.get("user") or "admin",
+9971: (base, dest, ext.lstrip("."), session.get("user") or "admin",
+10050: (base, dest, ext.lstrip("."), session.get("user") or "admin",
+10361: session["user"], question, answer, selected_model,
+10907: session["user"], question, answer,
+10959: @login_required
+10969: @app.route("/api/export_answer", methods=["POST"])
+10970: @login_required
+11010: @app.route("/feedback", methods=["POST"])
+11060: @app.route("/admin/users", methods=["GET", "POST"])
+11148: session["user"] = new_name
+11184: @app.route("/account", methods=["GET", "POST"])
+11185: @login_required
+11240: session["user"] = new_name
+11458: @app.route("/api/reminders", methods=["GET", "POST"])
+11459: @login_required
+11476: @login_required
+11483: @app.route("/api/reminders/<int:rid>/done", methods=["POST"])
+11484: @login_required
+11834: @app.route("/api/image/generate", methods=["POST"])
+11835: @login_required
+11876: @app.route("/api/ocr/extract", methods=["POST"])
+11877: @login_required
+11908: @app.route("/api/recordings", methods=["GET", "POST"])
+11909: @app.route("/recordings/api", methods=["GET", "POST"])
+11910: @login_required
+11933: user = session.get("user") or "admin"
+12077: @login_required
+12097: @app.route("/api/recordings/export-all", methods=["POST"])
+12098: @app.route("/recordings/api/export-all", methods=["POST"])
+12099: @login_required
+12102: user = session.get("user") or "admin"
+12136: @app.route("/api/recordings/<rid>", methods=["DELETE"])
+12137: @app.route("/recordings/api/<rid>", methods=["DELETE"])
+12138: @login_required
+12142: user = session.get("user") or "admin"
+12176: @login_required
+12182: user = session.get("user") or "admin"
+12230: @app.route("/api/recordings/<rid>/export", methods=["POST"])
+12231: @app.route("/recordings/api/<rid>/export", methods=["POST"])
+12232: @login_required
+12269: user = session.get("user") or "admin"
+12403: @app.route("/groq", methods=["GET", "POST"])
+12404: @login_required
+12450: @login_required
+12466: @app.route("/api/clear_dialogue", methods=["POST"])
+12467: @login_required
+12478: @app.route("/api/ocr_handwriting", methods=["POST"])
+12479: @login_required
+12614: @app.route("/api/pen/export", methods=["POST"])
+12615: @login_required
+12657: @app.route("/api/client_telemetry", methods=["POST"])
+12658: @app.route("/api/client_log", methods=["POST"])
+12757: @login_required
+12770: @app.route("/api/self_heal", methods=["POST"])
+12771: @login_required
+12786: from security_hardening import init_security_hardening
+12787: init_security_hardening(app, get_db, hash_password)
+--- security_hardening.py ---
+27: CSRF_SESSION_KEY = "_fbrah_csrf"
+28: CSRF_HEADER = "X-FBRAH-CSRF"
+88: def init_security_hardening(app, get_db, hash_password):
+115: return {"csrf_token": [REDACTED], "")}
+117: @app.before_request
+118: def _fbrah_csrf_guard():
+119: if not session.get(CSRF_SESSION_KEY):
+120: session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+122: supplied = request.headers.get(CSRF_HEADER, "")
+125: expected = session.get(CSRF_SESSION_KEY, "")
+145: @app.after_request
+146: def _fbrah_security_headers(response):
+163: token = session.get(CSRF_SESSION_KEY, "")
+231: @app.before_request
+239: @app.after_request
+264: @bp.route("/forgot-password", methods=["GET", "POST"])
+307: @bp.route("/reset-password/<token>", methods=["GET", "POST"])
+350: session.clear()
+
+===========================================================================
+SENSITIVE ROUTE DECORATORS
+===========================================================================
+--- Around line 9376 ---
+9370: </body>
+9371: </html>
+9372: """
+9373: 
+9374: 
+9375: 
+9376: @app.route("/login", methods=["GET", "POST"])
+9377: def login():
+9378:     message = ""
+9379:     if request.method == "POST":
+9380:         login_id = request.form.get("username", "").strip()
+9381:         password = [REDACTED]"password", "")
+--- Around line 9407 ---
+9401:                 session["role"] = row["role"]
+9402:                 return redirect(url_for("home"))
+9403:         message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+9404:     return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+9405: 
+9406: 
+9407: @app.route("/register", methods=["GET", "POST"])
+9408: def register():
+9409:     message = ""
+9410:     if request.method == "POST":
+9411:         username = request.form.get("username", "").strip()
+9412:         password = [REDACTED]"password", "")
+--- Around line 10969 ---
+10963:         app.config["OUTPUT_FOLDER"],
+10964:         safe_name,
+10965:         as_attachment=True
+10966:     )
+10967: 
+10968: 
+10969: @app.route("/api/export_answer", methods=["POST"])
+10970: @login_required
+10971: def api_export_answer():
+10972:     """تصدير فوري للإجابة المعروضة إلى Word, Excel, PPTX, أو PDF وتنزيلها مباشرة."""
+10973:     data = request.get_json(silent=True) or {}
+10974:     question = (data.get("question") or session.get("last_question") or "تقرير فبرا الذكي").strip()
+--- Around line 11010 ---
+11004: 
+11005: # ============================================================
+11006: # 12. ADMIN USERS
+11007: # ============================================================
+11008: 
+11009: 
+11010: @app.route("/feedback", methods=["POST"])
+11011: def feedback():
+11012:     """حفظ تقييم الإجابة، مع رد JSON ثابت لطلبات AJAX."""
+11013:     is_ajax = request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+11014: 
+11015:     def feedback_response(ok, message, status=200):
+--- Around line 11060 ---
+11054:         return feedback_response(True, message, 200)
+11055:     except Exception:
+11056:         app.logger.exception("فشل حفظ تقييم الإجابة")
+11057:         return feedback_response(False, "تعذر حفظ التقييم في قاعدة البيانات. لم يتم إخفاء أداة التقييم، ويمكنك المحاولة مجددًا.", 500)
+11058: 
+11059: 
+11060: @app.route("/admin/users", methods=["GET", "POST"])
+11061: @admin_required
+11062: def admin_users():
+11063:     message = ""
+11064:     if request.method == "POST":
+11065:         action = request.form.get("action")
+--- Around line 11184 ---
+11178:             """
+11179:         ).fetchall()
+11180:     return render_template("admin_users.html", users=users, msg=message)
+11181: 
+11182: 
+11183: 
+11184: @app.route("/account", methods=["GET", "POST"])
+11185: @login_required
+11186: def account_settings():
+11187:     """تغيير كلمة المرور / البريد / الهاتف للمستخدم الحالي (تعميم حسابي)."""
+11188:     user = session.get("user")
+11189:     message = ""
+--- Around line 11458 ---
+11452:                 last_fingerprint = current_fingerprint
+11453:                 last_review_at = time.time()
+11454:         except Exception:
+11455:             app.logger.exception("تعذر إكمال المراجعة الدورية للفهرس")
+11456: 
+11457: 
+11458: @app.route("/api/reminders", methods=["GET", "POST"])
+11459: @login_required
+11460: def api_reminders():
+11461:     user = session.get("user") or "anonymous"
+11462:     if request.method == "GET":
+11463:         return jsonify({"ok": True, "items": list_pending_reminders(user)})
+--- Around line 11475 ---
+11469:         return jsonify({"ok": False, "error": "message and remind_at required"}), 400
+11470:     sr = save_reminder(user, message[:400], remind_at, kind)
+11471:     rid = sr["id"] if isinstance(sr, dict) else sr
+11472:     return jsonify({"ok": True, "id": rid, "remind_at": remind_at, "message": message, "dropped": (sr or {}).get("dropped") if isinstance(sr, dict) else None})
+11473: 
+11474: 
+11475: @app.route("/api/reminders/due")
+11476: @login_required
+11477: def api_reminders_due():
+11478:     user = session.get("user") or "anonymous"
+11479:     items = due_reminders(user)
+11480:     return jsonify({"ok": True, "items": items})
+--- Around line 11483 ---
+11477: def api_reminders_due():
+11478:     user = session.get("user") or "anonymous"
+11479:     items = due_reminders(user)
+11480:     return jsonify({"ok": True, "items": items})
+11481: 
+11482: 
+11483: @app.route("/api/reminders/<int:rid>/done", methods=["POST"])
+11484: @login_required
+11485: def api_reminder_done(rid):
+11486:     mark_reminder_done(rid, session.get("user"))
+11487:     return jsonify({"ok": True})
+11488: 
+--- Around line 11489 ---
+11483: @app.route("/api/reminders/<int:rid>/done", methods=["POST"])
+11484: @login_required
+11485: def api_reminder_done(rid):
+11486:     mark_reminder_done(rid, session.get("user"))
+11487:     return jsonify({"ok": True})
+11488: 
+11489: @app.route("/api/status")
+11490: def api_status():
+11491:     """نبض احترافي: جاهزية الفهرس والنموذج."""
+11492:     models = get_models_for_ui()
+11493:     return jsonify({
+11494:         "ok": True,
+--- Around line 11908 ---
+11902:             os.unlink(tmp.name)
+11903:         except Exception:
+11904:             pass
+11905: 
+11906: 
+11907: 
+11908: @app.route("/api/recordings", methods=["GET", "POST"])
+11909: @app.route("/recordings/api", methods=["GET", "POST"])
+11910: @login_required
+11911: def api_recordings():
+11912:     """قائمة أو رفع تسجيل + تفريغ في مجلد النتائج (إجباري على الخادم)."""
+11913:     if request.method == "GET":
+--- Around line 11909 ---
+11903:         except Exception:
+11904:             pass
+11905: 
+11906: 
+11907: 
+11908: @app.route("/api/recordings", methods=["GET", "POST"])
+11909: @app.route("/recordings/api", methods=["GET", "POST"])
+11910: @login_required
+11911: def api_recordings():
+11912:     """قائمة أو رفع تسجيل + تفريغ في مجلد النتائج (إجباري على الخادم)."""
+11913:     if request.method == "GET":
+11914:         try:
+--- Around line 12075 ---
+12069:         })
+12070:     except Exception as e:
+12071:         app.logger.exception("recording upload failed")
+12072:         return jsonify({"ok": False, "error": "server", "message": "Server error: " + str(e)[:180]}), 500
+12073: 
+12074: 
+12075: @app.route("/api/recordings/where")
+12076: @app.route("/recordings/api/where")
+12077: @login_required
+12078: def api_recordings_where():
+12079:     """يعرض أين تُحفظ الملفات فعلياً وأمثلة لملفات موجودة."""
+12080:     dirs = _results_dirs()
+--- Around line 12076 ---
+12070:     except Exception as e:
+12071:         app.logger.exception("recording upload failed")
+12072:         return jsonify({"ok": False, "error": "server", "message": "Server error: " + str(e)[:180]}), 500
+12073: 
+12074: 
+12075: @app.route("/api/recordings/where")
+12076: @app.route("/recordings/api/where")
+12077: @login_required
+12078: def api_recordings_where():
+12079:     """يعرض أين تُحفظ الملفات فعلياً وأمثلة لملفات موجودة."""
+12080:     dirs = _results_dirs()
+12081:     found = []
+--- Around line 12097 ---
+12091:         "ok": True,
+12092:         "sample_count": len(found),
+12093:         "storage_available": bool(dirs),
+12094:     })
+12095: 
+12096: 
+12097: @app.route("/api/recordings/export-all", methods=["POST"])
+12098: @app.route("/recordings/api/export-all", methods=["POST"])
+12099: @login_required
+12100: def api_recordings_export_all():
+12101:     """تصدير كل تسجيلات المستخدم إلى النتائج."""
+12102:     user = session.get("user") or "admin"
+--- Around line 12098 ---
+12092:         "sample_count": len(found),
+12093:         "storage_available": bool(dirs),
+12094:     })
+12095: 
+12096: 
+12097: @app.route("/api/recordings/export-all", methods=["POST"])
+12098: @app.route("/recordings/api/export-all", methods=["POST"])
+12099: @login_required
+12100: def api_recordings_export_all():
+12101:     """تصدير كل تسجيلات المستخدم إلى النتائج."""
+12102:     user = session.get("user") or "admin"
+12103:     ui_lang = _ui_lang_from_request()
+--- Around line 12136 ---
+12130:         changed.append(it)
+12131:         out.append({"id": rid, "ok": bool(audio_paths), "audio": audio_name, "paths": audio_paths})
+12132:     _save_recordings_meta(changed)
+12133:     return jsonify({"ok": True, "exported": out, "results_dirs": _results_dirs()})
+12134: 
+12135: 
+12136: @app.route("/api/recordings/<rid>", methods=["DELETE"])
+12137: @app.route("/recordings/api/<rid>", methods=["DELETE"])
+12138: @login_required
+12139: def api_recordings_delete(rid):
+12140:     if rid in ("where", "export-all", "api"):
+12141:         return jsonify({"ok": False, "message": "use /api/recordings/where"}), 404
+--- Around line 12137 ---
+12131:         out.append({"id": rid, "ok": bool(audio_paths), "audio": audio_name, "paths": audio_paths})
+12132:     _save_recordings_meta(changed)
+12133:     return jsonify({"ok": True, "exported": out, "results_dirs": _results_dirs()})
+12134: 
+12135: 
+12136: @app.route("/api/recordings/<rid>", methods=["DELETE"])
+12137: @app.route("/recordings/api/<rid>", methods=["DELETE"])
+12138: @login_required
+12139: def api_recordings_delete(rid):
+12140:     if rid in ("where", "export-all", "api"):
+12141:         return jsonify({"ok": False, "message": "use /api/recordings/where"}), 404
+12142:     user = session.get("user") or "admin"
+--- Around line 12174 ---
+12168:     if not deleted:
+12169:         return jsonify({"ok": False, "error": "not_found", "message": "Not found"}), 404
+12170:     _save_recordings_meta(keep)
+12171:     return jsonify({"ok": True, "items": list_user_recordings(user), "message": "Deleted"})
+12172: 
+12173: 
+12174: @app.route("/api/recordings/<rid>/download")
+12175: @app.route("/recordings/api/<rid>/download")
+12176: @login_required
+12177: def api_recordings_download(rid):
+12178:     """
+12179:     تنزيل للمتصفح + إعادة حفظ نسخة في النتائج على القرص.
+--- Around line 12175 ---
+12169:         return jsonify({"ok": False, "error": "not_found", "message": "Not found"}), 404
+12170:     _save_recordings_meta(keep)
+12171:     return jsonify({"ok": True, "items": list_user_recordings(user), "message": "Deleted"})
+12172: 
+12173: 
+12174: @app.route("/api/recordings/<rid>/download")
+12175: @app.route("/recordings/api/<rid>/download")
+12176: @login_required
+12177: def api_recordings_download(rid):
+12178:     """
+12179:     تنزيل للمتصفح + إعادة حفظ نسخة في النتائج على القرص.
+12180:     ملاحظة: مجلد Downloads في المتصفح سلوك المتصفح؛ النتائج = حفظ خادم على القرص.
+--- Around line 12230 ---
+12224:         return send_from_directory(src_folder, src_name, as_attachment=as_att, download_name=nice)
+12225:     return jsonify({"ok": False, "message": "Not found"}), 404
+12226: 
+12227: 
+12228: 
+12229: 
+12230: @app.route("/api/recordings/<rid>/export", methods=["POST"])
+12231: @app.route("/recordings/api/<rid>/export", methods=["POST"])
+12232: @login_required
+12233: def api_recordings_export(rid):
+12234:     """إعادة تصدير تسجيل قديم إلى مجلدات النتائج بأسماء صحيحة + تفريغ."""
+12235:     try:
+--- Around line 12231 ---
+12225:     return jsonify({"ok": False, "message": "Not found"}), 404
+12226: 
+12227: 
+12228: 
+12229: 
+12230: @app.route("/api/recordings/<rid>/export", methods=["POST"])
+12231: @app.route("/recordings/api/<rid>/export", methods=["POST"])
+12232: @login_required
+12233: def api_recordings_export(rid):
+12234:     """إعادة تصدير تسجيل قديم إلى مجلدات النتائج بأسماء صحيحة + تفريغ."""
+12235:     try:
+12236:         return _api_recordings_export_impl(rid)
+--- Around line 12371 ---
+12365:         "message": msg,
+12366:     })
+12367: 
+12368: 
+12369: 
+12370: 
+12371: @app.route("/debug-template")
+12372: @admin_required
+12373: def debug_template():
+12374:     """تشخيص: أي index.html يقرأه Flask فعلياً؟"""
+12375:     import os
+12376:     path = os.path.join(app.root_path, "templates", "index.html")
+--- Around line 12614 ---
+12608: 
+12609:     except Exception as e:
+12610:         log_terminal("ERROR", "Handwriting OCR API error", str(e))
+12611:         return jsonify({"ok": False, "text": "", "error": "تعذر معالجة الصورة بسبب خطأ داخلي."}), 500
+12612: 
+12613: 
+12614: @app.route("/api/pen/export", methods=["POST"])
+12615: @login_required
+12616: def api_pen_export():
+12617:     """تحويل لوحة القلم إلى نص ثم ملف Word باستخدام مسار OCR المشترك."""
+12618:     data = request.get_json(silent=True) or {}
+12619:     image_data = data.get("image") or ""
+--- Around line 12770 ---
+12764:         "rag_backend": str(FBRAH_VECTOR_BACKEND),
+12765:         "upload_limit_mb": MAX_UPLOAD_MB,
+12766:         "ocr_max_pages": OCR_MAX_PAGES,
+12767:     })
+12768: 
+12769: 
+12770: @app.route("/api/self_heal", methods=["POST"])
+12771: @login_required
+12772: @admin_required
+12773: def api_self_heal():
+12774:     """تشغيل الإصلاح التلقائي الذاتي للمدير فقط."""
+12775:     res = FbrahSelfHealingEngine.diagnose_and_heal()
+
+===========================================================================
+GIT STATUS
+===========================================================================
+Branch:
+release/fbrah-ai-2026-11-12
+Status:
+D FBRAH_AI_GITHUB_RELEASE_CANDIDATE_2026-11-12.zip.sha256
+ D FBRAH_AI_RELEASE_2026-11-12.zip.sha256
+ M IMPLEMENTATION_REPORT_AR.md
+ M MANIFEST_SHA256.txt
+ M app.py
+ M security_hardening.py
+ M templates/admin_users.html
+ M templates/index.html
+ M test_release_integrity.py
+?? FBRAH_AI_COMPREHENSIVE_AUDIT.txt
+?? FBRAH_AI_Release_2026-11-14.zip.sha256
+?? FBRAH_CSRF_DIAGNOSTIC.txt
+?? FBRAH_CSRF_FINAL_REVIEW.txt
+?? FBRAH_CSRF_FOCUSED.txt
+?? FBRAH_CSRF_SOURCE_REVIEW.txt
+?? FBRAH_FULL_AUDIT_2026-11-14.txt
+?? RELEASE_UPDATE_2026-11-14_AR.md
+Recent commits:
+6b0bea9 Complete FBRAH AI release audit and updates
+15f0273 Add release integrity manifest
+5646fa8 Prepare FBRAH AI release candidate
+1cd9048 Create clean secure project baseline
+
+===========================================================================
+PYTHON SYNTAX VALIDATION
+===========================================================================
+app.py: PASS
+security_hardening.py: PASS

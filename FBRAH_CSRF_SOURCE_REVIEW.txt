@@ -1,0 +1,966 @@
+﻿FBRAH CSRF SOURCE REVIEW
+Generated: 11/14/2026 01:45:10
+
+===== FILE: app.py =====
+   386:                 if d_parts:
+   387:                     line += "\n    ↳ " + " | ".join(d_parts)
+   388:             else:
+   389:                 line += f"\n    ↳ {details}"
+   390:         print(line, flush=True)
+   391:     except Exception:
+   392:         try:
+   393:             print(f"[{category}] {message}", flush=True)
+   394:         except Exception:
+   395:             pass
+   396: 
+   397: 
+   398: @app.before_request
+   399: def _fbrah_log_request():
+   400:     request._start_time = time.time()
+   401:     path = request.path
+   402:     # تجنب إغراق التيرمنال بالأصول الثابتة ونبضات التذكير
+   403:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+   404:         user = session.get("user") or "ضيف / Anonymous"
+   405:         log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+   406: 
+   407: 
+   408: @app.after_request
+   409: def _fbrah_log_response(response):
+   410:     start = getattr(request, "_start_time", None)
+   411:     latency = f"{(time.time() - start)*1000:.1f}ms" if start else "N/A"
+   412:     path = request.path
+   413:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+   414:         log_terminal("HTTP", f"{request.method} {path} -> Status {response.status_code} ({latency})")
+   415:     return response
+   416: 
+   417: 
+   418: # ============================================================
+   419: # SELF-HEALING & DIAGNOSTICS ENGINE
+   420: # ============================================================
+   421: 
+   422: class FbrahSelfHealingEngine:
+   423:     """محرك فحص وتشخيص وإصلاح ذاتي تلقائي للمنظومة وقواعد البيانات والمجلدات والـ RAG."""
+   424:     @staticmethod
+   425:     def diagnose_and_heal():
+   426:         results = {
+------
+  9070:                 pdf.drawString(margin_x, y, shaped_chunk)
+  9071:             y -= 15
+  9072: 
+  9073:     pdf.save()
+  9074:     log_terminal("FILE", f"Generated Professional PDF: {os.path.basename(path)}")
+  9075:     return os.path.basename(path)
+  9076: 
+  9077: 
+  9078: # ============================================================
+  9079: # 9. AUTHENTICATION
+  9080: # ============================================================
+  9081: 
+  9082: def login_required(fn):
+  9083:     @wraps(fn)
+  9084:     def wrapped(*args, **kwargs):
+  9085:         if "user" not in session:
+  9086:             is_ajax = (
+  9087:                 request.headers.get("X-Requested-With", "").lower() == "xmlhttprequest"
+  9088:                 or "application/json" in request.headers.get("Accept", "").lower()
+  9089:                 or request.path.startswith("/api/")
+  9090:             )
+  9091:             if is_ajax:
+  9092:                 return jsonify({"ok": False, "message": "انتهت جلسة الدخول. سجّل الدخول ثم أعد المحاولة."}), 401
+  9093:             return redirect(url_for("login", next=request.full_path if request.query_string else request.path))
+  9094:         return fn(*args, **kwargs)
+  9095:     return wrapped
+  9096: 
+  9097: 
+  9098: def admin_required(fn):
+  9099:     @wraps(fn)
+  9100:     def wrapped(*args, **kwargs):
+------
+  9183:     <div class="top">
+  9184:       <div class="lang-switch">
+  9185:         <button type="button" id="langAr" class="active" onclick="setLang('ar')">عربي</button>
+  9186:         <button type="button" id="langEn" onclick="setLang('en')">EN</button>
+  9187:       </div>
+  9188:       <div class="logo" aria-label="FBRAH"><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></div>
+  9189:       <p class="tag" data-i="tag">مساعد فبرا القانوني والبحثي الذكي · كحلي × ذهبي</p>
+  9190:     </div>
+  9191:     <div class="body">
+  9192:       <h1 data-i="title">تسجيل الدخول</h1>
+  9193:       <div class="panel" data-i="hint">أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور</div>
+  9194:       <div class="msg">__MESSAGE__</div>
+  9195:       <form method="post" autocomplete="on"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+  9196:         <div class="field">
+  9197:           <label for="username" data-i="user">اسم المستخدم / البريد / الهاتف</label>
+  9198:           <input id="username" name="username" required autofocus placeholder="admin">
+  9199:         </div>
+  9200:         <div class="field">
+  9201:           <label for="password" data-i="pass">كلمة المرور</label>
+  9202:           <input id="password" name="password" type="password" required placeholder="••••••••">
+  9203:         </div>
+  9204:         <button class="btn" type="submit" data-i="btn">دخول إلى FBRAH</button>
+  9205:       </form>
+  9206:       <div class="foot"><span data-i="noAcc">ليس لديك حساب؟</span> <a href="/register" data-i="reg">إنشاء حساب جديد</a></div>
+  9207:     </div>
+  9208:   </div>
+  9209: </div>
+  9210: <script>
+  9211: var I={
+  9212:  ar:{title:"تسجيل الدخول",user:"اسم المستخدم / البريد / الهاتف",pass:"كلمة المرور",btn:"دخول إلى FBRAH",noAcc:"ليس لديك حساب؟",reg:"إنشاء حساب جديد",hint:"أدخل اسم المستخدم أو البريد أو الهاتف ثم كلمة المرور",tag:"مساعد فبرا القانوني والبحثي الذكي · كحلي × ذهبي"},
+  9213:  en:{title:"Sign in",user:"Username / email / phone",pass:"Password",btn:"Sign in to FBRAH",noAcc:"Don't have an account?",reg:"Create an account",hint:"Enter username, email or phone, then password",tag:"FBRAH AI Legal & Research Assistant · Navy × Gold"}
+  9214: };
+  9215: function setLang(lang){
+  9216:   lang = lang==="en"?"en":"ar";
+  9217:   document.documentElement.lang=lang;
+  9218:   document.documentElement.dir=lang==="en"?"ltr":"rtl";
+  9219:   var t=I[lang];
+  9220:   document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i"); if(t[k]) el.textContent=t[k];});
+  9221:   var userInp = document.getElementById("username");
+  9222:   var passInp = document.getElementById("password");
+------
+  9310:     <div class="bar"></div>
+  9311:     <div class="top">
+  9312:       <div class="lang-switch">
+  9313:         <button type="button" id="regLangAr" class="active" onclick="setRegLang('ar')">عربي</button>
+  9314:         <button type="button" id="regLangEn" onclick="setRegLang('en')">EN</button>
+  9315:       </div>
+  9316:       <div class="logo" aria-label="FBRAH"><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></div>
+  9317:       <p class="tag" data-i="tag">إنشاء حساب مستخدم جديد لمنظومة فبرا</p>
+  9318:     </div>
+  9319:     <div class="body">
+  9320:       <h1 data-i="title">إنشاء حساب جديد</h1>
+  9321:       <div class="msg">__MESSAGE__</div>
+  9322:       <form method="post" autocomplete="off"><input type="hidden" name="_csrf_token" value="__CSRF_TOKEN__">
+  9323:         <div class="field">
+  9324:           <label for="regUsername" data-i="user">اسم المستخدم (3 أحرف على الأقل)</label>
+  9325:           <input id="regUsername" name="username" required autofocus placeholder="اسم المستخدم">
+  9326:         </div>
+  9327:         <div class="field">
+  9328:           <label for="regEmail" data-i="email">البريد الإلكتروني (اختياري)</label>
+  9329:           <input id="regEmail" name="email" type="email" placeholder="example@domain.com">
+  9330:         </div>
+  9331:         <div class="field">
+  9332:           <label for="regPhone" data-i="phone">رقم الهاتف (اختياري)</label>
+  9333:           <input id="regPhone" name="phone" placeholder="01xxxxxxxxx">
+  9334:         </div>
+  9335:         <div class="field">
+  9336:           <label for="regPassword" data-i="pass">كلمة المرور (6 خانات على الأقل)</label>
+  9337:           <input id="regPassword" name="password" type="password" required minlength="12" maxlength="256" placeholder="••••••••">
+  9338:         </div>
+  9339:         <div class="field">
+  9340:           <label for="regPassword2" data-i="pass2">تأكيد كلمة المرور</label>
+  9341:           <input id="regPassword2" name="password2" type="password" required minlength="12" maxlength="256" placeholder="••••••••">
+  9342:         </div>
+  9343:         <button class="btn" type="submit" data-i="btn">تسجيل الحساب</button>
+  9344:       </form>
+  9345:       <div class="foot"><span data-i="hasAcc">لديك حساب بالفعل؟</span> <a href="/login" data-i="backLogin">العودة لتسجيل الدخول</a></div>
+  9346:     </div>
+  9347:   </div>
+  9348: </div>
+  9349: <script>
+  9350: var R_I={
+  9351:  ar:{title:"إنشاء حساب جديد",user:"اسم المستخدم (3 أحرف على الأقل)",email:"البريد الإلكتروني (اختياري)",phone:"رقم الهاتف (اختياري)",pass:"كلمة المرور (6 خانات على الأقل)",pass2:"تأكيد كلمة المرور",btn:"تسجيل الحساب",hasAcc:"لديك حساب بالفعل؟",backLogin:"العودة لتسجيل الدخول",tag:"إنشاء حساب مستخدم جديد لمنظومة فبرا"},
+  9352:  en:{title:"Create Account",user:"Username (min 3 characters)",email:"Email (Optional)",phone:"Phone (Optional)",pass:"Password (min 6 characters)",pass2:"Confirm Password",btn:"Register Account",hasAcc:"Already have an account?",backLogin:"Return to Sign In",tag:"Create a new user account for FBRAH AI"}
+  9353: };
+  9354: function setRegLang(lang){
+  9355:   lang = lang==="en"?"en":"ar";
+  9356:   document.documentElement.lang=lang;
+  9357:   document.documentElement.dir=lang==="en"?"ltr":"rtl";
+  9358:   var t=R_I[lang];
+  9359:   document.querySelectorAll("[data-i]").forEach(function(el){var k=el.getAttribute("data-i"); if(t[k]) el.textContent=t[k];});
+  9360:   var u = document.getElementById("regUsername");
+  9361:   if(u) u.placeholder = lang==="en" ? "Enter username" : "اسم المستخدم";
+------
+  9364:   if(bAr) bAr.className=lang==="ar"?"active":"";
+  9365:   if(bEn) bEn.className=lang==="en"?"active":"";
+  9366:   try{localStorage.setItem("fbrah_login_lang",lang);}catch(e){}
+  9367: }
+  9368: try{var L=localStorage.getItem("fbrah_login_lang"); if(L) setRegLang(L);}catch(e){}
+  9369: </script>
+  9370: </body>
+  9371: </html>
+  9372: """
+  9373: 
+  9374: 
+  9375: 
+  9376: @app.route("/login", methods=["GET", "POST"])
+  9377: def login():
+  9378:     message = ""
+  9379:     if request.method == "POST":
+  9380:         login_id = request.form.get("username", "").strip()
+  9381:         password = request.form.get("password", "")
+  9382:         with get_db() as db:
+  9383:             row = db.execute(
+  9384:                 """
+  9385:                 SELECT * FROM users
+  9386:                 WHERE username=? OR email=? OR phone=?
+  9387:                 """,
+  9388:                 (login_id, login_id, login_id)
+  9389:             ).fetchone()
+  9390:             if row and verify_password(password, row["password_hash"]):
+  9391:                 if not (row["password_hash"] or "").startswith("pbkdf2_sha256$"):
+  9392:                     db.execute(
+  9393:                         "UPDATE users SET password_hash=? WHERE id=?",
+  9394:                         (hash_password(password), row["id"])
+  9395:                     )
+  9396:                 _csrf_after_login = secrets.token_urlsafe(32)
+  9397:                 session.clear()
+  9398:                 session["_fbrah_csrf"] = _csrf_after_login
+  9399:                 session.permanent = True
+  9400:                 session["user"] = row["username"]
+  9401:                 session["role"] = row["role"]
+  9402:                 return redirect(url_for("home"))
+  9403:         message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+  9404:     return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+  9405: 
+  9406: 
+  9407: @app.route("/register", methods=["GET", "POST"])
+  9408: def register():
+  9409:     message = ""
+  9410:     if request.method == "POST":
+  9411:         username = request.form.get("username", "").strip()
+  9412:         password = request.form.get("password", "")
+  9413:         password2 = request.form.get("password2", "")
+  9414:         email = request.form.get("email", "").strip() or None
+  9415:         phone = request.form.get("phone", "").strip() or None
+  9416:         if not username or len(username) < 3:
+  9417:             message = "<p style='color:#b00020'>اسم المستخدم يجب ألا يقل عن 3 أحرف.</p>"
+  9418:         elif password != password2:
+  9419:             message = "<p style='color:#b00020'>كلمتا المرور غير متطابقتين.</p>"
+  9420:         elif len(password) < 12 or len(password) > 256:
+  9421:             message = "<p style='color:#b00020'>كلمة المرور يجب أن تكون بين 12 و256 حرفاً.</p>"
+  9422:         else:
+------
+  9436:                             "user",
+  9437:                             dt.datetime.now().isoformat(timespec="seconds")
+  9438:                         )
+  9439:                     )
+  9440:                 message = (
+  9441:                     "<p style='color:green'>تم إنشاء الحساب. يمكنك تسجيل الدخول.</p>"
+  9442:                 )
+  9443:             except sqlite3.IntegrityError:
+  9444:                 message = (
+  9445:                     "<p style='color:#b00020'>"
+  9446:                     "اسم المستخدم أو البريد أو الهاتف مسجل بالفعل.</p>"
+  9447:                 )
+  9448:     return REGISTER_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+  9449: 
+  9450: 
+  9451: @app.route("/logout", methods=["POST"])
+  9452: def logout():
+  9453:     session.clear()
+  9454:     return redirect(url_for("login"))
+  9455: 
+  9456: 
+  9457: # معالجة الملفات في الخلفية حتى لا ينتظر المستخدم تلخيص كل ملف وتصنيفه.
+  9458: _FILE_TASKS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="fbrah-files")
+  9459: 
+  9460: 
+  9461: def _process_uploaded_files_batch(file_rows, model):
+  9462:     """استخراج النص وتلخيصه وتصنيفه في الخلفية ثم تحديث الفهرس مرة واحدة."""
+  9463:     for file_id, filepath, filename in file_rows:
+  9464:         try:
+  9465:             content = extract_text_from_file(filepath) if os.path.isfile(filepath) else ""
+  9466:             if content:
+  9467:                 summary = process_document(content, "summarize", model)
+  9468:                 category = classify_file(content, filename, model)
+  9469:             else:
+  9470:                 summary = "تم حفظ الملف، لكن تعذر استخراج نص قابل للبحث منه."
+  9471:                 category = "أخرى"
+------
+ 11271: <a href="/">الرئيسية</a></div>
+ 11272: <div class="card">
+ 11273: """
+ 11274:         + (f'<div class="msg">{html.escape(str(message), quote=True)}</div>' if message else "")
+ 11275:         + f"""
+ 11276: <p>المستخدم: <strong>{html.escape(str(row['username'] if row else user), quote=True)}</strong></p>
+ 11277: <form method="post">
+ 11278: <input type="hidden" name="action" value="change_password">
+ 11279: <h2>تغيير كلمة المرور</h2>
+ 11280: <label>الحالية</label><input type="password" name="old_password" required>
+ 11281: <label>الجديدة</label><input type="password" name="new_password" minlength="12" maxlength="256" required>
+ 11282: <label>تأكيد الجديدة</label><input type="password" name="new_password2" minlength="12" maxlength="256" required>
+ 11283: <button type="submit">حفظ كلمة المرور</button>
+ 11284: </form>
+ 11285: <form method="post" style="margin-top:22px">
+ 11286: <input type="hidden" name="action" value="update_contact">
+ 11287: <h2>البريد والهاتف</h2>
+ 11288: <label>البريد</label><input type="email" name="email" value="{html.escape(str((row['email'] or '') if row else ''), quote=True)}">
+ 11289: <label>الهاتف</label><input name="phone" value="{html.escape(str((row['phone'] or '') if row else ''), quote=True)}">
+ 11290: <button type="submit">حفظ التواصل</button>
+ 11291: </form>
+ 11292: <form method="post" style="margin-top:22px">
+ 11293: <input type="hidden" name="action" value="change_username">
+ 11294: <h2>تغيير اسم المستخدم</h2>
+ 11295: <label>الاسم الجديد</label><input name="new_username" minlength="3" required>
+ 11296: <button type="submit">حفظ الاسم</button>
+ 11297: </form>
+ 11298: </div></body></html>
+ 11299: """
+ 11300:     )
+ 11301: 
+ 11302: 
+ 11303: 
+ 11304: # ============================================================
+ 11305: # 13. ERROR HANDLING
+ 11306: # ============================================================
+ 11307: 
+ 11308: 
+ 11309: @app.errorhandler(413)
+ 11310: def too_large(_error):
+ 11311:     return f"حجم الرفع يتجاوز الحد المسموح ({MAX_UPLOAD_MB} MB).", 413
+ 11312: 
+ 11313: 
+ 11314: @app.errorhandler(404)
+------
+ 12427: .err{color:#8f0606;font-weight:700}
+ 12428: a{color:#d4af37}
+ 12429: </style></head><body>
+ 12430: <div class="header">FBRAH · مسار GROQ · """
+ 12431:         + (GROQ_MODEL or "openai/gpt-oss-120b")
+ 12432:         + """ · <a href="/" style="color:#fff">الرئيسية</a></div>
+ 12433: <div class="card">
+ 12434: <p>يستخدم <b>GROQ_API_KEY</b> و <b>GROQ_MODEL</b> (افتراضي: openai/gpt-oss-120b).</p>
+ 12435: <form method="post">
+ 12436: <textarea name="question" placeholder="اكتب سؤالك القانوني أو البحثي...">"""
+ 12437:         + (question.replace("<", "&lt;") if question else "")
+ 12438:         + """</textarea>
+ 12439: <p style="margin-top:10px"><button type="submit">إرسال عبر GROQ</button></p>
+ 12440: </form>
+ 12441: """
+ 12442:         + (f'<p class="err">{error}</p>' if error else "")
+ 12443:         + (f'<div class="ans">{answer.replace("<","&lt;")}</div>' if answer else "")
+ 12444:         + """
+ 12445: </div></body></html>"""
+ 12446:     )
+ 12447: 
+ 12448: 
+ 12449: @app.route("/api/rag_status")
+ 12450: @login_required
+ 12451: def api_rag_status():
+ 12452:     vs = get_vector_store()
+ 12453:     rr = get_reranker()
+ 12454:     return jsonify({
+ 12455:         "vector_backend": getattr(vs, "backend", "unknown"),
+ 12456:         "embed_mode": getattr(getattr(vs, "embedder", None), "mode", "unknown"),
+ 12457:         "reranker": getattr(rr, "mode", "unknown"),
+------
+
+===== FILE: security_hardening.py =====
+    15: import smtplib
+    16: import ssl
+    17: import time
+    18: from datetime import datetime, timedelta, timezone
+    19: from email.message import EmailMessage
+    20: from functools import wraps
+    21: from urllib.parse import urlparse
+    22: 
+    23: from flask import (Blueprint, abort, current_app, jsonify, make_response,
+    24:                    redirect, render_template_string, request, session, url_for)
+    25: 
+    26: 
+    27: CSRF_SESSION_KEY = "_fbrah_csrf"
+    28: CSRF_HEADER = "X-FBRAH-CSRF"
+    29: RESET_TTL_MINUTES = 20
+    30: RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+    31: RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+    32: 
+    33: 
+    34: def _utcnow():
+    35:     return datetime.now(timezone.utc)
+    36: 
+    37: 
+    38: def _token_hash(token: str) -> str:
+    39:     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    40: 
+    41: 
+    42: def _db_exec(get_db, sql, params=()):
+    43:     with get_db() as db:
+    44:         cur = db.execute(sql, params)
+    45:         db.commit()
+    46:         return cur
+------
+   102:                 created_at TEXT NOT NULL
+   103:             )""")
+   104:             db.execute("CREATE INDEX IF NOT EXISTS idx_fbrah_reset_user ON fbrah_password_reset_tokens(user_id)")
+   105:             db.execute("""CREATE TABLE IF NOT EXISTS fbrah_auth_throttle (
+   106:                 bucket TEXT PRIMARY KEY,
+   107:                 attempts INTEGER NOT NULL DEFAULT 0,
+   108:                 window_started REAL NOT NULL,
+   109:                 blocked_until REAL NOT NULL DEFAULT 0
+   110:             )""")
+   111:             db.commit()
+   112: 
+   113:     @app.context_processor
+   114:     def _fbrah_csrf_template_context():
+   115:         return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+   116: 
+   117:     @app.before_request
+   118:     def _fbrah_csrf_guard():
+   119:         if not session.get(CSRF_SESSION_KEY):
+   120:             session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+   121:         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+   122:             supplied = request.headers.get(CSRF_HEADER, "")
+   123:             if not supplied:
+   124:                 supplied = request.form.get("_csrf_token", "")
+   125:             expected = session.get(CSRF_SESSION_KEY, "")
+   126:             if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+   127:                 if request.path in ("/api/client_telemetry", "/api/client_log"):
+   128:                     # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+   129:                     origin = request.headers.get("Origin", "")
+   130:                     origin_parts = urlparse(origin)
+   131:                     host_parts = urlparse(request.host_url)
+   132:                     if (
+   133:                         not origin_parts.scheme
+   134:                         or origin_parts.scheme != host_parts.scheme
+   135:                         or origin_parts.netloc.casefold() != host_parts.netloc.casefold()
+   136:                         or origin_parts.username
+   137:                         or origin_parts.password
+   138:                     ):
+   139:                         abort(400, description="CSRF validation failed")
+   140:                 else:
+   141:                     if request.path.startswith("/api/") or request.is_json:
+   142:                         return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+   143:                     abort(400, description="CSRF validation failed")
+   144: 
+   145:     @app.after_request
+   146:     def _fbrah_security_headers(response):
+   147:         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+   148:         response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+   149:         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+   150:         response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+   151:         response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+   152:         if request.path.startswith(("/forgot-password", "/reset-password/")):
+   153:             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+   154:             response.headers["Pragma"] = "no-cache"
+   155:             response.headers["Referrer-Policy"] = "no-referrer"
+   156:         if request.is_secure or os.environ.get("FBRAH_HTTPS") == "1":
+   157:             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+   158:         # Inject the synchronizer token into server-rendered forms, and into a meta tag
+   159:         # used by same-origin fetch requests. Only HTML responses are touched.
+   160:         if response.mimetype == "text/html" and response.direct_passthrough is False:
+   161:             try:
+   162:                 body = response.get_data(as_text=True)
+   163:                 token = session.get(CSRF_SESSION_KEY, "")
+   164:                 meta = '<meta name="fbrah-csrf" content="' + token + '">'
+   165:                 if "name=\"fbrah-csrf\"" not in body:
+   166:                     body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+   167:                 hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+   168:                 body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+   169:                 helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+   170:                 if "X-FBRAH-CSRF" not in body:
+   171:                     body = body.replace("</body>", helper + "</body>")
+   172:                 response.set_data(body)
+   173:             except Exception:
+   174:                 current_app.logger.exception("Could not inject CSRF token into HTML response")
+   175:         return response
+   176: 
+   177:     def _throttle_state(bucket):
+   178:         now = time.time()
+   179:         with get_db() as db:
+   180:             row = db.execute("SELECT attempts,window_started,blocked_until FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
+   181:             if not row:
+   182:                 db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,0,?,0)", (bucket, now))
+   183:                 db.commit()
+   184:                 return False
+   185:             if float(row["blocked_until"] or 0) > now:
+   186:                 return True
+   187:             return False
+   188: 
+------
+   193:             if row and float(row["blocked_until"] or 0) > now:
+   194:                 return False
+   195:             started = float(row["window_started"] or now) if row else now
+   196:             attempts = int(row["attempts"] or 0) if row else 0
+   197:             if now - started > window_seconds:
+   198:                 started, attempts = now, 0
+   199:             attempts += 1
+   200:             blocked = now + block_seconds if attempts >= limit else 0
+   201:             db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,?,?,?) ON CONFLICT(bucket) DO UPDATE SET attempts=excluded.attempts,window_started=excluded.window_started,blocked_until=excluded.blocked_until", (bucket, attempts, started, blocked))
+   202:             db.commit()
+   203:             return True
+   204: 
+   205:     @app.before_request
+   206:     def _fbrah_login_throttle():
+   207:         if request.path == "/login" and request.method == "POST":
+   208:             ip = request.remote_addr or "unknown"
+   209:             ident = (request.form.get("username") or "").strip().lower()[:160]
+   210:             if _throttle_state("ip:" + ip) or _throttle_state("id:" + hashlib.sha256(ident.encode()).hexdigest()):
+   211:                 return make_response("تم تجاوز عدد محاولات الدخول. انتظر 15 دقيقة ثم أعد المحاولة.", 429)
+   212: 
+   213:     @app.after_request
+   214:     def _fbrah_login_throttle_result(response):
+   215:         if request.path == "/login" and request.method == "POST":
+   216:             ip = request.remote_addr or "unknown"
+   217:             ident = (request.form.get("username") or "").strip().lower()[:160]
+   218:             buckets = ["ip:" + ip, "id:" + hashlib.sha256(ident.encode()).hexdigest()]
+   219:             if "user" in session:
+   220:                 with get_db() as db:
+   221:                     db.executemany("DELETE FROM fbrah_auth_throttle WHERE bucket=?", [(b,) for b in buckets])
+   222:                     db.commit()
+   223:             elif response.status_code == 200:
+   224:                 now = time.time()
+   225:                 with get_db() as db:
+   226:                     for bucket in buckets:
+   227:                         row = db.execute("SELECT attempts,window_started FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
+   228:                         if not row:
+   229:                             db.execute("INSERT INTO fbrah_auth_throttle(bucket,attempts,window_started,blocked_until) VALUES(?,1,?,0)", (bucket, now))
+   230:                         else:
+   231:                             started = float(row["window_started"] or now)
+------
+   312:                     updated = db.execute(
+   313:                         "UPDATE users SET password_hash=? WHERE id=?",
+   314:                         (hash_password(pw), row["user_id"]),
+   315:                     )
+   316:                     if updated.rowcount != 1:
+   317:                         abort(400, description="تعذر تحديث الحساب المرتبط برابط الاستعادة.")
+   318:                     db.execute(
+   319:                         "UPDATE fbrah_password_reset_tokens SET used_at=? "
+   320:                         "WHERE user_id=? AND used_at IS NULL",
+   321:                         (now, row["user_id"]),
+   322:                     )
+   323:                     db.commit()
+   324:                 session.clear()
+   325:                 return redirect(url_for("login"))
+   326:         return render_template_string(_RESET_PASSWORD_HTML, message=message)
+   327: 
+   328:     app.register_blueprint(bp)
+   329: 
+   330: 
+   331: _RESET_REQUEST_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استعادة كلمة المرور — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>استعادة كلمة المرور</h2><p>أدخل اسم المستخدم أو البريد الإلكتروني المسجل.</p><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>اسم المستخدم أو البريد</label><input name='username' required maxlength='160' autocomplete='username'><button type='submit'>إرسال رابط الاستعادة</button></form><p><a href='/login'>العودة لتسجيل الدخول</a></p></main></body></html>"""
+   332: _RESET_PASSWORD_HTML = """<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>تعيين كلمة مرور جديدة — FBRAH</title></head><body style='font-family:Tahoma,Arial;background:#f6f4ef;padding:30px'><main style='max-width:480px;margin:auto;background:white;padding:24px;border-radius:14px'><h2>تعيين كلمة مرور جديدة</h2><p>{{ message }}</p><form method='post'><input type='hidden' name='_csrf_token' value='{{ csrf_token }}'><label>كلمة المرور الجديدة (12 حرفاً على الأقل)</label><input type='password' name='password' minlength='12' required autocomplete='new-password'><label>تأكيد كلمة المرور</label><input type='password' name='password2' minlength='12' required autocomplete='new-password'><button type='submit'>حفظ كلمة المرور</button></form></main></body></html>"""
+------
+
+===== FILE: templates\index.html =====
+  1250:             unicode-bidi: isolate !important;
+  1251:             display: inline-block !important;
+  1252:             text-align: left !important;
+  1253:         }
+  1254:         .logo {
+  1255:             font-size: 40px !important;
+  1256:             font-weight: 800 !important;
+  1257:             letter-spacing: 1px !important;
+  1258:         }
+  1259: 
+  1260: 
+  1261:         /* أزرار: إطار واضح جداً أثناء الاستعمال */
+  1262:         button, .btn, input[type="submit"] {
+  1263:             border: 2px solid transparent;
+  1264:             box-sizing: border-box;
+  1265:         }
+  1266:         button:active, .btn:active, input[type="submit"]:active {
+  1267:             filter: brightness(1.12);
+  1268:             transform: scale(0.98);
+  1269:             border: 2px solid #d4af37 !important;
+  1270:             box-shadow: 0 0 0 3px rgba(212,175,55,.4) !important;
+  1271:         }
+  1272:         button.listening, #micBtn.listening, #talkBtn.listening,
+  1273:         button.fbrah-working, button.busy, button.is-busy,
+  1274:         #sendBtn.busy, #sendBtn:disabled, button[disabled].busy-visual {
+  1275:             background: #001F3F !important;
+  1276:             color: #d4af37 !important;
+  1277:             border: 3px solid #d4af37 !important;
+  1278:             outline: 2px solid rgba(212,175,55,.55) !important;
+  1279:             outline-offset: 2px !important;
+  1280:             box-shadow: 0 0 0 4px rgba(212,175,55,.35), 0 0 16px rgba(212,175,55,.25) !important;
+  1281:             font-weight: 800 !important;
+  1282:         }
+  1283:         button.recording, #recBtn.recording {
+  1284:             background: #8f0606 !important;
+------
+  2164:         <div class="header-links">
+  2165:             <div class="lang-switch" title="Language / اللغة">
+  2166:                 <button type="button" id="langArBtn" class="active" onclick="setFbrahLang('ar')">عربي</button>
+  2167:                 <button type="button" id="langEnBtn" onclick="setFbrahLang('en')">EN</button>
+  2168:             </div>
+  2169:             <button type="button" id="layoutEditBtn" data-i18n="layoutEdit">تحرير التخطيط</button>
+  2170: 
+  2171:             <span id="welcomeText" data-i18n="welcome">مرحباً</span> <b id="userNameLabel">{{ user }}</b>
+  2172:             {% if role == 'admin' %}
+  2173:             <a href="{{ url_for('admin_users') }}" id="adminUsersLink" data-i18n="users">المستخدمين</a>
+  2174:             {% endif %}
+  2175:             <a href="/account" title="الحساب" id="accountLink" data-i18n="account">حسابي</a>
+  2176:             <form method="post" action="{{ url_for('logout') }}" style="display:inline"><button type="submit" id="logoutLink" data-i18n="logout">خروج</button></form>
+  2177:         </div>
+  2178:     </div>
+  2179:     <div class="container">
+  2180:         <div class="card">
+  2181:             <div class="title-row" id="titleRow">
+  2182:                 <div class="fbrah-ui-chip" id="fbrahUiChip">واجهة عربية · جودة عالية</div>
+  2183:                 <h2>اسأل <span dir="ltr" style="direction:ltr;unicode-bidi:isolate;display:inline-block"><bdi><span class="l1">F</span><span class="l2">B</span><span class="l3">R</span><span class="l4">A</span><span class="l5">H</span></bdi></span></h2>
+  2184:                 <div class="font-controls" title="تكبير وتصغير الخط">
+  2185:                     <button type="button" id="fontDecBtn" aria-label="تصغير الخط">أ−</button>
+  2186:                     <span id="fontSizeLabel">100%</span>
+  2187:                     <button type="button" id="fontIncBtn" aria-label="تكبير الخط">أ+</button>
+  2188:                     <button type="button" id="fontResetBtn" aria-label="الخط الافتراضي" style="font-size:11px;min-width:auto;padding:4px 6px;">إعادة</button>
+  2189:                 </div>
+  2190:                 <span class="title-hint fbrah-hint-white" id="voiceDockHint" data-i18n="voiceDock">شريط الصوت بالاسفل — انقره أو اسحبه أو صغّره كما تشاء</span>
+  2191:             </div>
+  2192:             <form method="post" enctype="multipart/form-data" id="mainForm">
+  2193:                 <input type="hidden" name="action_capture" id="actionCapture" value="">
+  2194:                 <div class="field">
+------
+  2220: 
+  2221:                 <div class="dialogue-continuity" id="dialogueContinuity" style="display:none">
+  2222:                     <div id="continuityText"></div>
+  2223:                     <div class="hints" id="continuityHints"></div>
+  2224:                 </div>
+  2225: 
+  2226:                     <div class="speak-q-row" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;"><button type="button" id="speakQuestionBtnInline" title="Read" aria-label="Read" onclick="event.preventDefault();event.stopPropagation();try{window.speakQuestionBox();}catch(e){alert(e.message);}">🔊</button></div>
+  2227:                     <textarea name="question" id="question" placeholder="اكتب سؤالك أو الصق صورة/رسماً أو أدرج من لوحة القلم" data-i18n-placeholder="phQuestion" >{{ question or '' }}</textarea>
+  2228:                 <div class="loading" id="loading" role="status" aria-live="polite" style="display:none;flex-wrap:wrap;align-items:center;gap:10px;">
+  2229:                         <span id="loadingMessage" style="unicode-bidi:isolate">جاري البحث <span id="searchTimer" dir="ltr" style="direction:ltr;unicode-bidi:isolate;display:inline-block">0ث</span></span></span>
+  2230:                     </div>
+  2231:                     <div class="actions free-panel" id="panelActions"><div class="panel-drag">⠿</div>
+  2232:                         <button type="submit" name="action" value="ask" id="sendBtn" data-i18n="send" title="إرسال السؤال أو الأمر لمحرك فبرا الذكي">🚀 إرسال</button>
+  2233:                         <button type="submit" name="action" value="summarize_files" class="sec" formnovalidate data-i18n="summarize" title="تلخيص واستخلاص النقاط الجوهرية من الملفات والمستندات">📄 تلخيص الملفات</button>
+  2234:                         <button type="submit" name="action" value="translate_files" class="sec" formnovalidate data-i18n="translate" title="ترجمة الملفات ترجمة احترافية رصينة">🌐 ترجمة احترافية</button>
+  2235:                         <button type="submit" name="action" value="key_points" class="sec" formnovalidate data-i18n="keyPoints" title="استخراج النقاط الجوهرية من الملف المحدد أو الملفات المرفوعة">🎯 أهم النقاط</button>
+  2236:                         <button type="submit" name="action" value="classify" class="sec" formnovalidate data-i18n="classify" title="تصنيف وترتيب المستندات نظامياً">📑 تصنيف ذكي</button>
+  2237:                         <button type="submit" name="action" value="rebuild_index" class="sec" formnovalidate data-i18n="rebuild" title="تحديث وتنشيط فهرس المقاطع والـ RAG">🔄 تحديث الفهرس</button>
+  2238:                         <button type="button" id="selfHealBtn" class="sec" onclick="triggerSelfHeal()" title="فحص ذاتي لقواعد البيانات والمجلدات والأقفال ومعالجة الخلل آلياً" style="border-color:#d4af37;background:#fff9e6;color:#0a192f;">🛠️ فحص وإصلاح ذاتي</button>
+  2239:                         <button type="button" id="cancelSearchBtn" data-i18n="cancelSearch" class="sec" aria-label="إلغاء البحث الحالي" title="إيقاف انتظار البحث الحالي" style="background:#fff1f1;color:#991b1b;border-color:#fca5a5;">✕ إلغاء</button>
+  2240: 
+  2241:                         <div style="display:inline-flex;align-items:center;margin-inline-start:6px;">
+  2242:                             <select id="quickTemplateSelect" onchange="applyQuickTemplate(this.value)" style="border:1.5px solid #d4af37;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;background:#ffffff;color:#0a192f;cursor:pointer;">
+  2243:                                 <option value="">📋 نماذج وصيغ سريعة...</option>
+  2244:                                 <option value="contract_sale">📑 عقد بيع ملكية عقارية وبنوده ومخاطره</option>
+  2245:                                 <option value="contract_rent">📑 عقد إيجار خاضع للقانون المدني والضمانات</option>
+  2246:                                 <option value="memo_civil">⚖️ مذكرة دفاع مدني ودفوع شكلية وموضوعية</option>
+  2247:                                 <option value="appeal_tax">📑 طعن على نموذج ربط ضريبي وإجراءات لجان الطعن</option>
+  2248:                                 <option value="customs_dispute">🚢 تظلم جمركي لتقييم الرسوم ونظام ACI</option>
+  2249:                                 <option value="project_gov">🏢 مصفوفة حوكمة مشروع (RACI + KPIs + مخاطر)</option>
+  2250:                                 <option value="excel_model">📊 جدول بيانات إكسيل متقدم وصيغ محاسبية</option>
+  2251:                                 <option value="pptx_deck">📑 عرض تقديمي باور بوينت شامل 16:9 بهوية فبرا</option>
+  2252:                                 <option value="quiz_mcq">🎓 بنك أسئلة واختبار MCQ وصح/خطأ ومطابقة وتبرير</option>
+  2253:                             </select>
+  2254:                         </div>
+  2255:                     </div>
+------
+  2370:                 {% endwith %}
+  2371:                 {% if answer %}
+  2372:                 <div class="answer-block free-panel" id="answerBlock"><div class="panel-drag">⠿</div>
+  2373: <div style="display:flex;justify-content:flex-end;gap:8px;margin:4px 0;"><button type="button" id="clearAnswerBtn" data-i18n="clearAnswer">مسح النتيجة</button></div>
+  2374:                     <div class="answer" role="status" dir="auto" style="white-space:pre-wrap;direction:inherit;unicode-bidi:plaintext;text-align:start;overflow-wrap:anywhere;line-height:1.75;">{{ answer }}</div>
+  2375:                     {% if "تم رفع" not in answer and "تم إلغاء" not in answer and "تم تحديث نطاق" not in answer and "تذكير" not in answer and "المنبّه" not in answer and "المنبه" not in answer %}
+  2376:                     <div class="feedback-bar">
+  2377:                         <input type="hidden" name="fb_question" form="mainForm" value="{{ session.get('last_question', question)|e }}">
+  2378:                         <input type="hidden" name="fb_answer" form="mainForm" value="{{ answer|e }}">
+  2379:                         <input type="hidden" name="fb_model" form="mainForm" value="{{ selected_model|e }}">
+  2380:                         <span>تقييم الإجابة:</span>
+  2381:                         <span id="feedbackStatus" aria-live="polite"></span>
+  2382:                         <button type="submit" name="action" value="feedback_up" class="ok" form="mainForm" formnovalidate>جيدة ✓</button>
+  2383:                         <button type="submit" name="action" value="feedback_down" class="bad" form="mainForm" formnovalidate>سيئة ✗</button>
+  2384:                         <input type="text" name="fb_comment" form="mainForm" placeholder="ملاحظة اختيارية..." maxlength="500">
+  2385:                     </div>
+  2386:                     {% endif %}
+  2387:                     {% if generated %}
+  2388:                     <a class="download-link" href="{{ url_for('download', filename=generated) }}" style="background:#0a192f;color:#ffd700;border:1.5px solid #d4af37;padding:6px 14px;border-radius:6px;display:inline-block;font-weight:700;text-decoration:none;margin-top:6px;">📥 تحميل الملف المولد ({{ generated }})</a>
+  2389:                     {% endif %}
+  2390:                     <div class="export-toolbar">
+  2391:                         <span style="font-size:12px;font-weight:700;color:#0a192f;margin-left:8px;">تصدير وحفظ فوري:</span>
+  2392:                         <button type="button" class="export-btn" onclick="exportAnswerAs('xlsx')">📊 Excel (.xlsx)</button>
+  2393:                         <button type="button" class="export-btn" onclick="exportAnswerAs('docx')">📝 Word (.docx)</button>
+  2394:                         <button type="button" class="export-btn" onclick="exportAnswerAs('pptx')">📑 PowerPoint (.pptx)</button>
+  2395:                         <button type="button" class="export-btn" onclick="exportAnswerAs('pdf')">📄 PDF (.pdf)</button>
+  2396:                         <button type="button" class="export-btn" onclick="copyAnswerText()">📋 نسخ النص</button>
+  2397:                     </div>
+  2398:                 </div>
+  2399:                 {% endif %}
+  2400: 
+  2401: 
+------
+  2504:                         <div style="flex:1 1 200px;min-width:180px;">
+  2505:                             <div id="scopeFoldersTitle" style="font-weight:700;color:#ffffff;margin-bottom:4px;" data-i18n="foldersTitle">مجلدات</div>
+  2506:                             {% for f in sf %}
+  2507:                             <label style="display:flex;align-items:center;gap:6px;margin:3px 0;cursor:pointer;font-weight:500;">
+  2508:                                 <input type="checkbox" name="remove_folder" value="{{ f }}" form="clearScopeForm">
+  2509:                                 <span>{{ folder_display_map.get(f, f) if folder_display_map is defined else f }}</span>
+  2510:                             </label>
+  2511:                             {% endfor %}
+  2512:                         </div>
+  2513:                         {% endif %}
+  2514:                     </div>
+  2515:                     <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+  2516:                         <button type="submit" form="clearScopeForm" name="action" value="clear_scope" id="applyClearBtn" class="sec scope-clear-btn" style="background:#760d0d;color:#ffffff !important;" data-i18n="applyClearSel">تطبيق الإلغاء على المحدد</button>
+  2517:                         <button type="submit" form="clearScopeForm" name="action" value="clear_scope" id="clearAllBtn" class="sec" style="background:#FFFF00;" data-i18n="clearAll" onclick="var f=document.getElementById('clearAllFlag'); if(f) f.value='1';">إلغاء الكل</button>
+  2518:                         <span id="clearScopeHint" style="color:#8b6914;font-size:11px;" data-i18n="clearHint">ضع علامة ✓ على ما تريد إلغاءه ثم «تطبيق الإلغاء»</span>
+  2519:                     </div>
+  2520:                 </div>
+  2521:                 <form id="clearScopeForm" method="post" style="display:none;">
+  2522:                     <input type="hidden" name="action" value="clear_scope">
+  2523:                     <input type="hidden" name="clear_all" id="clearAllFlag" value="0">
+  2524:                 </form>
+  2525:                 {% endif %}
+  2526: 
+  2527:             </div>
+  2528: 
+  2529:         </div>
+  2530:     </div>
+  2531:     <!-- شريط الأخبار والقوانين السفلي المباشر -->
+  2532:     <div id="fbrahNewsTicker" class="fbrah-news-ticker" role="region" aria-label="شريط الأخبار والقوانين المباشر">
+  2533:         <div class="ticker-badge">
+  2534:             <span class="ticker-pulse"></span>
+  2535:             <span class="ticker-title">⚡ فبرا | موجز الأخبار والقوانين</span>
+------
+  4316:                 if (window.speechSynthesis) {
+  4317:                     window.speechSynthesis.cancel();
+  4318:                     var utterance = preferArabicVoice(new SpeechSynthesisUtterance(answerText));
+  4319:                     utterance.lang = getTtsLang();
+  4320:                     utterance.rate = getRate();
+  4321:                     var voice = typeof pickVoice === "function" ? pickVoice(utterance.lang) : null;
+  4322:                     if (voice) utterance.voice = voice;
+  4323:                     window.speechSynthesis.speak(utterance);
+  4324:                 }
+  4325:             }
+  4326:         }
+  4327: 
+  4328:         form.addEventListener("submit", async function (event) {
+  4329:             try { if (typeof saveFbrahPrefs === "function") saveFbrahPrefs(); } catch (e) {}
+  4330:             var s = event.submitter;
+  4331:             var action = s ? s.value : "ask";
+  4332: 
+  4333:             // Send feedback asynchronously so the answer stays visible.
+  4334:             if (action === "feedback_up" || action === "feedback_down") {
+  4335:                 event.preventDefault();
+  4336:                 if (s) s.disabled = true;
+  4337:                 if (feedbackStatus) feedbackStatus.textContent = "جارٍ حفظ التقييم...";
+  4338:                 try {
+  4339:                     var payload = new FormData();
+  4340:                     var questionField = form.querySelector('[name="fb_question"]');
+  4341:                     var answerField = form.querySelector('[name="fb_answer"]');
+  4342:                     var modelField = form.querySelector('[name="fb_model"]');
+  4343:                     var commentField = form.querySelector('[name="fb_comment"]');
+  4344:                     payload.set("question", questionField ? questionField.value : "");
+  4345:                     payload.set("answer", answerField ? answerField.value : "");
+  4346:                     payload.set("model", modelField ? modelField.value : "");
+------
+  6771:             } catch (e) {}
+  6772:             if (!spoken) {
+  6773:                 setTimeout(resumeWakeIfEnabled, 1200);
+  6774:             } else {
+  6775:                 setTimeout(resumeWakeIfEnabled, 2500);
+  6776:             }
+  6777:         })();
+  6778: 
+  6779:         // توهج الزر المضغوط أثناء تنفيذ الطلب + حفظ action قبل التعطيل
+  6780:         (function bindWorkingButtons() {
+  6781:             var form = document.getElementById("mainForm");
+  6782:             if (!form) return;
+  6783:             form.addEventListener("submit", function (ev) {
+  6784:                 var btn = ev.submitter || document.getElementById("sendBtn");
+  6785:                 if (!btn) return;
+  6786:                 // مهم: تعطيل زر submit قد يمنع إرسال name=action — نحفظ القيمة في حقل مخفي
+  6787:                 var cap = document.getElementById("actionCapture");
+  6788:                 if (cap) {
+  6789:                     if (btn.name === "action" && btn.value) {
+  6790:                         cap.value = btn.value;
+  6791:                     } else if (!cap.value) {
+  6792:                         cap.value = "ask";
+  6793:                     }
+  6794:                 }
+  6795:                 try {
+  6796:                     form.querySelectorAll("button").forEach(function (b) {
+  6797:                         b.classList.remove("working");
+  6798:                     });
+  6799:                 } catch (e) {}
+  6800:                 btn.classList.add("working");
+  6801:                 // لا تعطّل الزر قبل الإرسال — عطّل بعد لحظة قصيرة
+------
+  7526:                 var btn = t.closest("button, input[type=submit]");
+  7527:                 if (!btn) return;
+  7528:                 var v = (btn.value || btn.name || btn.id || "").toString();
+  7529:                 // أزرار المهام الطويلة
+  7530:                 if (/ask|upload|summar|translat|classify|rebuild|تلخيص|ترجمة|رفع|تصنيف|فهرس|إرسال/i.test(v + " " + (btn.textContent || ""))) {
+  7531:                     setBusy(btn, true);
+  7532:                     // إزالة بعد مهلة أمان إن لم تُحدَّث الصفحة
+  7533:                     setTimeout(function () { setBusy(btn, false); try { btn.style.cursor="pointer"; btn.disabled=false; } catch(e){} }, 45000);
+  7534:                 }
+  7535:             }, true);
+  7536:             var form = document.getElementById("mainForm");
+  7537:             if (form) {
+  7538:                 form.addEventListener("submit", function (ev) {
+  7539:                     var sub = ev.submitter || document.getElementById("sendBtn");
+  7540:                     setBusy(sub, true);
+  7541:                     var sendBtn = document.getElementById("sendBtn");
+  7542:                     if (sendBtn) {
+  7543:                         sendBtn.classList.add("busy", "fbrah-working");
+  7544:                         sendBtn.disabled = true;
+  7545:                     }
+  7546:                     form.classList.add("searching");
+  7547:                     document.body.classList.add("searching");
+  7548:                 });
+  7549:             }
+  7550:             // مزامنة لون الميك مع حالة الاستماع
+  7551:             var _obsMic = setInterval(function () {
+  7552:                 try {
+  7553:                     var mic = document.getElementById("micBtn");
+  7554:                     if (!mic) return;
+  7555:                     if (typeof isListening !== "undefined" && isListening) {
+  7556:                         mic.classList.add("listening");
+------
+  8067:                     return !!(window.fbrahRec && fbrahRec.recording && fbrahRec.mediaRec &&
+  8068:                         fbrahRec.mediaRec.state === "recording");
+  8069:                 } catch (e) { return false; }
+  8070:             }
+  8071:             window.addEventListener("beforeunload", function (ev) {
+  8072:                 if (!isRecActive()) return;
+  8073:                 ev.preventDefault();
+  8074:                 ev.returnValue = "";
+  8075:             });
+  8076:             var form = document.getElementById("mainForm");
+  8077:             if (!form) return;
+  8078:             var busyAjax = false;
+  8079:             form.addEventListener("submit", function (event) {
+  8080:                 if (!isRecActive()) return;
+  8081:                 if (busyAjax) { event.preventDefault(); return; }
+  8082:                 event.preventDefault();
+  8083:                 // لا نستخدم stopPropagation حتى لا تتجمد بقية المستمعات
+  8084:                 busyAjax = true;
+  8085:                 var submitter = event.submitter;
+  8086:                 var fd;
+  8087:                 try { fd = new FormData(form); } catch (e) { busyAjax = false; return; }
+  8088:                 if (submitter && submitter.name) {
+  8089:                     try { fd.set(submitter.name, submitter.value || "1"); } catch (e2) {}
+  8090:                 } else if (submitter && submitter.value) {
+  8091:                     try { fd.set("action", submitter.value); } catch (e3) {}
+  8092:                 }
+  8093:                 var loading = document.getElementById("loading");
+  8094:                 var sendBtn = document.getElementById("sendBtn");
+  8095:                 try {
+  8096:                     form.classList.add("searching");
+  8097:                     if (loading) loading.style.display = "block";
+------
+  8813:       // بعد اختيار ملف: ارفعه تلقائياً (بديل عملي للنقر المزدوج)
+  8814:       el.addEventListener("change", function(){
+  8815:         if (el.files && el.files.length) {
+  8816:           // تأخير بسيط لإظهار الاسم
+  8817:           setTimeout(submitUpload, 120);
+  8818:         }
+  8819:       });
+  8820:     });
+  8821: 
+  8822:     // إعادة ضبط المؤقت عند كل إرسال سؤال (متابعة حوار أو جديد)
+  8823:     var form = document.getElementById("mainForm");
+  8824:     if (form) {
+  8825:       form.addEventListener("submit", function(ev){
+  8826:         var sub = ev.submitter;
+  8827:         var act = (sub && sub.value) || (document.getElementById("actionCapture")||{}).value || "ask";
+  8828:         if (act === "ask" || !act) {
+  8829:           document.body.classList.add("searching-active");
+  8830:           form.classList.add("searching");
+  8831:           var loading = document.getElementById("loading");
+  8832:           if (loading) loading.style.display = "flex";
+  8833:           try {
+  8834:             if (typeof startSearchTimer === "function") startSearchTimer();
+  8835:             else {
+  8836:               window.searchStartedAt = Date.now();
+  8837:             }
+  8838:           } catch(e){}
+  8839:           var send = document.getElementById("sendBtn");
+  8840:           if (send) { send.textContent = t("جارٍ البحث...","Searching..."); } // لا تعطّل الزر في capture؛ مستمع الإرسال الرئيسي يتحقق من حالته قبل تعطيله.
+  8841:         }
+  8842:       }, true);
+  8843:     }
+------
+
+===== FILE: templates\admin_users.html =====
+   184:   <a href="{{ url_for('home') }}">العودة للرئيسية</a>
+   185: </header>
+   186: 
+   187: <div class="container">
+   188:   <div class="panel-note" id="langNote">FBRAH Admin · Navy / Gold · Panel #404040</div>
+   189:   {% if msg %}
+   190:   <div class="msg">{{ msg }}</div>
+   191:   {% endif %}
+   192: 
+   193:   <div class="card">
+   194:     <h2>إضافة مستخدم</h2>
+   195:     <p class="hint">اسم المستخدم ≥ 3 أحرف · كلمة المرور ≥ 6 أحرف</p>
+   196:     <form method="post"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+   197:       <input type="hidden" name="action" value="add">
+   198:       <div class="form-row">
+   199:         <input name="username" placeholder="اسم المستخدم" required minlength="3" autocomplete="off">
+   200:         <input name="password" type="password" placeholder="كلمة المرور" required minlength="12" autocomplete="new-password">
+   201:         <select name="role">
+   202:           <option value="user">مستخدم</option>
+   203:           <option value="admin">مدير</option>
+   204:         </select>
+   205:         <button type="submit" class="btn-green">إضافة</button>
+   206:       </div>
+   207:     </form>
+   208:   </div>
+   209: 
+   210:   <div class="card">
+   211:     <h2>قائمة المستخدمين</h2>
+   212:     <p class="hint">يمكن تعديل اسم المستخدم وكلمة المرور والدور من هنا. حساب <strong>admin</strong> لا يُحذف ولا يُعاد تسميته.</p>
+   213:     <table>
+   214:       <thead>
+   215:         <tr>
+   216:           <th>#</th>
+   217:           <th>اسم المستخدم</th>
+   218:           <th>البريد</th>
+   219:           <th>الهاتف</th>
+   220:           <th>الدور</th>
+   221:           <th>تاريخ الإنشاء</th>
+   222:           <th>تعديل / إجراء</th>
+   223:         </tr>
+------
+   230:           <td data-label="البريد">{{ u.email or '—' }}</td>
+   231:           <td data-label="الهاتف">{{ u.phone or '—' }}</td>
+   232:           <td data-label="الدور">
+   233:             {% if u.role == 'admin' %}
+   234:             <span class="badge badge-admin">مدير</span>
+   235:             {% else %}
+   236:             <span class="badge badge-user">مستخدم</span>
+   237:             {% endif %}
+   238:           </td>
+   239:           <td data-label="تاريخ الإنشاء">{{ u.created_at or '—' }}</td>
+   240:           <td data-label="تعديل">
+   241:             {% if u.username != 'admin' %}
+   242:             <form method="post" class="inline-form" title="تغيير اسم المستخدم"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+   243:               <input type="hidden" name="action" value="rename_user">
+   244:               <input type="hidden" name="user_id" value="{{ u.id }}">
+   245:               <input name="new_username" placeholder="اسم جديد" minlength="3" required>
+   246:               <button type="submit" class="btn-navy">تغيير الاسم</button>
+   247:             </form>
+   248:             {% endif %}
+   249: 
+   250:             <form method="post" class="inline-form" title="تغيير كلمة المرور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+   251:               <input type="hidden" name="action" value="change_password">
+   252:               <input type="hidden" name="user_id" value="{{ u.id }}">
+   253:               <input name="new_password" type="password" placeholder="كلمة مرور جديدة" minlength="12" required autocomplete="new-password">
+   254:               <button type="submit" class="btn-navy">تغيير المرور</button>
+   255:             </form>
+   256: 
+   257:             {% if u.username != 'admin' %}
+   258:             <form method="post" class="inline-form" title="تغيير الدور"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+   259:               <input type="hidden" name="action" value="change_role">
+   260:               <input type="hidden" name="user_id" value="{{ u.id }}">
+   261:               <select name="role">
+   262:                 <option value="user" {% if u.role == 'user' %}selected{% endif %}>مستخدم</option>
+   263:                 <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>مدير</option>
+   264:               </select>
+   265:               <button type="submit" class="btn-green">تحديث الدور</button>
+   266:             </form>
+   267: 
+   268:             <form method="post" class="inline-form" onsubmit="return confirm('حذف المستخدم «{{ u.username }}»؟');"><input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+   269:               <input type="hidden" name="action" value="delete">
+   270:               <input type="hidden" name="user_id" value="{{ u.id }}">
+   271:               <button type="submit" class="btn-danger">حذف</button>
+   272:             </form>
+   273:             {% else %}
+   274:             <span class="hint" style="margin:0">حساب المدير الأساسي — يمكن تغيير كلمة المرور فقط</span>
+   275:             {% endif %}
+   276:           </td>
+   277:         </tr>
+   278:         {% else %}
+   279:         <tr><td colspan="7">لا يوجد مستخدمون.</td></tr>
+   280:         {% endfor %}
+   281:       </tbody>
+   282:     </table>
+   283:   </div>
+   284: </div>
+   285: <footer>FBRAH — إدارة المستخدمين · ألوان الواجهة الرسمية</footer>
+   286: </body>
+   287: </html>
+------

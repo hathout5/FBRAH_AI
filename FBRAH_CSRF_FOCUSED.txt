@@ -1,0 +1,569 @@
+﻿FBRAH CSRF FOCUSED REVIEW
+
+===== app.py:100-430 =====
+   100:     os.path.join(BASE_DIR, "fbrah.db")
+   101: )
+   102: RECORDINGS_DIR = os.environ.get(
+   103:     "FBRAH_RECORDINGS",
+   104:     os.path.join(DATA_DIR, "recordings")
+   105: )
+   106: MAX_RECORDINGS = 10
+   107: MAX_RECORDING_MINUTES = 120
+   108: 
+   109: 
+   110: OLLAMA_BASE_URL = os.environ.get(
+   111:     "OLLAMA_BASE_URL",
+   112:     "http://127.0.0.1:11434"
+   113: ).rstrip("/")
+   114: 
+   115: OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
+   116: OLLAMA_TAGS_URL = f"{OLLAMA_BASE_URL}/api/tags"
+   117: 
+   118: 
+   119: # GROQ / OpenAI-compatible (gpt-oss-120b via Groq)
+   120: GROQ_API_KEY = (os.environ.get("GROQ_API_KEY") or "").strip()
+   121: GROQ_MODEL = (os.environ.get("GROQ_MODEL") or "openai/gpt-oss-120b").strip()
+   122: GROQ_MODELS_LIST = list(dict.fromkeys(
+   123:     x.strip() for x in (os.environ.get("GROQ_MODELS") or GROQ_MODEL).split(",") if x.strip()
+   124: ))
+   125: GROQ_BASE_URL = (os.environ.get("GROQ_BASE_URL") or "https://api.groq.com/openai/v1").rstrip("/")
+   126: 
+   127: # Google Gemini (AI Studio — free tier)
+   128: GEMINI_API_KEY = (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "").strip()
+   129: # القائمة النهائية المعتمدة من المستخدم (يمكن تجاوزها من .env)
+   130: _GEMINI_MODELS_DEFAULT = (
+   131:     "gemini-3.8-flash,gemini-3.5-flash,gemini-3.5-flash-lite,"
+   132:     "gemini-3.6-flash,gemini-3.1-pro-preview"
+   133: )
+   134: GEMINI_MODELS_LIST = [
+   135:     x.strip()
+   136:     for x in (os.environ.get("GEMINI_MODELS") or _GEMINI_MODELS_DEFAULT).split(",")
+   137:     if x.strip()
+   138: ]
+   139: if not GEMINI_MODELS_LIST:
+   140:     GEMINI_MODELS_LIST = [
+   141:         "gemini-3.8-flash",
+   142:         "gemini-3.5-flash",
+   143:         "gemini-3.5-flash-lite",
+   144:         "gemini-3.6-flash",
+   145:         "gemini-3.1-pro-preview",
+   146:     ]
+   147: 
+   148: GEMINI_MODEL = (os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash").strip()
+   149: # تنظيف أسماء العرض من القائمة إن وُضعت خطأ في .env
+   150: _gm_l = GEMINI_MODEL.lower()
+   151: if "3.1" in _gm_l and "pro" in _gm_l:
+   152:     GEMINI_MODEL = "gemini-3.1-pro-preview"
+   153: elif "3.8" in _gm_l and "flash" in _gm_l:
+   154:     GEMINI_MODEL = "gemini-3.8-flash"
+   155: elif "3.5" in _gm_l and ("lite" in _gm_l or "flash-lite" in _gm_l):
+   156:     GEMINI_MODEL = "gemini-3.5-flash-lite"
+   157: elif "3.5" in _gm_l:
+   158:     GEMINI_MODEL = "gemini-3.5-flash"
+   159: elif "3.6" in _gm_l:
+   160:     GEMINI_MODEL = "gemini-3.6-flash"
+   161: elif "2.5" in _gm_l:
+   162:     GEMINI_MODEL = "gemini-2.5-flash"
+   163: elif "·" in GEMINI_MODEL or (" " in GEMINI_MODEL and not GEMINI_MODEL.startswith("gemini-")):
+   164:     GEMINI_MODEL = "gemini-3.8-flash"
+   165: 
+   166: _GEMINI_MODELS_CACHE = {"ts": 0, "names": []}
+   167: 
+   168: 
+   169: # توليد صور مجاني عبر Pollinations (بدون مفتاح) — يمكن استبداله لاحقاً
+   170: IMAGE_GEN_ENABLED = (os.environ.get("FBRAH_IMAGE_GEN") or "1").strip() not in ("0", "false", "no")
+   171: 
+   172: FBRAH_VECTOR_BACKEND = (os.environ.get("FBRAH_VECTOR_BACKEND") or "auto").strip().lower()
+   173: FBRAH_EMBED_MODEL = os.environ.get("FBRAH_EMBED_MODEL") or "intfloat/multilingual-e5-small"
+   174: FBRAH_RERANK_MODEL = os.environ.get("FBRAH_RERANK_MODEL") or "BAAI/bge-reranker-base"
+   175: 
+   176: def _bounded_int_env(name, default, minimum, maximum):
+   177:     """قراءة عدد صحيح من البيئة ضمن حدود آمنة دون تعطيل بدء التطبيق."""
+   178:     try:
+   179:         value = int(os.environ.get(name, str(default)).strip())
+   180:     except (TypeError, ValueError, AttributeError):
+   181:         value = default
+   182:     return max(minimum, min(maximum, value))
+   183: 
+   184: 
+   185: MAX_UPLOAD_MB = _bounded_int_env("FBRAH_MAX_UPLOAD_MB", 500, 1, 500)
+   186: OCR_MAX_PAGES = _bounded_int_env("FBRAH_OCR_MAX_PAGES", 200, 1, 200)
+   187: MAX_FILES_PER_UPLOAD = 7
+   188: MAX_LOCAL_SCAN_FILES = 3000
+   189: MAX_WEB_RESULTS = 14
+   190: MAX_WEB_PAGE_BYTES = 1 * 1024 * 1024
+   191: 
+   192: WEB_CONNECT_TIMEOUT = 4
+   193: WEB_READ_TIMEOUT = 10
+   194: 
+   195: SUPPORTED_EXTENSIONS = {
+   196:     ".txt", ".md", ".pdf", ".docx", ".pptx", ".xlsx",
+   197:     ".xls", ".csv", ".json", ".py", ".js", ".html",
+   198:     ".css", ".sql", ".xml", ".rtf",
+   199:     ".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp", ".gif",
+   200: }
+   201: 
+   202: os.makedirs(DATA_DIR, exist_ok=True)
+   203: os.makedirs(UPLOAD_DIR, exist_ok=True)
+   204: os.makedirs(OUTPUT_DIR, exist_ok=True)
+   205: # تحقق من قابلية الكتابة؛ وإلا انقل إلى data/documents
+   206: try:
+   207:     _t = os.path.join(UPLOAD_DIR, ".fbrah_write_test")
+   208:     with open(_t, "w", encoding="utf-8") as _f:
+   209:         _f.write("ok")
+   210:     os.remove(_t)
+   211: except Exception:
+   212:     UPLOAD_DIR = os.path.join(DATA_DIR, "documents")
+   213:     OUTPUT_DIR = os.path.join(UPLOAD_DIR, "النتائج")
+   214:     os.makedirs(UPLOAD_DIR, exist_ok=True)
+   215:     os.makedirs(OUTPUT_DIR, exist_ok=True)
+   216:     print("UPLOAD_DIR fallback ->", UPLOAD_DIR, flush=True)
+   217: 
+   218: 
+   219: app = Flask(__name__)
+   220: 
+   221: secret_key = (os.environ.get("FBRAH_SECRET_KEY") or "").strip()
+   222: _key_file = os.path.join(DATA_DIR, ".secret_key")
+   223: if not secret_key:
+   224:     if os.path.isfile(_key_file):
+   225:         try:
+   226:             with open(_key_file, "r", encoding="utf-8") as kf:
+   227:                 secret_key = kf.read().strip()
+   228:         except OSError:
+   229:             secret_key = ""
+   230: if not secret_key or len(secret_key) < 32:
+   231:     secret_key = secrets.token_hex(32)
+   232:     try:
+   233:         with open(_key_file, "w", encoding="utf-8") as kf:
+   234:             kf.write(secret_key)
+   235:     except OSError:
+   236:         pass
+   237:     app.logger.warning(
+   238:         "تم حفظ مفتاح الجلسة في data/.secret_key (أو عيّن FBRAH_SECRET_KEY)."
+   239:     )
+   240: app.secret_key = secret_key
+   241: 
+   242: app.config["TEMPLATES_AUTO_RELOAD"] = True
+   243: app.config["PERMANENT_SESSION_LIFETIME"] = dt.timedelta(days=7)
+   244: app.jinja_env.auto_reload = True
+   245: app.config.update(
+   246:     MAX_CONTENT_LENGTH=MAX_UPLOAD_MB * 1024 * 1024,
+   247:     SESSION_COOKIE_HTTPONLY=True,
+   248:     SESSION_COOKIE_SAMESITE="Lax",
+   249:     SESSION_COOKIE_SECURE=os.environ.get("FBRAH_HTTPS") == "1",
+   250:     UPLOAD_FOLDER=UPLOAD_DIR,  # may be adjusted after write-test
+   251: 
+   252:     OUTPUT_FOLDER=OUTPUT_DIR,
+   253:     DATABASE=DB_PATH
+   254: )
+   255: 
+   256: 
+   257: def _get_local_library_roots():
+   258:     """مصادر الملفات المحلية المسموح بفهرستها: مجلد الرفع + مكاتب المحاماة + مسارات إضافية."""
+   259:     roots = []
+   260:     seen = set()
+   261: 
+   262:     def add_root(root_id, label, path):
+   263:         raw_path = str(path or "").strip()
+   264:         if not raw_path:
+   265:             return
+   266:         path = os.path.abspath(os.path.expanduser(raw_path))
+   267:         if not os.path.isdir(path):
+   268:             return
+   269:         normalized = os.path.normcase(os.path.normpath(path))
+   270:         if normalized in seen:
+   271:             return
+   272:         seen.add(normalized)
+   273:         roots.append({"id": root_id, "label": label, "path": path})
+   274: 
+   275:     add_root("uploads", "ملفات FBRAH", app.config.get("UPLOAD_FOLDER") or UPLOAD_DIR)
+   276:     add_root("law_offices", "مكاتب محاماة", LAW_OFFICE_DIR)
+   277: 
+   278:     # مسارات إضافية اختيارية مفصولة بفاصلة منقوطة، لتوافق Windows.
+   279:     extra_roots = (os.environ.get("FBRAH_EXTRA_LIBRARY_ROOTS") or "").split(";")
+   280:     for index, raw_path in enumerate(extra_roots, 1):
+   281:         path = raw_path.strip().strip('"')
+   282:         if path:
+   283:             label = os.path.basename(os.path.normpath(path)) or f"مكتبة إضافية {index}"
+   284:             add_root(f"extra{index}", label, path)
+   285: 
+   286:     return roots
+   287: 
+   288: 
+   289: def list_search_folders():
+   290:     """إرجاع المجلدات الفرعية من جميع المكتبات مع معرّف آمن لا يعتمد على المسار المطلق."""
+   291:     result = []
+   292:     for root in _get_local_library_roots():
+   293:         try:
+   294:             with os.scandir(root["path"]) as entries:
+   295:                 for entry in entries:
+   296:                     try:
+   297:                         if not entry.is_dir(follow_symlinks=False) or entry.name.startswith("."):
+   298:                             continue
+   299:                         token = f'{root["id"]}::{entry.name}'
+   300:                         result.append({
+   301:                             "value": token,
+   302:                             "label": f'{root["label"]} / {entry.name}',
+   303:                         })
+   304:                     except OSError:
+   305:                         continue
+   306:         except OSError:
+   307:             app.logger.warning("تعذر عرض مجلدات المكتبة: %s", root["path"])
+   308:     result.sort(key=lambda item: item["label"].casefold())
+   309:     return result
+   310: 
+   311: 
+   312: def _resolve_library_folder_token(token):
+   313:     """حل رمز مجلد مختار إلى مسار داخل جذر معروف فقط، مع دعم اختيارات الجلسات القديمة."""
+   314:     token = str(token or "").strip()
+   315:     if not token:
+   316:         return None
+   317: 
+   318:     roots = _get_local_library_roots()
+   319:     root_id, separator, folder_name = token.partition("::")
+   320:     if not separator:
+   321:         root_id, folder_name = "uploads", token
+   322: 
+   323:     root = next((item for item in roots if item["id"] == root_id), None)
+   324:     if not root or not folder_name or folder_name in (".", ".."):
+   325:         return None
+   326:     if os.path.basename(folder_name) != folder_name or "/" in folder_name or "\\" in folder_name:
+   327:         return None
+   328: 
+   329:     full_path = os.path.abspath(os.path.join(root["path"], folder_name))
+   330:     try:
+   331:         if os.path.commonpath([full_path, root["path"]]) != root["path"]:
+   332:             return None
+   333:     except ValueError:
+   334:         return None
+   335:     return full_path if os.path.isdir(full_path) else None
+   336: 
+   337: 
+   338: DEFAULT_MODEL = os.environ.get("FBRAH_DEFAULT_MODEL", "qwen2.5:7b")
+   339: TRANSLATE_MODEL = os.environ.get("FBRAH_TRANSLATE_MODEL", DEFAULT_MODEL)
+   340: OCR_ENABLED = os.environ.get("FBRAH_OCR", "1") != "0"
+   341: OCR_MAX_PAGES = int(os.environ.get("FBRAH_OCR_MAX_PAGES", "200"))
+   342: # مسار Poppler لـ pdf2image على ويندوز (pdftoppm)
+   343: OCR_POPPLER_PATH = (
+   344:     os.environ.get("FBRAH_POPPLER_PATH")
+   345:     or r"C:\Release-26.09.0-0\poppler-26.09.0\Library\bin"
+   346: )
+   347: if not os.path.isdir(OCR_POPPLER_PATH):
+   348:     OCR_POPPLER_PATH = None
+   349: 
+   350: 
+   351: _model_cache = {"at": 0.0, "models": []}
+   352: _model_lock = threading.Lock()
+   353: _thread_local = threading.local()
+   354: _index_lock = threading.RLock()
+   355: 
+   356: 
+   357: # ============================================================
+   358: # LIVE TERMINAL TELEMETRY & LOGGING (VS Code & PowerShell)
+   359: # ============================================================
+   360: 
+   361: def log_terminal(category, message, details=None, level="INFO"):
+   362:     """طباعة فورية منسقة في تيرمنال VS Code وPowerShell لكل ما يحدث في السيرفر والمتصفح."""
+   363:     try:
+   364:         now_str = dt.datetime.now().strftime("%H:%M:%S")
+   365:         cat = str(category or "SYS").upper()
+   366:         badges = {
+   367:             "BROWSER": "🌐 [CLIENT BROWSER]",
+   368:             "USER":    "👤 [USER ACTION]   ",
+   369:             "MODEL":   "🤖 [MODEL ROUTER]  ",
+   370:             "FILE":    "📁 [FILE EXPORT]   ",
+   371:             "RAG":     "🔍 [RAG PIPELINE]  ",
+   372:             "VOICE":   "🎙️ [VOICE AUDIO]   ",
+   373:             "PEN":     "✍️ [PEN & OCR]     ",
+   374:             "HEAL":    "🛠️ [SELF-HEALING]  ",
+   375:             "HTTP":    "⚡ [HTTP REQUEST]  ",
+   376:             "NEWS":    "📰 [LIVE NEWS]     ",
+   377:             "ERROR":   "❌ [SYSTEM ERROR]  ",
+   378:             "AUTH":    "🔒 [AUTH SECURITY] ",
+   379:             "ALARM":   "🔔 [REMINDER/ALARM]",
+   380:         }
+   381:         badge = badges.get(cat, f"[{cat}]")
+   382:         line = f"{badge} [PID:{os.getpid()}] 🕒 {now_str} | {message}"
+   383:         if details:
+   384:             if isinstance(details, dict):
+   385:                 d_parts = [f"{k}: {v}" for k, v in details.items() if v is not None and str(v).strip()]
+   386:                 if d_parts:
+   387:                     line += "\n    ↳ " + " | ".join(d_parts)
+   388:             else:
+   389:                 line += f"\n    ↳ {details}"
+   390:         print(line, flush=True)
+   391:     except Exception:
+   392:         try:
+   393:             print(f"[{category}] {message}", flush=True)
+   394:         except Exception:
+   395:             pass
+   396: 
+   397: 
+   398: @app.before_request
+   399: def _fbrah_log_request():
+   400:     request._start_time = time.time()
+   401:     path = request.path
+   402:     # تجنب إغراق التيرمنال بالأصول الثابتة ونبضات التذكير
+   403:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+   404:         user = session.get("user") or "ضيف / Anonymous"
+   405:         log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+   406: 
+   407: 
+   408: @app.after_request
+   409: def _fbrah_log_response(response):
+   410:     start = getattr(request, "_start_time", None)
+   411:     latency = f"{(time.time() - start)*1000:.1f}ms" if start else "N/A"
+   412:     path = request.path
+   413:     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
+   414:         log_terminal("HTTP", f"{request.method} {path} -> Status {response.status_code} ({latency})")
+   415:     return response
+   416: 
+   417: 
+   418: # ============================================================
+   419: # SELF-HEALING & DIAGNOSTICS ENGINE
+   420: # ============================================================
+   421: 
+   422: class FbrahSelfHealingEngine:
+   423:     """محرك فحص وتشخيص وإصلاح ذاتي تلقائي للمنظومة وقواعد البيانات والمجلدات والـ RAG."""
+   424:     @staticmethod
+   425:     def diagnose_and_heal():
+   426:         results = {
+   427:             "status": "healthy",
+   428:             "timestamp": dt.datetime.now().isoformat(),
+   429:             "issues_found": [],
+   430:             "fixes_applied": [],
+
+===== app.py:9360-9410 =====
+  9360:   var u = document.getElementById("regUsername");
+  9361:   if(u) u.placeholder = lang==="en" ? "Enter username" : "اسم المستخدم";
+  9362:   var bAr = document.getElementById("regLangAr");
+  9363:   var bEn = document.getElementById("regLangEn");
+  9364:   if(bAr) bAr.className=lang==="ar"?"active":"";
+  9365:   if(bEn) bEn.className=lang==="en"?"active":"";
+  9366:   try{localStorage.setItem("fbrah_login_lang",lang);}catch(e){}
+  9367: }
+  9368: try{var L=localStorage.getItem("fbrah_login_lang"); if(L) setRegLang(L);}catch(e){}
+  9369: </script>
+  9370: </body>
+  9371: </html>
+  9372: """
+  9373: 
+  9374: 
+  9375: 
+  9376: @app.route("/login", methods=["GET", "POST"])
+  9377: def login():
+  9378:     message = ""
+  9379:     if request.method == "POST":
+  9380:         login_id = request.form.get("username", "").strip()
+  9381:         password = request.form.get("password", "")
+  9382:         with get_db() as db:
+  9383:             row = db.execute(
+  9384:                 """
+  9385:                 SELECT * FROM users
+  9386:                 WHERE username=? OR email=? OR phone=?
+  9387:                 """,
+  9388:                 (login_id, login_id, login_id)
+  9389:             ).fetchone()
+  9390:             if row and verify_password(password, row["password_hash"]):
+  9391:                 if not (row["password_hash"] or "").startswith("pbkdf2_sha256$"):
+  9392:                     db.execute(
+  9393:                         "UPDATE users SET password_hash=? WHERE id=?",
+  9394:                         (hash_password(password), row["id"])
+  9395:                     )
+  9396:                 _csrf_after_login = secrets.token_urlsafe(32)
+  9397:                 session.clear()
+  9398:                 session["_fbrah_csrf"] = _csrf_after_login
+  9399:                 session.permanent = True
+  9400:                 session["user"] = row["username"]
+  9401:                 session["role"] = row["role"]
+  9402:                 return redirect(url_for("home"))
+  9403:         message = "<div class='err'>بيانات الدخول غير صحيحة.</div>"
+  9404:     return LOGIN_HTML.replace("__MESSAGE__", message).replace("__CSRF_TOKEN__", session.get("_fbrah_csrf", ""))
+  9405: 
+  9406: 
+  9407: @app.route("/register", methods=["GET", "POST"])
+  9408: def register():
+  9409:     message = ""
+  9410:     if request.method == "POST":
+
+===== security_hardening.py:1-180 =====
+     1: # -*- coding: utf-8 -*-
+     2: """FBRAH security extension: CSRF, safe password reset by email, and headers.
+     3: 
+     4: This module is intentionally independent of the application's business logic.
+     5: It uses the existing SQLite connection factory and password hasher supplied by
+     6: app.py. No password or reset token is logged or stored in plaintext.
+     7: """
+     8: from __future__ import annotations
+     9: 
+    10: import hashlib
+    11: import hmac
+    12: import os
+    13: import re
+    14: import secrets
+    15: import smtplib
+    16: import ssl
+    17: import time
+    18: from datetime import datetime, timedelta, timezone
+    19: from email.message import EmailMessage
+    20: from functools import wraps
+    21: from urllib.parse import urlparse
+    22: 
+    23: from flask import (Blueprint, abort, current_app, jsonify, make_response,
+    24:                    redirect, render_template_string, request, session, url_for)
+    25: 
+    26: 
+    27: CSRF_SESSION_KEY = "_fbrah_csrf"
+    28: CSRF_HEADER = "X-FBRAH-CSRF"
+    29: RESET_TTL_MINUTES = 20
+    30: RESET_MESSAGE_AR = "إذا كانت بيانات الحساب صحيحة وكان البريد مسجلاً، فستصلك رسالة تتضمن رابطاً مؤقتاً لإعادة التعيين. تحقق من البريد الوارد والرسائل غير المرغوب فيها."
+    31: RESET_MESSAGE_EN = "If the account details are valid and an email is registered, a time-limited reset link will be sent. Check your inbox and spam folder."
+    32: 
+    33: 
+    34: def _utcnow():
+    35:     return datetime.now(timezone.utc)
+    36: 
+    37: 
+    38: def _token_hash(token: str) -> str:
+    39:     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    40: 
+    41: 
+    42: def _db_exec(get_db, sql, params=()):
+    43:     with get_db() as db:
+    44:         cur = db.execute(sql, params)
+    45:         db.commit()
+    46:         return cur
+    47: 
+    48: 
+    49: def _send_reset_email(email: str, reset_url: str) -> bool:
+    50:     host = (os.environ.get("FBRAH_SMTP_HOST") or "").strip()
+    51:     sender = (os.environ.get("FBRAH_SMTP_FROM") or "").strip()
+    52:     username = (os.environ.get("FBRAH_SMTP_USER") or "").strip()
+    53:     password = os.environ.get("FBRAH_SMTP_PASSWORD") or ""
+    54:     if not host or not sender:
+    55:         current_app.logger.error("Password reset email is not configured (SMTP host/from missing).")
+    56:         return False
+    57:     try:
+    58:         port = int(os.environ.get("FBRAH_SMTP_PORT", "465"))
+    59:         timeout = min(max(int(os.environ.get("FBRAH_SMTP_TIMEOUT", "10")), 3), 30)
+    60:         msg = EmailMessage()
+    61:         msg["Subject"] = "FBRAH — Password reset / إعادة تعيين كلمة المرور"
+    62:         msg["From"] = sender
+    63:         msg["To"] = email
+    64:         msg.set_content(
+    65:             "طلب إعادة تعيين كلمة مرور FBRAH. الرابط صالح لمدة 20 دقيقة ولمرة واحدة فقط:\n\n"
+    66:             + reset_url + "\n\nإذا لم تطلب ذلك فتجاهل الرسالة. لا تشارك الرابط مع أحد."
+    67:         )
+    68:         context = ssl.create_default_context()
+    69:         if port == 465:
+    70:             with smtplib.SMTP_SSL(host, port, timeout=timeout, context=context) as smtp:
+    71:                 if username:
+    72:                     smtp.login(username, password)
+    73:                 smtp.send_message(msg)
+    74:         else:
+    75:             with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+    76:                 smtp.ehlo()
+    77:                 smtp.starttls(context=context)
+    78:                 smtp.ehlo()
+    79:                 if username:
+    80:                     smtp.login(username, password)
+    81:                 smtp.send_message(msg)
+    82:         return True
+    83:     except Exception:
+    84:         current_app.logger.exception("Password reset email delivery failed.")
+    85:         return False
+    86: 
+    87: 
+    88: def init_security_hardening(app, get_db, hash_password):
+    89:     """Register hardening hooks and password-reset routes exactly once."""
+    90:     if app.extensions.get("fbrah_security_hardening"):
+    91:         return
+    92:     app.extensions["fbrah_security_hardening"] = True
+    93:     bp = Blueprint("fbrah_security", __name__)
+    94: 
+    95:     with app.app_context():
+    96:         with get_db() as db:
+    97:             db.execute("""CREATE TABLE IF NOT EXISTS fbrah_password_reset_tokens (
+    98:                 token_hash TEXT PRIMARY KEY,
+    99:                 user_id INTEGER NOT NULL,
+   100:                 expires_at TEXT NOT NULL,
+   101:                 used_at TEXT,
+   102:                 created_at TEXT NOT NULL
+   103:             )""")
+   104:             db.execute("CREATE INDEX IF NOT EXISTS idx_fbrah_reset_user ON fbrah_password_reset_tokens(user_id)")
+   105:             db.execute("""CREATE TABLE IF NOT EXISTS fbrah_auth_throttle (
+   106:                 bucket TEXT PRIMARY KEY,
+   107:                 attempts INTEGER NOT NULL DEFAULT 0,
+   108:                 window_started REAL NOT NULL,
+   109:                 blocked_until REAL NOT NULL DEFAULT 0
+   110:             )""")
+   111:             db.commit()
+   112: 
+   113:     @app.context_processor
+   114:     def _fbrah_csrf_template_context():
+   115:         return {"csrf_token": session.get(CSRF_SESSION_KEY, "")}
+   116: 
+   117:     @app.before_request
+   118:     def _fbrah_csrf_guard():
+   119:         if not session.get(CSRF_SESSION_KEY):
+   120:             session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
+   121:         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+   122:             supplied = request.headers.get(CSRF_HEADER, "")
+   123:             if not supplied:
+   124:                 supplied = request.form.get("_csrf_token", "")
+   125:             expected = session.get(CSRF_SESSION_KEY, "")
+   126:             if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+   127:                 if request.path in ("/api/client_telemetry", "/api/client_log"):
+   128:                     # sendBeacon cannot set custom headers: accept only browser same-origin beacon.
+   129:                     origin = request.headers.get("Origin", "")
+   130:                     origin_parts = urlparse(origin)
+   131:                     host_parts = urlparse(request.host_url)
+   132:                     if (
+   133:                         not origin_parts.scheme
+   134:                         or origin_parts.scheme != host_parts.scheme
+   135:                         or origin_parts.netloc.casefold() != host_parts.netloc.casefold()
+   136:                         or origin_parts.username
+   137:                         or origin_parts.password
+   138:                     ):
+   139:                         abort(400, description="CSRF validation failed")
+   140:                 else:
+   141:                     if request.path.startswith("/api/") or request.is_json:
+   142:                         return jsonify({"ok": False, "error": "csrf", "message": "انتهت صلاحية الطلب. حدّث الصفحة ثم أعد المحاولة."}), 400
+   143:                     abort(400, description="CSRF validation failed")
+   144: 
+   145:     @app.after_request
+   146:     def _fbrah_security_headers(response):
+   147:         response.headers.setdefault("X-Content-Type-Options", "nosniff")
+   148:         response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+   149:         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+   150:         response.headers.setdefault("Permissions-Policy", "camera=(self), microphone=(self), geolocation=()")
+   151:         response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+   152:         if request.path.startswith(("/forgot-password", "/reset-password/")):
+   153:             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+   154:             response.headers["Pragma"] = "no-cache"
+   155:             response.headers["Referrer-Policy"] = "no-referrer"
+   156:         if request.is_secure or os.environ.get("FBRAH_HTTPS") == "1":
+   157:             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+   158:         # Inject the synchronizer token into server-rendered forms, and into a meta tag
+   159:         # used by same-origin fetch requests. Only HTML responses are touched.
+   160:         if response.mimetype == "text/html" and response.direct_passthrough is False:
+   161:             try:
+   162:                 body = response.get_data(as_text=True)
+   163:                 token = session.get(CSRF_SESSION_KEY, "")
+   164:                 meta = '<meta name="fbrah-csrf" content="' + token + '">'
+   165:                 if "name=\"fbrah-csrf\"" not in body:
+   166:                     body = re.sub(r"(<head[^>]*>)", r"\1" + meta, body, count=1, flags=re.I)
+   167:                 hidden = '<input type="hidden" name="_csrf_token" value="' + token + '">'
+   168:                 body = re.sub(r"(<form\b[^>]*>)", lambda m: m.group(1) + hidden, body, flags=re.I)
+   169:                 helper = """<script>(function(){var m=document.querySelector('meta[name=\\\"fbrah-csrf\\\"]');if(!m)return;var t=m.content;var f=window.fetch;window.fetch=function(input,init){init=init||{};var u=typeof input==='string'?input:(input&&input.url)||'';var method=(init.method||(input&&input.method)||'GET').toUpperCase();try{var x=new URL(u,location.href);if(x.origin===location.origin&&['POST','PUT','PATCH','DELETE'].indexOf(method)>=0){var h=new Headers(init.headers||(input&&input.headers)||{});h.set('X-FBRAH-CSRF',t);init.headers=h;}}catch(e){}return f.call(this,input,init);};})();</script>"""
+   170:                 if "X-FBRAH-CSRF" not in body:
+   171:                     body = body.replace("</body>", helper + "</body>")
+   172:                 response.set_data(body)
+   173:             except Exception:
+   174:                 current_app.logger.exception("Could not inject CSRF token into HTML response")
+   175:         return response
+   176: 
+   177:     def _throttle_state(bucket):
+   178:         now = time.time()
+   179:         with get_db() as db:
+   180:             row = db.execute("SELECT attempts,window_started,blocked_until FROM fbrah_auth_throttle WHERE bucket=?", (bucket,)).fetchone()
