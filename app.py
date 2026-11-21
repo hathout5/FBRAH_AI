@@ -13656,13 +13656,33 @@ def _build_live_news_payload(language):
     ]
     if language == "en":
         extra_jokes = [
-            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The meeting was so productive that we scheduled another meeting to discuss what we achieved.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The meeting could have been an email — and the email could have been silence.","url":""},
             {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"My budget is like a mystery novel: every month the money disappears, and I never find the culprit.","url":""},
             {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The printer said it needed a break. Honestly, same.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"Wi-Fi dropped at the office… people discovered they actually have coworkers nearby.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"I told the calendar I needed free time. It booked another meeting.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"Accountant: the numbers balance. Boss: then why is the cash gone? Accountant: different numbers.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"AI finished my report in seconds. Now I need an AI to explain it to my manager.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"I started reading the news daily. Now I worry with better sources.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"Password tip of the day: make it long, strong, and something you will immediately forget.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"The coffee machine is the only office system with 99.9% uptime and zero documentation.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"Lawyer: we have a strong case. Client: and the judge? Lawyer: also very strong.","url":""},
+            {"cat":"Light joke","icon":"😄","source":"FBRAH","text":"I bought a standing desk to be healthier. Now I stand while procrastinating.","url":""},
         ]
     if len(curated_jokes) < 6:
         curated_jokes.extend(extra_jokes)
+    # تدوير مستمر: بذرة زمنية كل 30 ثانية لتغيير ترتيب النكت والموجز
+    try:
+        random.seed(int(now // 30) ^ (0xA5A5 if language == "en" else 0x5A5A))
+    except Exception:
+        pass
     random.shuffle(curated_jokes)
+    try:
+        random.shuffle(news_items)
+        # أعد ترتيب الأولوية بعد الخلط الخفيف للحفاظ على المهم أولاً
+        news_items = sorted(list(news_items or []), key=lambda it: _news_priority_score(it, language), reverse=True)
+    except Exception:
+        pass
 
     # أسعار فعلية من صفحة البنك المركزي؛ عند تعذر الوصول لا نعرض أرقاماً قديمة أو مخمّنة.
     cbe_items = _fetch_cbe_rate_ticker_items(language)
@@ -13798,7 +13818,7 @@ def api_live_news():
         lang_cache = _LIVE_NEWS_CACHE["by_lang"][language]
         cached_items = list(lang_cache.get("items") or [])
         cached_at = float(lang_cache.get("at") or 0.0)
-        stale = force or not cached_items or (now - cached_at >= 45)
+        stale = force or not cached_items or (now - cached_at >= 30)
         if stale and not _NEWS_REFRESHING[language]:
             _NEWS_REFRESHING[language] = True
             try:
