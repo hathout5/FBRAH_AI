@@ -4619,23 +4619,138 @@ def looks_like_24h_written_time(hour, has_ampm_marker):
 
 
 
+
+
+def is_explicit_adhan_or_prayer_request(question):
+    """True فقط عند طلب أذان/صلاة صريح — لغات متعددة."""
+    q = question or ""
+    ql = q.lower()
+    # أذان / صلاة صريح
+    if re.search(r"أذان|اذان|adhan|\bazan\b|\bazaan\b", q, re.I):
+        return True
+    if re.search(r"مواقيت|أوقات\s*الصلاة|اوقات\s*الصلاة|prayer\s*times?", q, re.I):
+        return True
+    if re.search(r"صلاة\s*(الفجر|الظهر|العصر|المغرب|العشاء|الصبح)|صلاه\s*(الفجر|الظهر|العصر|المغرب|العشاء)", q):
+        return True
+    if re.search(r"(الصلاة|الصلاه)\s*(القادمة|الجاية|الجائيه|القادمه)", q):
+        return True
+    if re.search(r"(fajr|dhuhr|zuhr|asr|maghrib|isha)\s*(prayer|salah|salat)?", ql):
+        if re.search(r"remind|alert|notify|alarm|أذان|صلاة|pray", ql + q):
+            return True
+    if re.search(r"remind\s+me\s+(to\s+)?pray|\bsalah\b|\bsalat\b|pri[eè]re|gebet|oración|namaz|salât", q, re.I):
+        return True
+    if re.search(r"(ذكرني|فكرني|نبهني|remind|rappelle|erinnere|recu[eé]rdame).{0,48}(أذان|اذان|adhan|صلاة\s*ال|صلاه\s*ال|pray|namaz)", q, re.I):
+        return True
+    return False
+
+
+def is_general_reminder_intent(question):
+    """
+    نية تذكير عامة بأي صيغة وبأي لغة شائعة على الصفحة العربية أو الإنجليزية
+    (وتعبيرات إضافية FR/DE/ES/TR/UR إن وُجدت في النص).
+    """
+    q = question or ""
+    ql = q.lower()
+    # استعلام عن التذكيرات الموجودة ≠ ضبط تذكير جديد
+    if re.search(
+        r"(كام|كم|عدد|how\s*many|count|combien|cu[aá]ntos?).{0,24}(تذكير|تذاكير|reminder|rappels?)",
+        q, re.I,
+    ):
+        return False
+    if re.search(
+        r"(عرض|قائمة|list|show|my).{0,16}(تذكير|تذكيرات|reminders?)|(تذكير|تذكيرات|reminders?).{0,20}(عندك|عندي|الآن|الان|now|pending)",
+        q, re.I,
+    ):
+        return False
+    if re.search(r"(ألغ|الغي|الغِ|cancel|delete|remove).{0,20}(تذكير|reminder)", q, re.I):
+        return False
+
+    # --- عربي (فصحى + عامية) ---
+    ar_triggers = (
+        "ذكرني", "ذكّرني", "ذكريني", "ذكّريني", "فكرني", "فكّرني", "فكريني", "فكّريني",
+        "نبهني", "نبّهني", "نبهيني", "تذكير", "التنبيه", "منبه", "منبّه", "المنبه",
+        "بلغني", "بلّغني", "أعلمني", "اعلمني", "سجل تذكير", "سجّل تذكير", "حط تذكير",
+        "ضع تذكير", "اعمل تذكير", "أضف تذكير", "اضبط المنبه", "اضبطلي", "اضبط لي",
+        "صحيني", "أيقظني", "ايقظني", "رن عليا", "متنساش", "ما تنساش", "لا تنس",
+        "متخلينيش أنسى", "متخلينيش انسى", "خليني أفتكر", "خليني افتكر",
+        "لما يجي الموعد", "لما تحين", "أول ما يجي", "اول ما يجي",
+    )
+    # --- English ---
+    en_triggers = (
+        "remind me", "remind us", "set a reminder", "set reminder", "set an alarm",
+        "set alarm", "notify me", "alert me", "wake me", "don't forget", "do not forget",
+        "dont forget", "ping me", "schedule a reminder", "create a reminder",
+        "add a reminder", "i need a reminder", "please remind", "can you remind",
+        "reminder for", "alarm for", "nudge me",
+    )
+    # --- French / German / Spanish / Turkish / Urdu (romanized + common) ---
+    other_triggers = (
+        "rappelle-moi", "rappelez-moi", "rappel-moi", "fais-moi penser", "pense à me rappeler",
+        "erinnere mich", "erinnere mich daran", "erinnerung", "weck mich",
+        "recuérdame", "recuerdame", "recuérdarme", "avísame", "avisame", "no olvides",
+        "hatırlat", "hatirlat", "beni hatırlat", "alarm kur",
+        "مجھے یاد", "یاد دلا", "یاد کرو",  # Urdu
+        "rappella", "ricordami",  # Italian-ish
+        "lembre-me", "lembra-me",  # PT
+    )
+
+    if any(t in q for t in ar_triggers):
+        return True
+    if any(t in ql for t in en_triggers):
+        return True
+    if any(t in ql or t in q for t in other_triggers):
+        return True
+    # صيغ قصيرة: reminder/alarm + وقت أو تاريخ
+    if re.search(
+        r"\b(reminder|alarm|t(?:é|e)l[eé]phone|erinnerung|rappel)\b.{0,40}"
+        r"(\d|am\b|pm\b|morning|evening|night|tomorrow|monday|wednesday|friday|noon|"
+        r"ساع|يوم|غدا|بكر|الأربعاء|الاربعاء|الظهر|مساء|صباح)",
+        ql + " " + q,
+        re.I,
+    ):
+        return True
+    # عربي: منبه/تذكير + زمن
+    if re.search(
+        r"(منبه|تذكير|نبه|ذكر|فكر).{0,40}(\d|ساع|يوم|غدا|بكر|الأربعاء|الاربعاء|الظهر|مساء|صباح|دقيقة|ساعة)",
+        q,
+    ):
+        return True
+    return False
+
+
+def detect_reminder_ui_lang(question, session_obj=None):
+    """اختر لغة رسالة التأكيد: ar أو en حسب النص والجلسة."""
+    q = question or ""
+    ar = len(re.findall(r"[\u0600-\u06ff]", q))
+    en = len(re.findall(r"[A-Za-z]", q))
+    try:
+        if session_obj is not None and session_obj.get("ui_lang") in ("ar", "en"):
+            # إن كان النص واضحاً بلغة أخرى، غلّب النص
+            if ar >= 6 and en < 8:
+                return "ar"
+            if en >= 10 and ar < 3:
+                return "en"
+            return session_obj.get("ui_lang")
+    except Exception:
+        pass
+    if ar >= 3 and ar >= en:
+        return "ar"
+    if en >= 5:
+        return "en"
+    return "ar"
+
+
 def parse_adhan_reminder_request(question):
-    """ذكرني/فكرني/نبهني/بلغني بالأذان أو الصلاة الجاية/القادمة أو فرض معيّن."""
+    """تذكير أذان/صلاة فقط. أي تذكير آخر (موعد/مهمة/اجتماع…) عبر التذكير العام."""
+    if not is_explicit_adhan_or_prayer_request(question or ""):
+        return None
     raw = _fb_strip_wake_words(question or "") or (question or "")
     q = _fb_prayer_aliases_norm(raw)
-    # نية التذكير/التنبيه بصور لهجية متعددة
+    ql = (q or "").lower()
     if not any(t in q for t in (
         "ذكر", "فكر", "نبه", "بلّغ", "بلغ", "تذكير", "منبه", "منبّه",
-        "لما تيج", "لما تحين", "حين تحين", "لما يجي", "لما يجي",
+        "لما تيج", "لما تحين", "حين تحين", "لما يجي",
         "remind", "alarm", "notify",
-    )):
-        return None
-    if not any(x in q for x in (
-        "اذان", "أذان", "صلاه", "صلاة", "الصلاه", "الصلاة", "موعد",
-        "الفجر", "الظهر", "العصر", "المغرب", "العشاء", "عشا", "عشاء",
-        "الشروق", "الغروب",
-        "الجايه", "الجائيه", "الجاية", "القادمه", "القادمة", "القادم", "الجاي",
-        "كل الاذان", "كل الأذان", "كل الصلوات",
     )):
         return None
     # قبل كم دقيقة؟
@@ -4741,8 +4856,17 @@ def parse_reminder_request(question):
     except Exception:
         pass
     ql = q.lower()
+    # لا تضبط تذكيراً جديداً عند الاستعلام عن القائمة/العدد/الإلغاء
+    if re.search(
+        r"(كام|كم|عدد|how\s*many|count|عرض|قائمة|list\s+reminders|show\s+reminders|my\s+reminders|"
+        r"ألغ|الغي|cancel\s+reminder|delete\s+reminder).{0,30}(تذكير|reminder)?|"
+        r"(تذكير|تذكيرات|reminders?).{0,20}(عندك|عندي|الآن|الان|now|pending|حالي)",
+        q, re.I,
+    ):
+        return None
 
     triggers = (
+        # AR
         "ذكرني", "ذكّرني", "ذكرنى", "ذكريني", "ذكّريني", "ذكرينى", "ذكّرني",
         "فكرني", "فكّرني", "فكريني", "فكّريني", "فكرنى", "فكّرني", "فكّرني ب",
         "تذكير", "التنبيه", "تنبيه", "ذكرني ب", "ذكريني ب", "فكرني ب", "فكريني ب",
@@ -4755,9 +4879,16 @@ def parse_reminder_request(question):
         "لما يجي الموعد", "لما يحل الموعد", "لما تحين", "حين يحين", "أول ما يجي", "اول ما يجي",
         "موعد الصلاة", "موعد الاذان", "موعد الأذان", "الأذان الجاي", "الصلاة الجاية",
         "ميعاد الجلسة", "ميعاد الاستئناف", "موعد الجلسة", "موعد الحكم", "موعد تقديم الإقرار",
+        # EN
         "remind me", "reminder", "alarm", "wake me", "set alarm", "set a reminder",
-        "notify me", "alert me", "don't let me forget", "do not forget", "ping me",
-        "schedule a reminder", "set reminder", "remind",
+        "notify me", "alert me", "don't let me forget", "do not forget", "dont forget",
+        "ping me", "schedule a reminder", "set reminder", "remind", "create a reminder",
+        "add a reminder", "please remind", "can you remind", "nudge me", "i need a reminder",
+        # FR / DE / ES / TR / IT / PT (common phrases)
+        "rappelle-moi", "rappelez-moi", "rappel-moi", "fais-moi penser",
+        "erinnere mich", "erinnerung setzen", "weck mich",
+        "recuérdame", "recuerdame", "avísame", "avisame",
+        "hatırlat", "hatirlat", "ricordami", "lembre-me", "lembra-me",
     )
     if not any(t in q or t in ql for t in triggers):
         return None
@@ -4924,8 +5055,10 @@ def parse_reminder_request(question):
                 ap = groups[1] if len(groups) > 1 else None
             has_ampm = bool(ap)
             ap_l = (ap or "").lower()
-            is_pm = any(x in ap_l for x in ("مساء", "م", "pm"))
+            is_pm = any(x in ap_l for x in ("مساء", "م", "pm")) or bool(re.search(r"(الظهر|ظهر|noon|midday)", q, re.I))
             is_am = any(x in ap_l for x in ("صباح", "ص", "am"))
+            if is_pm and is_am:
+                is_am = False  # الظهر يغلب إن اختلطا
             if is_pm and hh < 12:
                 hh += 12
             elif is_am and hh == 12:
@@ -4942,6 +5075,54 @@ def parse_reminder_request(question):
     if remind_at is not None and any(w in q for w in ("غدا", "غداً", "بكره", "بكرة", "بكره")):
         if remind_at.date() == now.date():
             remind_at += dt.timedelta(days=1)
+
+    # يوم الأسبوع: الأربعاء / Wednesday ...
+    if remind_at is not None or True:
+        wd_map = {
+            "الاثنين": 0, "الأثنين": 0, "الإثنين": 0, "اتنين": 0, "monday": 0, "lundi": 0, "montag": 0, "lunes": 0,
+            "الثلاثاء": 1, "التلات": 1, "التلاتاء": 1, "tuesday": 1, "mardi": 1, "dienstag": 1, "martes": 1,
+            "الأربعاء": 2, "الاربعاء": 2, "أربعاء": 2, "اربعاء": 2, "wednesday": 2, "mercredi": 2, "mittwoch": 2, "miércoles": 2, "miercoles": 2,
+            "الخميس": 3, "thursday": 3, "jeudi": 3, "donnerstag": 3, "jueves": 3,
+            "الجمعة": 4, "الجمعه": 4, "friday": 4, "vendredi": 4, "freitag": 4, "viernes": 4,
+            "السبت": 5, "saturday": 5, "samedi": 5, "samstag": 5, "sábado": 5, "sabado": 5,
+            "الأحد": 6, "الاحد": 6, "sunday": 6, "dimanche": 6, "sonntag": 6, "domingo": 6,
+        }
+        target_wd = None
+        ql2 = q.lower()
+        for name, wd in wd_map.items():
+            if name in q or name in ql2:
+                target_wd = wd
+                break
+        if target_wd is not None:
+            base = remind_at if remind_at is not None else now.replace(second=0, microsecond=0)
+            # إن لم يُستخرج وقت بعد: افترض 12:00 إن وُجد «الظهر» وإلا ابقِ الساعة الحالية للضبط لاحقاً
+            if remind_at is None:
+                hh, mm = now.hour, now.minute
+                if re.search(r"(الظهر|ظهر|noon|midday)", q, re.I):
+                    hh, mm = 12, 0
+                mclock = re.search(r"(?:الساعة|الساعه)?\s*(\d{1,2})\s*(?::|\.|و)?\s*(\d{0,2})?", q)
+                if mclock:
+                    try:
+                        hh = int(mclock.group(1))
+                        mm = int(mclock.group(2) or 0)
+                    except Exception:
+                        pass
+                if re.search(r"(الظهر|مساء|مساءً|pm|noon)", q, re.I) and hh < 12:
+                    hh += 12
+                if hh == 12 and re.search(r"(صباح|صباحا|am)", q, re.I):
+                    hh = 0
+                if 0 <= hh <= 23 and 0 <= mm <= 59:
+                    base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+            days_ahead = (target_wd - base.weekday()) % 7
+            if days_ahead == 0 and base <= now:
+                days_ahead = 7
+            remind_at = base + dt.timedelta(days=days_ahead)
+
+    # «12 الظهر» / «الساعة 12 ظهر» بدون يوم — بعد استخراج الساعة
+    if remind_at is not None and re.search(r"(الظهر|ظهر|noon)", q, re.I):
+        # إن كانت الساعة 12 صباحاً بالخطأ بسبب غياب am/pm، صحّح للظهر
+        if remind_at.hour == 0 or (remind_at.hour == 12 and "صباح" not in q):
+            remind_at = remind_at.replace(hour=12, minute=remind_at.minute)
 
     if remind_at is None:
         # افتراضي بعد 10 دقائق
@@ -5094,6 +5275,13 @@ def parse_list_cancel_reminders(question, username):
         "ما التذكيرات", "ايه التذكيرات", "التذكيرات الحالية", "ذكرني بإيه",
         "show reminders", "list reminders", "my reminders", "pending reminders",
         "mes rappels", "liste des rappels",
+        # عدّ / استعلام
+        "في كام تذكير", "فيه كام تذكير", "كام تذكير", "كم تذكير", "عدد التذكير",
+        "عدد التذكيرات", "عندك كام تذكير", "عندك كم تذكير", "ايه التذكير اللي عندك",
+        "التذكيرات عندك", "التذكير عندك", "ما هي التذكيرات", "ماهي التذكيرات",
+        "how many reminders", "how many reminder", "count reminders", "what reminders",
+        "any reminders", "do i have reminders", "reminders do i have",
+        "combien de rappels", "wie viele erinnerungen", "cuántos recordatorios",
     )
     cancel_keys = (
         "الغ تذكير", "ألغ تذكير", "الغي تذكير", "إلغاء تذكير", "امسح تذكير",
@@ -5102,20 +5290,42 @@ def parse_list_cancel_reminders(question, username):
     )
     is_list = any(k in q or k in ql for k in list_keys)
     is_cancel = any(k in q or k in ql for k in cancel_keys)
+    # صيغ استعلام/عدّ متنوعة (بدون ضبط تذكير جديد)
+    if not is_list and re.search(
+        r"(كام|كم|عدد|how\s*many|count|combien|cu[aá]ntos?).{0,20}(تذكير|تذاكير|reminder|rappels?|erinnerungen|recordatorios)",
+        q, re.I,
+    ):
+        is_list = True
+    if not is_list and re.search(
+        r"(تذكير|تذكيرات|reminders?).{0,24}(عندك|عندي|الآن|الان|now|pending|current|حالي)",
+        q, re.I,
+    ):
+        is_list = True
     if not is_list and not is_cancel:
-        # «التذكيرات» وحدها
-        if q.strip() in ("التذكيرات", "تذكيراتي", "reminders"):
+        if q.strip() in ("التذكيرات", "تذكيراتي", "reminders", "my reminders"):
             is_list = True
         else:
             return None
     items = list_pending_reminders(username, limit=10)
     if is_list and not is_cancel:
+        n = len(items or [])
+        is_en = bool(re.search(r"[A-Za-z]{4,}", q)) and not bool(re.search(r"[\u0600-\u06ff]{3,}", q))
         if not items:
-            return "لا توجد تذكيرات معلّقة الآن. يمكنك طلب تذكير بأي موضوع (صوتي أو كتابي)."
-        lines = [f"آخر التذكيرات المعلّقة ({len(items)}/10):"]
+            return (
+                "You have 0 pending reminders right now. You can set a reminder for any topic."
+                if is_en else
+                "عدد التذكيرات المعلّقة الآن: 0\nلا توجد تذكيرات معلّقة. يمكنك طلب تذكير بأي موضوع."
+            )
+        if is_en:
+            lines = [f"You have {n} pending reminder(s) (max 10):"]
+            for i, it in enumerate(items, 1):
+                lines.append(f"{i}) [{it['id']}] {it.get('message') or '—'} — {it.get('remind_at') or ''}")
+            lines.append("To cancel: «cancel reminder number 3» or «delete reminder …».")
+            return "\n".join(lines)
+        lines = [f"عدد التذكيرات المعلّقة الآن: {n} (الحد الأقصى 10)"]
         for i, it in enumerate(items, 1):
             lines.append(f"{i}) [{it['id']}] {it.get('message') or '—'} — {it.get('remind_at') or ''}")
-        lines.append("للإلغاء: «ألغِ التذكير رقم 3» أو «ألغِ تذكير الاجتماع».")
+        lines.append("للإلغاء: «ألغِ التذكير رقم 3» أو «ألغِ تذكير …».")
         return "\n".join(lines)
     # cancel by number or text
     if not items:
@@ -8446,19 +8656,30 @@ def process_selected_uploaded_file(file_id, model, task, question="", use_web_co
     return f"{heading}\nالمعالجة عبر: {provider}\n\n{result}{truncation_note}"
 
 
-def summarize_or_translate_sticky_upload(question, model, force=False, force_translate=False):
+def summarize_or_translate_sticky_upload(question, model, force=False, force_translate=False, force_key_points=False):
     """
-    تلخيص/ترجمة الملفات المرفوعة.
+    تلخيص/ترجمة/أهم نقاط الملفات المرفوعة.
     force=True: تلخيص إجباري من الزر.
     force_translate=True: ترجمة إجبارية من الزر.
+    force_key_points=True: استخراج أهم النقاط إجباري.
     """
     want_sum, want_tr = is_file_summary_request(question)
+    want_kp = force_key_points or any(
+        k in (question or "") for k in (
+            "أهم النقاط", "اهم النقاط", "النقاط الجوهرية", "key points", "keypoints", "bullet points",
+        )
+    )
     if force:
         want_sum = True
+    if force_key_points:
+        want_kp = True
+        want_sum = True
+        want_tr = False
     if force_translate:
         want_tr = True
         want_sum = False
-    if not (want_sum or want_tr):
+        want_kp = False
+    if not (want_sum or want_tr or want_kp):
         return None
 
     rows = _collect_sticky_file_rows()
@@ -8495,6 +8716,29 @@ def summarize_or_translate_sticky_upload(question, model, force=False, force_tra
 
         extractive = _extractive_summary(content, max_chars=2500, title_hint=fn)
         body = ""
+
+        if want_kp and not want_tr:
+            # أهم النقاط من نص الملف — ليس اسم الملف فقط
+            kp_out = ""
+            try:
+                kp_prompt = (
+                    "استخرج أهم النقاط الجوهرية من نص الملف التالي فقط. "
+                    "أدرج الوقائع والأسماء والأرقام والتواريخ والنتائج في نقاط مرقّمة. "
+                    "ممنوع إعادة عنوان الملف فقط أو جواب من كلمة واحدة.\n\n"
+                    f"الملف: {fn}\n\n{content[:8000]}"
+                )
+                kp_out = ask_ollama(kp_prompt, model, num_predict=900, timeout=120, temperature=0.1)
+            except Exception:
+                app.logger.exception("key points sticky model")
+                kp_out = ""
+            if not (kp_out or "").strip() or len((kp_out or "").strip()) < 40:
+                # استخراج محلي من المقاطع
+                kp_out = _extractive_summary(content, max_chars=3200, title_hint="")
+            if (kp_out or "").strip() and fn and kp_out.strip() == fn.strip():
+                kp_out = _extractive_summary(content, max_chars=3200, title_hint="")
+            body = f"🎯 أهم النقاط — {fn}\n\n" + (kp_out or extractive or content[:2000]).strip()
+            parts.append(body)
+            continue
 
         if want_tr:
             lang = _guess_text_lang(content)
@@ -10704,7 +10948,7 @@ def home():
 
         elif action == "key_points":
             selected_file_id = (request.form.get("selected_file_id") or session.get("selected_file_id") or "").strip()
-            # إن لم يُحدد ملف، استخدم أحدث ملف مرفوع للمستخدم (الملف المخزّن على الخادم وليس المسار المحلي للمتصفح)
+            # إن لم يُحدد ملف، استخدم أحدث ملف مرفوع للمستخدم
             if not selected_file_id:
                 try:
                     with get_db() as db:
@@ -10723,16 +10967,44 @@ def home():
                             session["selected_file_id"] = selected_file_id
                 except Exception:
                     app.logger.exception("key_points fallback latest file")
-            if not selected_file_id:
-                answer = "لاستخراج النقاط الجوهرية بدقة، ارفع ملفاً أو اختر ملفاً من قائمة «الملف المستهدف حصرياً» أولاً."
-            elif use_web and not use_web_and_local:
+            if use_web and not use_web_and_local:
                 answer = "وضع «الإنترنت فقط» لا يعالج الملفات المحلية. اختر «الإنترنت + الملفات والمجلدات» أو الوضع المحلي."
-            else:
+            elif selected_file_id:
                 answer = process_selected_uploaded_file(
                     selected_file_id, selected_model, "key_points",
-                    question=question,
+                    question=question or "استخرج أهم النقاط من الملف",
                     use_web_context=use_web_and_local,
                 )
+            else:
+                # ملفات sticky / مرفوعة في الجلسة
+                try:
+                    answer = summarize_or_translate_sticky_upload(
+                        question or "أهم النقاط من الملف المرفق",
+                        selected_model,
+                        force=True,
+                        force_key_points=True,
+                    )
+                except TypeError:
+                    answer = summarize_or_translate_sticky_upload(
+                        question or "أهم النقاط من الملف المرفق",
+                        selected_model,
+                        force=True,
+                    )
+                if not (answer or "").strip():
+                    answer = (
+                        "لاستخراج النقاط الجوهرية: ارفع ملفاً عبر «رفع الملفات»، "
+                        "أو اختره من «الملف المستهدف حصرياً»، ثم اضغط «أهم النقاط»."
+                    )
+            # إن كانت الإجابة مجرد اسم ملف قصير جداً — أعد المحاولة استخراجياً
+            if answer and len(re.sub(r"\s+", "", answer)) < 40 and selected_file_id:
+                try:
+                    answer = process_selected_uploaded_file(
+                        selected_file_id, selected_model, "key_points",
+                        question="استخرج أهم النقاط والوقائع والأرقام من نص الملف بالكامل",
+                        use_web_context=False,
+                    )
+                except Exception:
+                    app.logger.exception("key_points retry")
             session["last_question"] = question or "استخراج النقاط الجوهرية من الملف المحدد"
             session["last_answer"] = answer
             session["last_model"] = selected_model
@@ -10876,6 +11148,59 @@ def home():
                     session["last_model"] = selected_model
                     session["_display_answer"] = answer
                     return redirect(url_for("home"))
+                                # === تذكير عام أولاً (أي موعد/موضوع — عربي وإنجليزي) قبل مسار الأذان ===
+                try:
+                    # إن كان استعلاماً عن التذكيرات — لا تضبط جديداً هنا
+                    _lc0 = parse_list_cancel_reminders(question, session.get("user"))
+                    if _lc0:
+                        session["last_question"] = question
+                        session["last_answer"] = _lc0
+                        session["last_model"] = selected_model
+                        session["_display_answer"] = _lc0
+                        return redirect(url_for("home"))
+                    if is_general_reminder_intent(question) and not is_explicit_adhan_or_prayer_request(question):
+                        _rem_gen = parse_reminder_request(question)
+                        if _rem_gen:
+                            _msg_g = (_rem_gen.get("message") or question or "")[:400]
+                            sr = save_reminder(
+                                session.get("user"),
+                                _msg_g,
+                                _rem_gen["remind_at"],
+                                _rem_gen.get("kind") or "remind",
+                            )
+                            try:
+                                _at = dt.datetime.fromisoformat(_rem_gen["remind_at"])
+                                _lang = detect_reminder_ui_lang(question, session)
+                                if _lang == "en":
+                                    _clock = format_time_12h(_at, with_seconds=False, arabic=False)
+                                    _when = _at.strftime("%Y-%m-%d ") + _clock
+                                    answer = (
+                                        "Reminder set (keep the browser open at the scheduled time):\n"
+                                        + "• " + _msg_g[:200] + " — " + _when + "\n"
+                                        + "General reminder for any event or topic (any language/phrasing)."
+                                    )
+                                else:
+                                    _clock = format_time_12h(_at, with_seconds=False, arabic=True)
+                                    _when = _at.strftime("%Y-%m-%d ") + _clock
+                                    answer = (
+                                        "تم ضبط التذكير (المتصفح مفتوح عند الموعد):\n"
+                                        + "• " + _msg_g[:200] + " — " + _when + "\n"
+                                        + "تذكير عام لأي موعد أو موضوع — بأي صياغة أو لغة."
+                                    )
+                            except Exception:
+                                answer = format_reminder_save_answer(
+                                    sr, _rem_gen.get("kind"), _msg_g,
+                                    _rem_gen.get("when_human") or "",
+                                )
+                            session["last_question"] = question
+                            session["last_answer"] = answer
+                            session["last_model"] = selected_model
+                            session["_display_answer"] = answer
+                            print(">>> GENERAL reminder set (AR/EN)", flush=True)
+                            return redirect(url_for("home"))
+                except Exception:
+                    app.logger.exception("general reminder path")
+
                 # عرض/إلغاء التذكيرات (عام — أي لغة/موضوع)
                 _lc = parse_list_cancel_reminders(question, session.get("user"))
                 if _lc:
@@ -10887,6 +11212,38 @@ def home():
                     return redirect(url_for("home"))
 
                 # تذكير الأذان/المواعيد قبل عرض الموعد فقط (حتى يُجدول التنبيه)
+                # تذكير عادي أولاً إن لم يُذكر أذان/صلاة صراحة (اجتماعات، مواعيد، 12 الظهر…)
+                _rem_first = None
+                try:
+                    _qchk = (question or "")
+                    _explicit_adhan = any(x in _qchk for x in (
+                        "أذان", "اذان", "صلاة", "صلاه", "مواقيت", "adhan", "salah"
+                    ))
+                    if not _explicit_adhan:
+                        _rem_first = parse_reminder_request(question)
+                except Exception:
+                    _rem_first = None
+                if _rem_first:
+                    sr = save_reminder(
+                        session.get("user"),
+                        _rem_first["message"],
+                        _rem_first["remind_at"],
+                        _rem_first["kind"],
+                    )
+                    try:
+                        _at = dt.datetime.fromisoformat(_rem_first["remind_at"])
+                        _clock = format_time_12h(_at, with_seconds=False, arabic=True)
+                    except Exception:
+                        _clock = _rem_first.get("when_human") or ""
+                    answer = format_reminder_save_answer(
+                        sr, _rem_first["kind"], _rem_first.get("message"), _clock
+                    )
+                    session["last_question"] = question
+                    session["last_answer"] = answer
+                    session["last_model"] = selected_model
+                    session["_display_answer"] = answer
+                    return redirect(url_for("home"))
+
                 _adhan_list = parse_adhan_reminder_request(question)
                 if _adhan_list:
                     lines = []
@@ -11117,6 +11474,91 @@ def home():
                     return redirect(url_for("home"))
 
                 # تذكير أذان / تذكير عادي أولاً
+                                # === تذكير عام أولاً (أي موعد/موضوع — عربي وإنجليزي) قبل مسار الأذان ===
+                try:
+                    # إن كان استعلاماً عن التذكيرات — لا تضبط جديداً هنا
+                    _lc0 = parse_list_cancel_reminders(question, session.get("user"))
+                    if _lc0:
+                        session["last_question"] = question
+                        session["last_answer"] = _lc0
+                        session["last_model"] = selected_model
+                        session["_display_answer"] = _lc0
+                        return redirect(url_for("home"))
+                    if is_general_reminder_intent(question) and not is_explicit_adhan_or_prayer_request(question):
+                        _rem_gen = parse_reminder_request(question)
+                        if _rem_gen:
+                            _msg_g = (_rem_gen.get("message") or question or "")[:400]
+                            sr = save_reminder(
+                                session.get("user"),
+                                _msg_g,
+                                _rem_gen["remind_at"],
+                                _rem_gen.get("kind") or "remind",
+                            )
+                            try:
+                                _at = dt.datetime.fromisoformat(_rem_gen["remind_at"])
+                                _lang = detect_reminder_ui_lang(question, session)
+                                if _lang == "en":
+                                    _clock = format_time_12h(_at, with_seconds=False, arabic=False)
+                                    _when = _at.strftime("%Y-%m-%d ") + _clock
+                                    answer = (
+                                        "Reminder set (keep the browser open at the scheduled time):\n"
+                                        + "• " + _msg_g[:200] + " — " + _when + "\n"
+                                        + "General reminder for any event or topic (any language/phrasing)."
+                                    )
+                                else:
+                                    _clock = format_time_12h(_at, with_seconds=False, arabic=True)
+                                    _when = _at.strftime("%Y-%m-%d ") + _clock
+                                    answer = (
+                                        "تم ضبط التذكير (المتصفح مفتوح عند الموعد):\n"
+                                        + "• " + _msg_g[:200] + " — " + _when + "\n"
+                                        + "تذكير عام لأي موعد أو موضوع — بأي صياغة أو لغة."
+                                    )
+                            except Exception:
+                                answer = format_reminder_save_answer(
+                                    sr, _rem_gen.get("kind"), _msg_g,
+                                    _rem_gen.get("when_human") or "",
+                                )
+                            session["last_question"] = question
+                            session["last_answer"] = answer
+                            session["last_model"] = selected_model
+                            session["_display_answer"] = answer
+                            print(">>> GENERAL reminder set (AR/EN)", flush=True)
+                            return redirect(url_for("home"))
+                except Exception:
+                    app.logger.exception("general reminder path")
+
+                # تذكير عادي أولاً إن لم يُذكر أذان/صلاة صراحة (اجتماعات، مواعيد، 12 الظهر…)
+                _rem_first = None
+                try:
+                    _qchk = (question or "")
+                    _explicit_adhan = any(x in _qchk for x in (
+                        "أذان", "اذان", "صلاة", "صلاه", "مواقيت", "adhan", "salah"
+                    ))
+                    if not _explicit_adhan:
+                        _rem_first = parse_reminder_request(question)
+                except Exception:
+                    _rem_first = None
+                if _rem_first:
+                    sr = save_reminder(
+                        session.get("user"),
+                        _rem_first["message"],
+                        _rem_first["remind_at"],
+                        _rem_first["kind"],
+                    )
+                    try:
+                        _at = dt.datetime.fromisoformat(_rem_first["remind_at"])
+                        _clock = format_time_12h(_at, with_seconds=False, arabic=True)
+                    except Exception:
+                        _clock = _rem_first.get("when_human") or ""
+                    answer = format_reminder_save_answer(
+                        sr, _rem_first["kind"], _rem_first.get("message"), _clock
+                    )
+                    session["last_question"] = question
+                    session["last_answer"] = answer
+                    session["last_model"] = selected_model
+                    session["_display_answer"] = answer
+                    return redirect(url_for("home"))
+
                 _adhan_list = parse_adhan_reminder_request(question)
                 if _adhan_list:
                     lines = []

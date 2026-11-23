@@ -2343,6 +2343,31 @@
             position: relative;
         }
 
+
+        /* خانة البحث: المحاذاة يمين في العربي، يسار في الإنجليزي */
+        #question, textarea[name="question"] {
+            text-align: right !important;
+            direction: rtl !important;
+        }
+        #question::placeholder, textarea[name="question"]::placeholder {
+            text-align: right !important;
+            direction: rtl !important;
+            opacity: 0.85;
+        }
+        html[lang="en"] #question,
+        html[lang="en"] textarea[name="question"],
+        body.lang-en #question,
+        body.lang-en textarea[name="question"] {
+            text-align: left !important;
+            direction: ltr !important;
+        }
+        html[lang="en"] #question::placeholder,
+        html[lang="en"] textarea[name="question"]::placeholder,
+        body.lang-en #question::placeholder,
+        body.lang-en textarea[name="question"]::placeholder {
+            text-align: left !important;
+            direction: ltr !important;
+        }
 </style>
 </head>
 <body>
@@ -2443,7 +2468,7 @@
                 </script>
 
                     <div class="speak-q-row" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;"><button type="button" id="speakQuestionBtnInline" title="Read" aria-label="Read" onclick="event.preventDefault();event.stopPropagation();try{window.speakQuestionBox();}catch(e){alert(e.message);}">🔊</button></div>
-                    <textarea name="question" id="question" placeholder="اكتب سؤالك أو الصق صورة/رسماً أو أدرج من لوحة القلم" data-i18n-placeholder="phQuestion" >{{ question or '' }}</textarea>
+                    <textarea name="question" id="question" placeholder="اكتب سؤالك أو الصق صورة/رسماً أو أدرج من لوحة القلم" data-i18n-placeholder="phQuestion" dir="rtl" lang="ar" inputmode="text" autocomplete="off" style="text-align:right;direction:rtl;">{{ question or '' }}</textarea>
                 <div class="loading" id="loading" role="status" aria-live="polite" style="display:none;flex-wrap:wrap;align-items:center;gap:10px;">
                         <span id="loadingMessage" style="unicode-bidi:isolate">جاري البحث <span id="searchTimer" dir="ltr" style="direction:ltr;unicode-bidi:isolate;display:inline-block">0ث</span></span></span>
                     </div>
@@ -3701,6 +3726,7 @@ function toggleTickerPause() {
                 dir: "rtl",
                 askTitle: "اسأل",
                 model: "الموديل",
+                newReqHint: "اكتب أو انطق طلباً جديداً",
                 phQuestion: "اكتب سؤالك أو: محتاج ملخص للملف",
                 send: "إرسال",
                 clearAnswer: "مسح النتيجة",
@@ -3868,6 +3894,7 @@ function toggleTickerPause() {
                 dir: "ltr",
                 askTitle: "Ask",
                 model: "Model",
+                newReqHint: "Write or speak a new request",
                 phQuestion: "Type your question or: summarize the uploaded file",
                 send: "Send",
                 clearAnswer: "Clear result",
@@ -4165,10 +4192,11 @@ function toggleTickerPause() {
                 if (el) el.textContent = pair[1];
             });
             var wake = document.getElementById("wakeBtn");
-            if (wake && !wake.textContent.includes("إيقاف") && !wake.textContent.includes("Stop")) {
-                wake.textContent = t.wakeOn;
-            } else if (wake && (wake.textContent.indexOf("إيقاف") >= 0 || wake.textContent.indexOf("Stop") >= 0)) {
-                wake.textContent = t.wakeOff;
+            if (wake) {
+                var wakeOnFlag = false;
+                try { wakeOnFlag = sessionStorage.getItem("fbrahWakeEnabled") === "1"; } catch (eW) {}
+                if (wakeOnFlag || /إيقاف|Stop/i.test(wake.textContent || "")) wake.textContent = t.wakeOff;
+                else wake.textContent = t.wakeOn;
             }
             var mic = document.getElementById("micBtn");
             if (mic) mic.textContent = t.talk;
@@ -4394,8 +4422,9 @@ function toggleTickerPause() {
             }
             var wake = document.getElementById("wakeBtn");
             if (wake) {
-                var wt = (wake.textContent || "");
-                if (/إيقاف|Stop/i.test(wt)) wake.textContent = t.wakeOff;
+                var wakeOnFlag2 = false;
+                try { wakeOnFlag2 = sessionStorage.getItem("fbrahWakeEnabled") === "1"; } catch (eW2) {}
+                if (wakeOnFlag2 || /إيقاف|Stop/i.test(wake.textContent || "")) wake.textContent = t.wakeOff;
                 else wake.textContent = t.wakeOn;
             }
             var mic = document.getElementById("micBtn");
@@ -5004,6 +5033,7 @@ function toggleTickerPause() {
 
             if (action === "ask") {
                 var qCheck = document.getElementById("question");
+                try { if (typeof sanitizeQuestionBox === "function") sanitizeQuestionBox(true); } catch (eSan) {}
                 if (qCheck && !(qCheck.value || "").trim()) {
                     event.preventDefault();
                     var __ta = FBRAH_I18N[fbrahLang()] || FBRAH_I18N.ar;
@@ -5388,31 +5418,51 @@ function toggleTickerPause() {
             return false;
         }
 
-        function stripWakePhrase(text) {
-            var t = (text || "").trim();
-            // لا تلمس «فبراير» إن كانت كلمة مستقلة عن النداء
-            var keepFeb = /فبراير|february/i.test(t);
-            // إزالة كل أشكال النداء المكررة من أي موضع
-            for (var i = 0; i < 4; i++) {
-                t = t.replace(/ف\s*ب\s*ر\s*ا\s*[ههيي]?/gi, " ");
-                t = t.replace(/\b(f\s*b\s*r\s*a\s*h?|fbrah|fbra|feebra|fibra|febra|phbra|fb)\b/gi, " ");
-                t = t.replace(/(^|[\s،,\.:؛\-–—])(يا\s*)?(فبرا|فبراه|فبراي|فبره|فبرة|فيبرا|خبرا|صبرا|صبره)(?![ا-يأإآ])/gi, " ");
-                t = t.replace(/^(يا\s*)?(فبرا|فبراه|فبراي|خبرا|صبرا|صبره|fbrah|fbra)\s*[,،:\-–—]*\s*/i, "");
-                t = t.replace(/\s+(يا\s*)?(فبرا|فبراه|خبرا|صبرا|صبره|fbrah|fbra)\s*$/i, "");
+        function stripWakePhrase(text, opts) {
+            // opts.preserveSpaces: لا تحذف المسافات الطرفية أثناء الكتابة اليدوية
+            opts = opts || {};
+            var raw = (text == null) ? "" : String(text);
+            var lead = "";
+            var trail = "";
+            if (opts.preserveSpaces) {
+                var mLead = raw.match(/^\s*/);
+                var mTrail = raw.match(/\s*$/);
+                lead = mLead ? mLead[0] : "";
+                trail = mTrail ? mTrail[0] : "";
             }
-            t = t.replace(/\s+/g, " ").trim();
-            if (keepFeb && !/فبراير|february/i.test(t)) {
-                // لا نعيد فبراير اصطناعياً — فقط نتجنب مسحها إن بقيت
+            var t = raw.trim();
+            // لا تلمس «فبراير»
+            // أزل كلمة النداء فقط ككلمة كاملة — لا تلمس أي لغة أخرى
+            for (var i = 0; i < 3; i++) {
+                t = t.replace(/\b(fbrah|fbra|feebra|fibra|febra|phbra)\b/gi, " ");
+                t = t.replace(/(^|[\s،,\.:؛\-–—])(يا\s+)?(فبرا|فبراه|فبراي|فبره|فبرة|فيبرا|خبرا|صبرا|صبره)(?=$|[\s،,\.:؛\-–—!?؟])/g, " ");
+                t = t.replace(/^(يا\s+)?(فبرا|فبراه|فبراي|خبرا|صبرا|صبره)\s*[,،:\-–—]?\s+/i, "");
             }
+            t = t.replace(/[ \t\u00a0]{2,}/g, " ");
+            if (!opts.preserveSpaces) t = t.trim();
+            else t = lead + t.replace(/^\s+/, "").replace(/\s+$/, "") + trail;
             return t;
         }
-        function sanitizeQuestionBox() {
+        function sanitizeQuestionBox(force) {
+            // أثناء الكتابة اليدوية: لا تُعدّل النص إلا عند blur/إرسال أو force
             try {
                 var q = document.getElementById("question");
                 if (!q) return;
+                // إذا المستخدم يكتب الآن — لا تمسح ولا تمنع المسافات
+                if (!force && document.activeElement === q) return;
                 var before = q.value || "";
-                var after = stripWakePhrase(before);
-                if (after !== before) q.value = after;
+                var after = stripWakePhrase(before, { preserveSpaces: false });
+                if (after !== before) {
+                    var pos = null;
+                    try { pos = q.selectionStart; } catch (e0) {}
+                    q.value = after;
+                    try {
+                        if (pos != null && typeof q.setSelectionRange === "function") {
+                            var np = Math.min(pos, after.length);
+                            q.setSelectionRange(np, np);
+                        }
+                    } catch (e1) {}
+                }
             } catch (e) {}
         }
         // حالة التقاط الصوت: لا يُفعَّل الإرسال حتى اكتمال الطلب
@@ -5590,14 +5640,28 @@ function toggleTickerPause() {
                 var q = document.getElementById("question");
                 if (!q || q.dataset.wakeSanitize === "1") return;
                 q.dataset.wakeSanitize = "1";
-                ["input", "change", "blur", "keyup"].forEach(function (ev) {
-                    q.addEventListener(ev, function () { sanitizeQuestionBox(); });
-                });
+                // أثناء الكتابة: لا تتدخل. نظّف النداء فقط عند مغادرة الخانة أو قبل الإرسال
+                q.addEventListener("blur", function () { sanitizeQuestionBox(true); });
+                // دعم أي لغة: اتجاه تلقائي + إدخال حر للمسافات والرموز
+                try {
+                    q.setAttribute("lang", "");
+                    q.setAttribute("dir", "auto");
+                    q.setAttribute("spellcheck", "true");
+                    q.setAttribute("autocomplete", "off");
+                    q.setAttribute("autocapitalize", "off");
+                    q.style.unicodeBidi = "plaintext";
+                } catch (eA) {}
+                // لا تمنع Space أو أي حرف في أي لغة
+                q.addEventListener("keydown", function (e) {
+                    // اترك المسافة والأسطر والحروف تعمل طبيعياً (Ctrl+Enter فقط يُعالج في listener آخر)
+                    if (e.key === " " || e.code === "Space") {
+                        e.stopPropagation();
+                    }
+                }, true);
             }
             if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
             else bind();
         })();
-        // sanitizeQuestionBox on input
 
         (function guardSendUntilVoiceReady() {
             function onSendAttempt(ev) {
@@ -5918,7 +5982,14 @@ function toggleTickerPause() {
                 }
                 // خانة البحث: المطلوب فقط بدون كلمة النداء
                 var qBox = document.getElementById("question");
-                if (qBox) { qBox.value = stripped; try { sanitizeQuestionBox(); } catch (eS) {} }
+                if (qBox) {
+                    // لا تكتب فوق ما يكتبه المستخدم يدوياً
+                    if (document.activeElement === qBox && !voiceCaptureActive) {
+                        /* المستخدم يكتب — تجاهل الكتابة الصوتية فوق النص */
+                    } else {
+                        qBox.value = stripped;
+                    }
+                }
                 try { analyzeSentiment(stripped); } catch (e) {}
                 setVoiceUiState("listen");
                 setVoiceStatus(fbrahT("vsHear","✓ يسمع:") + " " + stripped);
@@ -6177,10 +6248,12 @@ function toggleTickerPause() {
             setVoiceUiState("wake");
             voiceAccum = "";
             voiceSubmitLock = false;
-            var wakeBtn = document.getElementById("wakeBtn");
-            if (wakeBtn) { wakeBtn.textContent = fbrahT("wakeOff", "🔕 إيقاف النداء"); wakeBtn.style.background = "#228B22"; }
+            try { if (typeof setWakeButtonUi === "function") setWakeButtonUi(true); } catch (eBU) {
+                var wakeBtn = document.getElementById("wakeBtn");
+                if (wakeBtn) { wakeBtn.textContent = fbrahT("wakeOff", "🔕 إيقاف النداء"); wakeBtn.style.background = "#228B22"; }
+            }
             setVoiceUiState("wake");
-            setVoiceStatus(fbrahT("vsWakeOn","نداء مفعّل — قل: فبرا أو يا فبرا"));
+            setVoiceStatus(fbrahT("vsWakeOn","نداء مفعّل — قل: فبرا أو يا فبرا (بدون ضغط الزر مرة أخرى)"));
             try {
                 rec.lang = getSttLang() || "ar-EG";
                 rec.continuous = true;
@@ -6195,25 +6268,54 @@ function toggleTickerPause() {
             }
         }
 
-        function toggleWakeMode() {
-            var rec = getRecognition();
+        function fbrahWakeFeatureOn() {
+            try { return sessionStorage.getItem("fbrahWakeEnabled") === "1"; } catch (e) { return !!wakeListening; }
+        }
+        function setWakeButtonUi(on) {
             var btn = document.getElementById("wakeBtn");
+            if (!btn) return;
+            if (on) {
+                btn.textContent = (typeof fbrahT === "function") ? fbrahT("wakeOff", "🔕 إيقاف النداء") : "🔕 إيقاف النداء";
+                btn.style.background = "#228B22";
+                btn.style.color = "#fff";
+                btn.classList.add("active");
+                btn.setAttribute("title", (typeof fbrahLang === "function" && fbrahLang() === "en")
+                    ? "Wake is ON — say FBRAH. Click to turn off."
+                    : "النداء مفعّل — قل «فبرا». اضغط مرة لإيقاف الميزة.");
+            } else {
+                btn.textContent = (typeof fbrahT === "function") ? fbrahT("wakeOn", "🔔 تفعيل النداء") : "🔔 تفعيل النداء";
+                btn.style.background = "#6b0f1a";
+                btn.style.color = "#fff";
+                btn.classList.remove("active", "listening");
+                btn.setAttribute("title", (typeof fbrahLang === "function" && fbrahLang() === "en")
+                    ? "Click once to enable wake, then say FBRAH"
+                    : "اضغط مرة واحدة للتفعيل، ثم قل «فبرا» (لا تحتاج ضغطة ثانية)");
+            }
+        }
+        function toggleWakeMode() {
+            // حالتان فقط: تشغيل ↔ إيقاف (لا توجد ضغطة ثالثة)
+            var rec = getRecognition();
             if (!rec) {
                 setVoiceStatus("التعرف الصوتي محدود على هذا الجهاز/المتصفح. على الآيفون جرّب Chrome واسمح بالميكروفون؛ أو اكتب السؤال يدوياً. على الكمبيوتر يُفضّل Chrome أو Edge.");
                 alert("على الآيفون: إعدادات → Chrome → الميكروفون → سماح. إن استمر التعذر استخدم الكتابة. على الكمبيوتر: Chrome أو Edge.");
                 return;
             }
-            if (wakeListening || isListening) {
+            var on = fbrahWakeFeatureOn();
+            if (on) {
+                // الضغطة = إيقاف الميزة بالكامل
                 try { sessionStorage.setItem("fbrahWakeEnabled", "0"); } catch (e) {}
-                hardStopMic();
-                if (btn) { btn.textContent = fbrahT("wakeOn", "🔔 تفعيل النداء"); btn.style.background = "#6b0f1a"; }
-                setVoiceStatus(fbrahT("vsWakeOff","تم إيقاف انتظار النداء"));
+                try { isListening = false; } catch (e1) {}
+                try { hardStopMic(); } catch (e2) {}
+                setWakeButtonUi(false);
+                setVoiceStatus(fbrahT("vsWakeOff", "تم إيقاف انتظار النداء"));
                 return;
             }
+            // الضغطة = تفعيل مرة واحدة ثم انتظر قول «فبرا» صوتياً
             try { sessionStorage.setItem("fbrahWakeEnabled", "1"); } catch (e) {}
-            stopSpeak();
+            try { if (typeof stopSpeak === "function") stopSpeak(); } catch (e3) {}
+            setWakeButtonUi(true);
             startWakeListener();
-            if (btn) { btn.textContent = fbrahT("wakeOff", "🔕 إيقاف النداء"); btn.style.background = "#228B22"; }
+            setVoiceStatus(fbrahT("vsWakeOn", "نداء مفعّل — قل: فبرا أو يا فبرا (بدون ضغط الزر مرة أخرى)"));
         }
 
         function toggleVoiceInput() {
@@ -6670,6 +6772,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
 
             // Edge: cancel ثم انتظر قليلاً قبل speak وإلا يُتجاهل العربي أحياناً
             try { window.speechSynthesis.cancel(); } catch (e1) {}
+            try { window.speechSynthesis.resume(); } catch (eR) {}
             if (typeof speechRunToken !== "undefined") speechRunToken++;
             var myToken = (typeof speechRunToken !== "undefined") ? speechRunToken : 1;
 
@@ -10588,6 +10691,42 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
     if (s) { s.disabled = false; s.classList.remove("busy","fbrah-working"); }
   } catch(e){}
 })();
+
+        (function wireKeyPointsButton() {
+            var btn = document.querySelector('button[value="key_points"]');
+            if (!btn || btn.dataset.kpWired === "1") return;
+            btn.dataset.kpWired = "1";
+            btn.addEventListener("click", function () {
+                var q = document.getElementById("question");
+                if (q && !(q.value || "").trim()) {
+                    q.value = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                        ? "Extract the key points from the attached/selected file"
+                        : "استخرج أهم النقاط الجوهرية من الملف المرفق أو المحدد";
+                }
+            });
+        })();
+
+
+        (function fbrahQuestionAlign() {
+            function apply() {
+                var q = document.getElementById("question");
+                if (!q) return;
+                var en = (typeof fbrahLang === "function" && fbrahLang() === "en");
+                if (en) {
+                    q.setAttribute("dir", "ltr");
+                    q.style.textAlign = "left";
+                    q.style.direction = "ltr";
+                } else {
+                    q.setAttribute("dir", "rtl");
+                    q.style.textAlign = "right";
+                    q.style.direction = "rtl";
+                }
+            }
+            if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply);
+            else apply();
+            document.addEventListener("fbrah-lang-change", apply);
+            setInterval(apply, 2500);
+        })();
 </script>
 </body>
 </html>
