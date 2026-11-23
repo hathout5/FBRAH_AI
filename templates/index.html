@@ -10727,6 +10727,21 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             document.addEventListener("fbrah-lang-change", apply);
             setInterval(apply, 2500);
         })();
+
+        // لا تُظهر اسم فبرا في خانة البحث أبداً أثناء النداء أو الكتابة الصوتية
+        (function fbrahWakeNeverInBox() {
+            function clean() {
+                var q = document.getElementById("question");
+                if (!q || document.activeElement === q) return;
+                var v = q.value || "";
+                if (!v) return;
+                var cleaned = (typeof stripWakePhrase === "function") ? stripWakePhrase(v, {preserveSpaces: true}) : v;
+                if (cleaned !== v) q.value = cleaned;
+            }
+            setInterval(clean, 900);
+            document.addEventListener("visibilitychange", clean);
+        })();
+        /* fbrah-wake-never-in-box */
 </script>
 </body>
 </html>
