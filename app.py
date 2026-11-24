@@ -624,6 +624,8 @@ def _fbrah_log_request():
     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
         user = session.get("user") or "ضيف / Anonymous"
         log_terminal("HTTP", f"{request.method} {path} (user: {user})")
+        if request.method in ("GET", "POST", "DELETE"):
+            print(f"[HTTP {request.method}] {request.method} {path}", flush=True)
 
 
 @app.after_request
@@ -633,6 +635,8 @@ def _fbrah_log_response(response):
     path = re.sub(r"(?i)(/reset-password/)[^/]+", r"\1[REDACTED]", request.path)
     if not (path.startswith("/static") or path in ("/favicon.ico", "/api/reminders/due", "/api/client_telemetry", "/api/client_log")):
         log_terminal("HTTP", f"{request.method} {path} -> Status {response.status_code} ({latency})")
+        if request.method in ("GET", "POST", "DELETE"):
+            print(f"[HTTP {request.method}] {request.method} {path} -> {response.status_code} ({latency})", flush=True)
     return response
 
 
@@ -987,12 +991,13 @@ init_db()
 def get_available_models(force=False):
     now = time.time()
     with _model_lock:
-        if not force and now - _model_cache["at"] < 20:
+        ttl = 90 if not (_model_cache.get("models") or []) else 20
+        if not force and now - float(_model_cache.get("at") or 0) < ttl:
             return list(_model_cache["models"])
         try:
             response = get_http_session().get(
                 OLLAMA_TAGS_URL,
-                timeout=(1.5, 3)
+                timeout=(0.6, 1.2)
             )
             response.raise_for_status()
             payload = response.json()
@@ -1003,8 +1008,7 @@ def get_available_models(force=False):
             ]
             _model_cache.update(at=now, models=models)
             return list(models)
-        except (requests.RequestException, ValueError):
-            # لا تُعرض أسماء نماذج غير مثبتة — قائمة فارغة حتى يعود Ollama
+        except (requests.RequestException, ValueError, OSError):
             _model_cache.update(at=now, models=[])
             return []
 
@@ -1189,7 +1193,7 @@ def ask_ollama(prompt, model=None, num_predict=1800, timeout=320,
                     if not _llm_looks_bad(out):
                         log_terminal("FAILOVER", f"✅ نجاح الرد عبر GROQ البديل في {elapsed2:.1f}s")
                         return (
-                            "⚡ تحويل تلقائي → GROQ (بعد بطء/تعذر Gemini)\n\n" + str(out)
+                            str(out)
                         )
                     results.append(("groq", out, elapsed2))
                 except Exception as e:
@@ -1202,7 +1206,7 @@ def ask_ollama(prompt, model=None, num_predict=1800, timeout=320,
                     if not _llm_looks_bad(out):
                         log_terminal("FAILOVER", f"✅ نجاح الرد عبر Gemini البديل في {elapsed2:.1f}s")
                         return (
-                            "⚡ تحويل تلقائي → Gemini (بعد بطء/تعذر GROQ)\n\n" + str(out)
+                            str(out)
                         )
                     results.append(("gemini", out, elapsed2))
                 except Exception as e:
@@ -1266,7 +1270,7 @@ def ask_ollama(prompt, model=None, num_predict=1800, timeout=320,
                 continue
             elapsed = time.time() - t0
             if i > 0:
-                return f"⚡ تحويل تلقائي → {cand}\n\n" + answer
+                return answer
             if elapsed > 50 and i + 1 < len(candidates):
                 # بطيء جداً: جرّب البديل سريعاً؛ إن فشل أعد الأول
                 app.logger.info("local %s slow %.1fs — try fallback", cand, elapsed)
@@ -2977,7 +2981,7 @@ def hybrid_retrieve(question, bm25_passages, top_k=12):
     return out
 
 
-def ask_groq(prompt, model=None, max_tokens=2000, temperature=0.2):
+def ask_groq(prompt, model=None, max_tokens=1400, temperature=0.2):
     """استدعاء GROQ OpenAI-compatible API مع مهلة استجابة سريعة ودعم التحويل التلقائي."""
     key = GROQ_API_KEY
     if not key:
@@ -2998,7 +3002,7 @@ def ask_groq(prompt, model=None, max_tokens=2000, temperature=0.2):
                     "استشهد بالمصادر، ولا تختلق مواد قانونية."
                 ),
             },
-            {"role": "user", "content": prompt[:120000]},
+            {"role": "user", "content": prompt[:30000]},
         ],
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -3008,7 +3012,7 @@ def ask_groq(prompt, model=None, max_tokens=2000, temperature=0.2):
         "Content-Type": "application/json",
     }
     try:
-        r = get_http_session().post(url, json=payload, headers=headers, timeout=(3, 10))
+        r = get_http_session().post(url, json=payload, headers=headers, timeout=(5, 60))
         if not r.ok:
             err_msg = f"خطأ GROQ ({r.status_code}): {(r.text or '')[:300]}"
             log_terminal("MODEL", f"⚠️ {err_msg}", level="warning")
@@ -3225,6 +3229,18 @@ def is_groq_model(model_name):
 
 
 def resolve_llm(prompt, model=None, **kwargs):
+    """توجيه آمن — لا يُسقط السيرفر عند فشل المزود."""
+    try:
+        return _resolve_llm_inner(prompt, model=model, **kwargs)
+    except Exception as exc:
+        try:
+            app.logger.exception("resolve_llm")
+        except Exception:
+            pass
+        return "تعذر توليد الإجابة حالياً. أعد المحاولة أو اختر نموذجاً آخر. (" + str(exc)[:100] + ")"
+
+
+def _resolve_llm_inner(prompt, model=None, **kwargs):
     """توجيه التوليد مع تحويل تلقائي داخل البيئة: Gemini↔GROQ ومحلي↔محلي فقط."""
     allow_cloud = (os.environ.get("FBRAH_ALLOW_CLOUD_FALLBACK") or "0").strip().lower() in ("1", "true", "yes")
     mt = kwargs.get("num_predict") or 2000
@@ -3274,12 +3290,12 @@ def resolve_llm(prompt, model=None, **kwargs):
                 pass
             fb = ask_groq(prompt, model=GROQ_MODEL, max_tokens=mt)
             if fb and not _bad(fb) and "تعذر الاتصال بـ GROQ" not in str(fb) and "GROQ_API_KEY" not in str(fb):
-                return "⚠️ تحويل تلقائي Gemini → GROQ\n\n" + str(fb)
+                return str(fb)
             try:
                 time.sleep(1.0)
                 fb2 = ask_groq(prompt, model=GROQ_MODEL, max_tokens=mt)
                 if fb2 and not _bad(fb2) and "تعذر الاتصال بـ GROQ" not in str(fb2):
-                    return "⚠️ تحويل تلقائي Gemini → GROQ\n\n" + str(fb2)
+                    return str(fb2)
             except Exception:
                 pass
         return (
@@ -3302,7 +3318,7 @@ def resolve_llm(prompt, model=None, **kwargs):
                 pass
             fb = ask_gemini(prompt, model=GEMINI_MODEL, max_tokens=mt)
             if not _bad(fb):
-                return "⚠️ تحويل تلقائي GROQ → Gemini\n\n" + str(fb)
+                return str(fb)
         return out if out else "تعذر GROQ وGemini."
 
     # محلي (Ollama): التحويل الاحتياطي يقتصر على النماذج المحلية فقط.
@@ -7502,6 +7518,17 @@ def enrich_pages_with_wikipedia_extracts(question, pages):
 
 
 def answer_with_web_sources(question, pages, model):
+    try:
+        return _answer_with_web_sources_inner(question, pages, model)
+    except Exception as exc:
+        try:
+            app.logger.exception("answer_with_web_sources")
+        except Exception:
+            pass
+        return "تعذر إكمال الإجابة من الإنترنت حالياً. أعد المحاولة بعد لحظات. (" + str(exc)[:120] + ")"
+
+
+def _answer_with_web_sources_inner(question, pages, model):
     if not pages:
         return (
             "تعذر الوصول إلى صفحات الإنترنت. "
@@ -7691,7 +7718,7 @@ def answer_with_web_sources(question, pages, model):
             print("FAILOVER(web): Gemini busy → GROQ", flush=True)
             fb = ask_groq(prompt, model=GROQ_MODEL, max_tokens=adaptive_predict(question, 1100))
             if fb and "تعذر" not in str(fb)[:40] and "GEMINI_BUSY" not in str(fb):
-                answer = "⚠️ تحويل تلقائي Gemini → GROQ\n\n" + str(fb)
+                answer = str(fb)
                 answer = _dedupe_repeated_paragraphs(_strip_wrong_script(answer, out_lang))
         except Exception as _fe:
             app.logger.warning("web groq failover: %s", _fe)
@@ -10474,6 +10501,7 @@ def try_generate_image(question, model=None):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def home():
+    # FBRAH_HOME_SAFE
     answer = ""
     question = ""
     generated = ""
@@ -10731,6 +10759,25 @@ def home():
                 sticky_folder_scope=session.get("sticky_folder_scope") or "selected_only",
             )
         question = request.form.get("question", "").strip()
+        # Detect common Arabic/English keyboard-layout mismatch without corrupting ordinary English.
+        def _fbrah_decode_arabic_keyboard(value):
+            value = str(value or "")
+            keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./"
+            vals = ["ذ","ض","ص","ث","ق","ف","غ","ع","ه","خ","ح","ج","د","ش","س","ي","ب","ل","ا","ت","ن","م","ك","ط","ئ","ء","ؤ","ر","لا","ى","ة","و","ز","ظ"]
+            layout = dict(zip(keys, vals))
+            letters = [c for c in value if c.isalpha()]
+            if not letters or any(ord(c) > 127 for c in letters):
+                return value
+            mapped = "".join(layout.get(c.lower(), c) for c in value)
+            ar = sum("\u0600" <= c <= "\u06ff" for c in mapped)
+            # Only convert when the physical-key mapping yields a predominantly Arabic phrase.
+            if ar >= max(3, int(len(letters) * 0.62)):
+                return mapped
+            return value
+        _decoded_question = _fbrah_decode_arabic_keyboard(question)
+        if _decoded_question != question:
+            app.logger.info("Arabic keyboard-layout mismatch detected and normalized")
+            question = _decoded_question
         requested_model = (request.form.get("model") or selected_model or "").strip()
         # قبول GROQ دائماً (حتى مع تعطل Ollama)
         if requested_model and is_gemini_model(requested_model):
@@ -11273,6 +11320,36 @@ def home():
             if not question:
                 answer = "اكتب السؤال أولًا."
             else:
+                # مسار سريع للأسئلة المفاهيمية (بدون ويب/فهرس) — يقلل سقوط السيرفر
+                try:
+                    _sm = (selected_model or "").lower()
+                    _use_fast = (
+                        _sm.startswith("groq") or _sm.startswith("gemini") or _sm in ("groq", "gemini")
+                    ) and not internet_only_request
+                    # لا تتخطّ إن طُلب ملف أو بحث ويب صريح
+                    _q0 = question or ""
+                    if _use_fast and not any(x in _q0 for x in ("ملف", "المرفق", "ارفع", "http://", "https://", "لخّص", "ترجم")):
+                        print(">>> FAST conceptual path", flush=True)
+                        _prompt = (
+                            "أجب بدقة ووضوح بالعربية الفصحى دون حشو. "
+                            "إن كان السؤال قانونياً فرّق بين المصطلحات باختصار منظم.\n\n"
+                            "السؤال:\n" + _q0[:4000]
+                        )
+                        _ans = resolve_llm(_prompt, model=selected_model, num_predict=900, timeout=45)
+                        if _ans and len(str(_ans).strip()) > 40 and not str(_ans).strip().startswith("تعذر"):
+                            answer = str(_ans).strip()
+                            try:
+                                set_display_answer(answer, question=_q0, model=selected_model)
+                            except Exception:
+                                session["_display_answer"] = answer
+                                session["last_answer"] = answer[:800]
+                                session["last_question"] = _q0
+                                session["last_model"] = selected_model
+                            print(">>> FAST path OK len", len(answer), flush=True)
+                            return redirect(url_for("home"))
+                        print(">>> FAST path weak, continue full", flush=True)
+                except Exception:
+                    app.logger.exception("fast conceptual path")
                 # روابط: جلب المحتوى وتلخيصه/ترجمته دون فتح الصفحة
                 try:
                     if extract_urls_from_text(question):
@@ -11547,7 +11624,11 @@ def home():
                             _web_result = search_web(question)
                             _web_pages = _web_result.get("pages") or []
                             if _web_pages:
-                                answer = answer_with_web_sources(question, _web_pages, selected_model)
+                                try:
+                                    answer = answer_with_web_sources(question, _web_pages, selected_model)
+                                except Exception as _aw:
+                                    app.logger.exception("web ans")
+                                    answer = "تعذر إكمال الإجابة من الويب: " + str(_aw)[:150]
                             else:
                                 answer = (
                                     "تعذر إكمال البحث عبر الإنترنت فقط.\\n"
@@ -11900,7 +11981,11 @@ def home():
                         _current_web = search_web(question, max_results=6)
                         _current_pages = _current_web.get("pages") or []
                         if _current_pages:
-                            answer = answer_with_web_sources(question, _current_pages, selected_model)
+                            try:
+                                answer = answer_with_web_sources(question, _current_pages, selected_model)
+                            except Exception as _aw:
+                                app.logger.exception("web ans")
+                                answer = "تعذر إكمال الإجابة من الويب: " + str(_aw)[:150]
                         else:
                             answer = "لم أتمكن من جلب أخبار اليوم من الإنترنت الآن. " + (_current_web.get("error") or "تحقق من الاتصال ثم أعد المحاولة.")
                     elif (not internet_only_request) and is_file_find_request(question):
@@ -11935,7 +12020,11 @@ def home():
                 web_result = search_web(question)
                 pages = web_result.get("pages", []) or []
                 if pages:
-                    answer = answer_with_web_sources(question, pages, selected_model)
+                    try:
+                        answer = answer_with_web_sources(question, pages, selected_model)
+                    except Exception as _aw:
+                        app.logger.exception("web ans")
+                        answer = "تعذر إكمال الإجابة من الويب: " + str(_aw)[:150]
                     # تأكيد في ذيل الإجابة إن ظهرت صياغة محلية بالخطأ من النموذج
                     if answer and ("مجلد" in answer or "ملفات محلية" in answer or "المرفوعة" in answer):
                         answer = (
@@ -12340,8 +12429,16 @@ def feedback():
 
     if rating_i not in (-1, 1):
         return feedback_response(False, "قيمة التقييم غير صحيحة. اختر جيدة أو سيئة.", 400)
-    if not question or not answer:
-        return feedback_response(False, "تعذر ربط التقييم بالسؤال والإجابة. أعد طرح السؤال ثم قيّم الإجابة.", 400)
+    if not answer:
+        # محاولة أخيرة من ملف العرض المؤقت
+        try:
+            answer = (pop_display_answer() or "").strip() or answer
+        except Exception:
+            pass
+    if not answer:
+        return feedback_response(False, "تعذر ربط التقييم بالإجابة. تأكد أن الإجابة ظاهرة ثم أعد التقييم.", 400)
+    if not question:
+        question = "تقييم على إجابة معروضة"
 
     try:
         feedback_user = session.get("user") or "anonymous"
@@ -14716,6 +14813,6 @@ if __name__ == "__main__":
     try:
         from waitress import serve
         print("Serving with waitress on port", port, flush=True)
-        serve(app, host=host, port=port, threads=6, channel_timeout=120)
+        serve(app, host=host, port=port, threads=4, channel_timeout=300, connection_limit=50)
     except ImportError:
         app.run(host=host, port=port, debug=False, threaded=True, use_reloader=False)

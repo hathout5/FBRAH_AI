@@ -4787,14 +4787,29 @@ function toggleTickerPause() {
                 setVoiceStatus(fbrahT("vsSpeakAns","نطق الإجابة الصوتية…"));
                 if (window.speechSynthesis) {
                     window.speechSynthesis.cancel();
-                    var utterance = preferArabicVoice(new SpeechSynthesisUtterance(answerText));
-                    utterance.lang = getTtsLang();
-                    utterance.rate = getRate();
-                    var voice = typeof pickVoice === "function" ? pickVoice(utterance.lang) : null;
-                    if (voice) utterance.voice = voice;
-                    window.speechSynthesis.speak(utterance);
+                    var answerNode = document.querySelector("#answerBlock .answer");
+                    var speechOnlyAnswer = (typeof extractAnswerSpeechText === "function" && answerNode)
+                        ? extractAnswerSpeechText(answerNode)
+                        : (typeof cleanTextForAnswerSpeech === "function" ? cleanTextForAnswerSpeech(answerText) : answerText);
+                    if (speechOnlyAnswer && speechOnlyAnswer.trim()) {
+                        speakAnswerDirect(speechOnlyAnswer, {});
+                    }
                 }
             }
+        }
+
+        function fbrahDecodeKeyboardLayout(raw) {
+            var value = String(raw || "");
+            var keys = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./";
+            var arabic = ["ذ","ض","ص","ث","ق","ف","غ","ع","ه","خ","ح","ج","د","ش","س","ي","ب","ل","ا","ت","ن","م","ك","ط","ئ","ء","ؤ","ر","لا","ى","ة","و","ز","ظ"];
+            var letters = value.match(/[a-z]/gi) || [];
+            if (!letters.length || /[\u0600-\u06FF]/.test(value)) return value;
+            var mapped = value.split("").map(function (ch) {
+                var i = keys.indexOf(ch.toLowerCase());
+                return i >= 0 ? (arabic[i] || ch) : ch;
+            }).join("");
+            var arCount = (mapped.match(/[\u0600-\u06FF]/g) || []).length;
+            return arCount >= Math.max(3, Math.floor(letters.length * 0.62)) ? mapped : value;
         }
 
         function fbrahTryInlineCalc(raw) {
@@ -4905,6 +4920,8 @@ function toggleTickerPause() {
                 try {
                     var qEl = document.getElementById("question");
                     var qv = qEl ? String(qEl.value || "").trim() : "";
+                    var decodedQ = (typeof fbrahDecodeKeyboardLayout === "function") ? fbrahDecodeKeyboardLayout(qv) : qv;
+                    if (decodedQ !== qv) { qv = decodedQ; qEl.value = decodedQ; }
                     var calc = fbrahTryInlineCalc(qv);
                     if (calc != null) {
                         event.preventDefault();
@@ -4928,8 +4945,24 @@ function toggleTickerPause() {
                     var answerField = form.querySelector('[name="fb_answer"]');
                     var modelField = form.querySelector('[name="fb_model"]');
                     var commentField = form.querySelector('[name="fb_comment"]');
-                    payload.set("question", questionField ? questionField.value : "");
-                    payload.set("answer", answerField ? answerField.value : "");
+                    var qVal = (questionField && questionField.value) ? questionField.value.trim() : "";
+                    var aVal = (answerField && answerField.value) ? answerField.value.trim() : "";
+                    if (!qVal) {
+                        var qBox = document.getElementById("question");
+                        qVal = (qBox && qBox.value) ? qBox.value.trim() : "";
+                        try { qVal = qVal || sessionStorage.getItem("fbrah_last_q") || ""; } catch (e0) {}
+                    }
+                    if (!aVal) {
+                        var ansEl = document.querySelector("#answerBlock .answer") || document.querySelector(".answer");
+                        aVal = ansEl ? (ansEl.innerText || ansEl.textContent || "").trim() : "";
+                        try { aVal = aVal || sessionStorage.getItem("fbrah_last_a") || ""; } catch (e1) {}
+                    }
+                    if (!qVal) qVal = "سؤال بدون نص محفوظ";
+                    if (!aVal) {
+                        throw new Error("لا توجد إجابة ظاهرة للتقييم. انتظر ظهور الإجابة ثم أعد المحاولة.");
+                    }
+                    payload.set("question", qVal.slice(0, 2000));
+                    payload.set("answer", aVal.slice(0, 12000));
                     payload.set("model", modelField ? modelField.value : "");
                     payload.set("comment", commentField ? commentField.value : "");
                     payload.set("rating", action === "feedback_up" ? "1" : "-1");
@@ -6545,6 +6578,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 return;
             }
             var spoken = String(text).replace(/\r/g, "").trim();
+            spoken = spoken.replace(/(?:^|\n)\s*(?:⚠️?\s*)?(?:تحويل\s*تلقائي|FAILOVER|MODEL ROUTER)[^\n]*/gi, "\n");
             if (typeof stripLinksForSpeech === "function") spoken = stripLinksForSpeech(spoken);
             try {
                 var _ln = (typeof detectLangForTts === "function") ? detectLangForTts(spoken) : "ar-EG";
@@ -6917,6 +6951,12 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
 
         function stripLinksForSpeech(text) {
             var t = (text || "").toString();
+            // اقطع قسم المصادر بالكامل
+            var _cs = t.search(/(?:^|\n)\s*(?:─+|—+)?\s*(?:مصادر|المصادر|Sources|References|الروابط|Bibliography)\b/i);
+            if (_cs >= 0) t = t.slice(0, _cs);
+            // لا تُنطق الشرطة الرأسية | والفواصل الزخرفية
+            t = t.replace(/\|+/g, " ");
+            t = t.replace(/[│┃┆┇┊┋]/g, " ");
             t = t.replace(/https?:\/\/[^\s<>"')\]]+/gi, " ");
             t = t.replace(/www\.[^\s<>"')\]]+/gi, " ");
             t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
@@ -6946,17 +6986,23 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             // احذف سطور النظام قبل أي معالجة
             raw = raw.replace(/(?:^|\n)[^\n]*(?:تحويل\s*تلقائي|FAILOVER|Gemini\s*[→\->]+\s*GROQ|GROQ\s*[→\->]+\s*Gemini|MODEL ROUTER|timed out)[^\n]*/gi, "\n");
             // اقطع عند أي كتلة مصادر شائعة (حتى لو في منتصف النص)
-            var cutRe = /(?:^|\n)\s*(?:──+\s*)?(?:مصادر(?:\s+الإنترنت)?|المصادر(?:\s+المستند)?|Sources(?:\s*&)?|References|الروابط المعتمدة|عناوين وروابط المصادر|مصادر متنوعة|مصادر الويب)\b/i;
+            var cutRe = /(?:^|\n)\s*(?:──+|—+|-{3,}|={3,})?\s*(?:مصادر(?:\s+الإنترنت)?|المصادر(?:\s+المستند)?|Sources(?:\s*&\s*References)?|References|الروابط المعتمدة|عناوين وروابط(?:\s+المصادر)?|مصادر متنوعة|مصادر الويب|قائمة المصادر|Bibliography|Citations)\b/i;
             var cm = raw.search(cutRe);
-            if (cm > 30) raw = raw.slice(0, cm);
+            if (cm >= 0) raw = raw.slice(0, cm);
+            // اقطع أيضاً عند سطر يبدأ بمصدر/رابط فقط
+            raw = raw.replace(/(?:^|\n)\s*(?:المصدر|مصدر|Source)\s*\d*\s*[:：][\s\S]*$/i, "\n");
             var lines = raw.split(/\n/);
             var kept = [];
             for (var i = 0; i < lines.length; i++) {
                 var s = (lines[i] || "").trim();
                 if (!s) continue;
+                if (/^[|│┃\s\-─—=]+$/.test(s)) continue;
+                s = s.replace(/\|+/g, " ").replace(/[│┃]+/g, " ").trim();
+                if (!s) continue;
                 if (/^https?:\/\//i.test(s) || /^www\./i.test(s)) continue;
-                if (/^(?:المصدر|مصدر|Source|Ref)\b/i.test(s) && s.length < 80) continue;
-                if (/https?:\/\//i.test(s) && s.replace(/https?:\/\/\S+/gi, "").trim().length < 8) continue;
+                if (/^(?:المصدر|مصدر|Source|Ref|References?)\b/i.test(s)) continue;
+                if (/مصادر|Sources|References/i.test(s) && s.length < 60) continue;
+                if (/https?:\/\//i.test(s) && s.replace(/https?:\/\/\S+/gi, "").trim().length < 12) continue;
                 // تجاهل أسطر الروابط المرقمة
                 if (/^\d+[\).\-\s]+https?:\/\//i.test(s)) continue;
                 if (/^[-•*]\s*$/.test(s)) continue;
@@ -6982,6 +7028,13 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
 
         function cleanTextForAnswerSpeech(text) {
             var t = String(text || "");
+            t = t.replace(/\|+/g, " ");
+            t = t.replace(/[│┃┆┇┊┋]/g, " ");
+            // لا تُنطق أقسام المصادر
+            var cutSrc = t.search(/(?:^|\n)\s*(?:مصادر|المصادر|Sources|References|الروابط)\b/i);
+            if (cutSrc >= 0) t = t.slice(0, cutSrc);
+            t = t.replace(/(?:^|\n)\s*(?:المصدر|مصدر|Source)\s*\d*\s*[:：][^\n]*/gi, "\n");
+            t = t.replace(/https?:\/\/\S+/gi, " ");
             // رسائل نظام/تحويل نماذج — لا تُنطق
             t = t.replace(/(?:⚠️|⚠)?\s*تحويل\s*تلقائي\s*[^\n]*/gi, " ");
             t = t.replace(/FAILOVER\s*:[^\n]*/gi, " ");
@@ -10855,8 +10908,18 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             }
             function showAnswer(text) {
                 var block = document.getElementById("answerBlock");
-                var box = document.querySelector("#answerBlock .answer") || document.querySelector(".answer");
-                if (!box && block) {
+                if (!block) {
+                    block = document.createElement("div");
+                    block.id = "answerBlock";
+                    block.className = "answer-block free-panel";
+                    var form = document.getElementById("mainForm");
+                    if (form) form.appendChild(block);
+                    else document.body.appendChild(block);
+                }
+                block.style.display = "block";
+                block.hidden = false;
+                var box = block.querySelector(".answer");
+                if (!box) {
                     box = document.createElement("div");
                     box.className = "answer";
                     box.setAttribute("role", "status");
@@ -10864,13 +10927,42 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     box.style.direction = "rtl";
                     block.appendChild(box);
                 }
-                if (block) { block.style.display = "block"; block.hidden = false; }
-                if (box) {
-                    box.textContent = text || "";
-                    try { box.scrollIntoView({behavior: "smooth", block: "nearest"}); } catch (e) {}
-                } else {
-                    alert((text || "").slice(0, 1500));
+                box.textContent = text || "";
+                // حقول التقييم
+                var qEl = document.getElementById("question");
+                var qText = qEl ? (qEl.value || "").trim() : "";
+                if (!qText) qText = "مهمة ملف";
+                var modelEl = document.getElementById("model");
+                var modelVal = modelEl ? (modelEl.value || "") : "";
+                var fbQ = document.querySelector('input[name="fb_question"]');
+                var fbA = document.querySelector('input[name="fb_answer"]');
+                var fbM = document.querySelector('input[name="fb_model"]');
+                if (!fbQ || !fbA) {
+                    var bar = block.querySelector(".feedback-bar");
+                    if (!bar) {
+                        bar = document.createElement("div");
+                        bar.className = "feedback-bar";
+                        bar.innerHTML = '<input type="hidden" name="fb_question" form="mainForm" value="">' +
+                            '<input type="hidden" name="fb_answer" form="mainForm" value="">' +
+                            '<input type="hidden" name="fb_model" form="mainForm" value="">' +
+                            '<span>تقييم الإجابة:</span><span id="feedbackStatus" aria-live="polite"></span>' +
+                            '<button type="submit" name="action" value="feedback_up" class="ok" form="mainForm" formnovalidate>جيدة ✓</button>' +
+                            '<button type="submit" name="action" value="feedback_down" class="bad" form="mainForm" formnovalidate>سيئة ✗</button>' +
+                            '<input type="text" name="fb_comment" form="mainForm" placeholder="ملاحظة اختيارية..." maxlength="500">';
+                        block.appendChild(bar);
+                    }
+                    fbQ = block.querySelector('input[name="fb_question"]');
+                    fbA = block.querySelector('input[name="fb_answer"]');
+                    fbM = block.querySelector('input[name="fb_model"]');
                 }
+                if (fbQ) fbQ.value = qText.slice(0, 2000);
+                if (fbA) fbA.value = (text || "").slice(0, 12000);
+                if (fbM) fbM.value = modelVal;
+                try {
+                    sessionStorage.setItem("fbrah_last_q", qText.slice(0, 2000));
+                    sessionStorage.setItem("fbrah_last_a", (text || "").slice(0, 12000));
+                } catch (eS) {}
+                try { box.scrollIntoView({behavior: "smooth", block: "nearest"}); } catch (e) {}
             }
             showLoading();
             var modelEl = document.getElementById("model");
