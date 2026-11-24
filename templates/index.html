@@ -2474,9 +2474,9 @@
                     </div>
                     <div class="actions free-panel" id="panelActions"><div class="panel-drag">⠿</div>
                         <button type="submit" name="action" value="ask" id="sendBtn" data-i18n="send" title="إرسال السؤال أو الأمر لمحرك فبرا الذكي">🚀 إرسال</button>
-                        <button type="submit" name="action" value="summarize_files" class="sec" formnovalidate data-i18n="summarize" title="تلخيص واستخلاص النقاط الجوهرية من الملفات والمستندات">📄 تلخيص الملفات</button>
-                        <button type="submit" name="action" value="translate_files" class="sec" formnovalidate data-i18n="translate" title="ترجمة الملفات ترجمة احترافية رصينة">🌐 ترجمة احترافية</button>
-                        <button type="submit" name="action" value="key_points" class="sec" formnovalidate data-i18n="keyPoints" title="استخراج النقاط الجوهرية من الملف المحدد أو الملفات المرفوعة">🎯 أهم النقاط</button>
+                        <button type="button" name="action" value="summarize_files" onclick="return window.fbrahRunFileTask && window.fbrahRunFileTask('summarize')" class="sec" formnovalidate data-i18n="summarize" title="تلخيص واستخلاص النقاط الجوهرية من الملفات والمستندات">📄 تلخيص الملفات</button>
+                        <button type="button" name="action" value="translate_files" onclick="return window.fbrahRunFileTask && window.fbrahRunFileTask('translate')" class="sec" formnovalidate data-i18n="translate" title="ترجمة الملفات ترجمة احترافية رصينة">🌐 ترجمة احترافية</button>
+                        <button type="button" id="keyPointsBtn" name="action" value="key_points" class="sec" formnovalidate data-i18n="keyPoints" title="استخراج النقاط الجوهرية من الملف المحدد أو الملفات المرفوعة" onclick="return window.fbrahRunFileTask && window.fbrahRunFileTask('key_points')">🎯 أهم النقاط</button>
                         <button type="submit" name="action" value="classify" class="sec" formnovalidate data-i18n="classify" title="تصنيف وترتيب المستندات نظامياً">📑 تصنيف ذكي</button>
                         <button type="submit" name="action" value="rebuild_index" class="sec" formnovalidate data-i18n="rebuild" title="تحديث وتنشيط فهرس المقاطع والـ RAG">🔄 تحديث الفهرس</button>
                         <button type="button" id="selfHealBtn" class="sec" onclick="triggerSelfHeal()" title="فحص ذاتي لقواعد البيانات والمجلدات والأقفال ومعالجة الخلل آلياً" style="border-color:#d4af37;background:#fff9e6;color:#0a192f;">🛠️ فحص وإصلاح ذاتي</button>
@@ -4987,7 +4987,7 @@ function toggleTickerPause() {
 
             // لا ترسل الملفات المختارة مع كل سؤال؛ هذا يقلل حجم الطلب وزمن الاستجابة.
             // تُرسل الملفات فقط عند اختيار زر «رفع الملفات».
-            if (action === "upload" || action === "summarize_files" || action === "translate_files") {
+            if (action === "upload" || action === "summarize_files" || action === "translate_files" || action === "key_points") {
                 // أبقِ الملفات مفعّلة لتصل مع الطلب (رفع تلقائي مع التلخيص/الترجمة)
                 var uploadFilesOn = document.getElementById("uploadFiles");
                 var folderPickerOn = document.getElementById("folderPicker");
@@ -5022,7 +5022,7 @@ function toggleTickerPause() {
                 return;
             }
             // تنظيف بقايا «searching» قبل إرسال جديد
-            if (action === "ask" || action === "upload") {
+            if (action === "ask" || action === "upload" || action === "key_points" || action === "summarize_files" || action === "translate_files") {
                 try {
                     form.classList.remove("searching");
                     document.body.classList.remove("searching-active");
@@ -5042,7 +5042,8 @@ function toggleTickerPause() {
                 }
             }
 
-            if (sendBtn && sendBtn.disabled) {
+            // لا تمنع تلخيص/ترجمة/أهم النقاط إذا كان زر الإرسال فقط معطلاً
+            if (sendBtn && sendBtn.disabled && (action === "ask" || !action)) {
                 event.preventDefault();
                 return;
             }
@@ -10742,6 +10743,172 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             document.addEventListener("visibilitychange", clean);
         })();
         /* fbrah-wake-never-in-box */
+
+        (function wireActionCapture() {
+            var form = document.getElementById("mainForm");
+            if (!form || form.dataset.actCap === "1") return;
+            form.dataset.actCap = "1";
+            form.addEventListener("submit", function(ev) {
+                var sub = ev.submitter;
+                var cap = document.getElementById("actionCapture");
+                if (!cap) return;
+                var act = (sub && sub.name === "action" && sub.value) ? sub.value : (cap.value || "ask");
+                cap.value = act;
+                try { console.log("[FBRAH] action_capture=", act); } catch (e) {}
+            }, true);
+            document.querySelectorAll('#mainForm button[name="action"]').forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    var cap = document.getElementById("actionCapture");
+                    if (cap && btn.value) cap.value = btn.value;
+                });
+            });
+        })();
+
+        (function forceKeyPointsSubmit() {
+            var btn = document.querySelector('#mainForm button[value="key_points"]');
+            if (!btn || btn.dataset.forceKp === "1") return;
+            btn.dataset.forceKp = "1";
+            btn.addEventListener("click", function (e) {
+                try {
+                    var form = document.getElementById("mainForm");
+                    var cap = document.getElementById("actionCapture");
+                    if (cap) cap.value = "key_points";
+                    var q = document.getElementById("question");
+                    if (q && !(q.value || "").trim()) {
+                        q.value = (typeof fbrahLang === "function" && fbrahLang() === "en")
+                            ? "Extract key points from the uploaded file"
+                            : "استخرج أهم النقاط الجوهرية من الملف المرفق";
+                    }
+                    // أعد تفعيل الأزرار العالقة
+                    try {
+                        form.classList.remove("searching");
+                        document.body.classList.remove("searching-active");
+                        document.querySelectorAll("#mainForm button").forEach(function(b){
+                            b.disabled = false;
+                            b.classList.remove("busy","fbrah-working");
+                        });
+                    } catch (e0) {}
+                    // ابدأ عداد الثواني
+                    try {
+                        if (typeof startSearchTimer === "function") startSearchTimer("key_points");
+                        else if (typeof beginSearchUi === "function") beginSearchUi("key_points");
+                    } catch (e1) {}
+                    try { sessionStorage.setItem("fbrah_search_t0", String(Date.now())); } catch (e2) {}
+                } catch (err) { console.warn(err); }
+            }, true);
+        })();
+
+        (function resumeSearchTimer() {
+            try {
+                var t0 = parseInt(sessionStorage.getItem("fbrah_search_t0") || "0", 10);
+                if (!t0) return;
+                var el = document.getElementById("searchTimer");
+                var box = document.getElementById("loading");
+                if (box) box.style.display = "flex";
+                function tick() {
+                    var sec = Math.floor((Date.now() - t0) / 1000);
+                    if (el) el.textContent = sec + "s";
+                    if (sec > 180) {
+                        try { sessionStorage.removeItem("fbrah_search_t0"); } catch (e) {}
+                        return;
+                    }
+                    setTimeout(tick, 500);
+                }
+                tick();
+            } catch (e) {}
+        })();
+        /* fbrah_resume_timer */
+
+        (function clearTimerIfAnswer() {
+            try {
+                if (document.querySelector(".answer, .answer-box, #answerBox, [data-answer]")) {
+                    sessionStorage.removeItem("fbrah_search_t0");
+                }
+            } catch (e) {}
+        })();
+
+
+        window.fbrahRunFileTask = function (task) {
+            task = task || "key_points";
+            var loading = document.getElementById("loading");
+            var loadingMessage = document.getElementById("loadingMessage");
+            var t0 = Date.now();
+            var tickTimer = null;
+            function showLoading() {
+                try {
+                    if (loading) loading.style.display = "flex";
+                    if (loadingMessage) {
+                        var labels = {key_points: "جاري استخراج أهم النقاط", summarize: "جاري التلخيص", translate: "جاري الترجمة"};
+                        loadingMessage.innerHTML = (labels[task] || "جاري المعالجة") +
+                            ' <span id="searchTimer" dir="ltr" style="direction:ltr;display:inline-block">0ث</span>';
+                    }
+                    tickTimer = setInterval(function () {
+                        var s = Math.floor((Date.now() - t0) / 1000);
+                        var el = document.getElementById("searchTimer");
+                        if (el) el.textContent = s + "ث";
+                    }, 400);
+                } catch (e) {}
+            }
+            function hideLoading() {
+                try { if (tickTimer) clearInterval(tickTimer); } catch (e) {}
+                try { if (loading) loading.style.display = "none"; } catch (e) {}
+            }
+            function showAnswer(text) {
+                var block = document.getElementById("answerBlock");
+                var box = document.querySelector("#answerBlock .answer") || document.querySelector(".answer");
+                if (!box && block) {
+                    box = document.createElement("div");
+                    box.className = "answer";
+                    box.setAttribute("role", "status");
+                    box.style.whiteSpace = "pre-wrap";
+                    box.style.direction = "rtl";
+                    block.appendChild(box);
+                }
+                if (block) { block.style.display = "block"; block.hidden = false; }
+                if (box) {
+                    box.textContent = text || "";
+                    try { box.scrollIntoView({behavior: "smooth", block: "nearest"}); } catch (e) {}
+                } else {
+                    alert((text || "").slice(0, 1500));
+                }
+            }
+            showLoading();
+            var modelEl = document.getElementById("model");
+            var fileEl = document.getElementById("selected_file_id");
+            var qEl = document.getElementById("question");
+            var payload = {
+                task: task,
+                model: modelEl ? (modelEl.value || "") : "",
+                selected_file_id: fileEl ? (fileEl.value || "") : "",
+                question: qEl ? (qEl.value || "") : ""
+            };
+            if (!payload.question) {
+                payload.question = task === "translate" ? "ترجم الملف" :
+                    (task === "summarize" ? "لخص الملف" : "استخرج أهم النقاط من الملف المرفق");
+            }
+            fetch("/api/file_task", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {"Content-Type": "application/json", "Accept": "application/json"},
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                return r.text().then(function (t) {
+                    var j = null;
+                    try { j = JSON.parse(t); } catch (e) { j = {ok:false, answer: t.slice(0,500)}; }
+                    return {ok: r.ok, j: j};
+                });
+            }).then(function (res) {
+                hideLoading();
+                var ans = (res.j && res.j.answer) || "";
+                if (!ans) ans = "لا توجد نتيجة. ارفع الملف أولاً عبر زر «رفع الملفات» حتى تظهر رسالة النجاح.";
+                showAnswer(ans);
+            }).catch(function (err) {
+                hideLoading();
+                showAnswer("تعذر الاتصال بالخادم: " + (err && err.message ? err.message : String(err)));
+            });
+            return false;
+        };
+
 </script>
 </body>
 </html>

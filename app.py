@@ -246,6 +246,72 @@ app.secret_key = secret_key
 
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = dt.timedelta(days=7)
+
+
+def _display_answer_path(user):
+    base = os.path.join(DATA_DIR, "display_answers")
+    try:
+        os.makedirs(base, exist_ok=True)
+    except Exception:
+        pass
+    safe = re.sub(r"[^\w\-]+", "_", str(user or "anon"))[:40]
+    return os.path.join(base, safe + ".txt")
+
+
+def set_display_answer(answer, question="", model=""):
+    """خزّن الإجابة على القرص + ملخص قصير في الجلسة فقط."""
+    user = ""
+    try:
+        user = session.get("user") or "anon"
+    except Exception:
+        user = "anon"
+    ans = answer or ""
+    try:
+        with open(_display_answer_path(user), "w", encoding="utf-8") as f:
+            f.write(ans)
+    except Exception:
+        app.logger.exception("set_display_answer write")
+    # لا تضع الإجابة الكاملة في كوكي الجلسة
+    try:
+        session.pop("_display_answer", None)
+        session["last_question"] = (question or "")[:500]
+        session["last_answer"] = (ans[:800] + ("…" if len(ans) > 800 else ""))
+        if model:
+            session["last_model"] = model
+        session["has_display_answer"] = 1
+        session.modified = True
+    except Exception:
+        pass
+    return ans
+
+
+def pop_display_answer():
+    """اقرأ الإجابة من القرص مرة واحدة (بعد إعادة التوجيه)."""
+    user = ""
+    try:
+        user = session.get("user") or "anon"
+    except Exception:
+        user = "anon"
+    path = _display_answer_path(user)
+    ans = ""
+    try:
+        if os.path.isfile(path):
+            with open(path, "r", encoding="utf-8") as f:
+                ans = f.read()
+            try:
+                os.remove(path)
+            except Exception:
+                pass
+    except Exception:
+        app.logger.exception("pop_display_answer")
+    try:
+        session.pop("has_display_answer", None)
+        session.pop("_display_answer", None)
+    except Exception:
+        pass
+    return ans or ""
+
+
 app.jinja_env.auto_reload = True
 app.config.update(
     MAX_CONTENT_LENGTH=MAX_UPLOAD_MB * 1024 * 1024,
@@ -10462,9 +10528,9 @@ def home():
                     "تذكير عام حسب الوقت المطلوب."
                 )
                 session["last_question"] = _q0
-                session["last_answer"] = answer
+                session["last_answer"] = (answer or "")[:800]
                 session["last_model"] = (request.form.get("model") or DEFAULT_MODEL)
-                session["_display_answer"] = answer
+                set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                 print(">>> ISOLATED reminder OK", _msg0, _when, flush=True)
                 return redirect(url_for("home"))
         except Exception:
@@ -10476,7 +10542,7 @@ def home():
     # عند تحديث الصفحة يختفي السؤال والإجابة ولا يعاد عرضهما من الجلسة.
     if request.method == "GET":
         question = ""
-        answer = session.pop("_display_answer", "") or ""
+        answer = pop_display_answer() or session.pop("_display_answer", "") or ""
         generated = session.pop("_display_generated", "") or ""
     try:
         models = get_models_for_ui()
@@ -10532,9 +10598,9 @@ def home():
                         + "تذكير عام حسب الوقت المطلوب."
                     )
                     session["last_question"] = _q_early_rem
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = (request.form.get("model") or DEFAULT_MODEL)
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     print(">>> EARLY reminder OK", flush=True)
                     return redirect(url_for("home"))
         except Exception:
@@ -10617,7 +10683,7 @@ def home():
                     comment=comment, model=model,
                 )
                 session["last_question"] = question
-                session["last_answer"] = answer
+                session["last_answer"] = (answer or "")[:800]
                 session["last_model"] = model
                 flash(
                     "شكراً لتقييمك — سيُستخدم لتحسين النتائج. الإجابة ما زالت ظاهرة."
@@ -10734,7 +10800,7 @@ def home():
                 answer = (
                     "تم تحديث نطاق البحث.\n" + ("\n".join(left) if left else "لا يوجد نطاق محفوظ الآن.")
                 )
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             # لا تمسح خانة السؤال عند إلغاء نطاق الملفات
             session.pop("_clear_question", None)
             return redirect(url_for("home"))
@@ -10931,8 +10997,8 @@ def home():
                     + why
                     + "\nإن استمر الأمر: شغّل الطرفية كمسؤول أو غيّر FBRAH_UPLOAD_FOLDER لمجلد قابل للكتابة."
                 )
-            session["last_answer"] = answer
-            session["_display_answer"] = answer
+            session["last_answer"] = (answer or "")[:800]
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             print(">>> UPLOAD done saved=%s" % saved_count, flush=True)
             app.logger.warning("UPLOAD action done: saved=%s answer_head=%s", saved_count, (answer or "")[:120])
             return redirect(url_for("home"))
@@ -10940,8 +11006,8 @@ def home():
         elif action == "translate_files":
             if use_web and not use_web_and_local:
                 answer = "وضع «الإنترنت فقط» لا يعالج الملفات المحلية ولا يرسلها للنموذج. ألغِ خيار الإنترنت فقط واختر الوضع المحلي أو «الإنترنت + الملفات والمجلدات»."
-                session["_display_answer"] = answer
-                session["last_answer"] = answer
+                set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
+                session["last_answer"] = (answer or "")[:800]
                 session["last_model"] = selected_model
                 return redirect(url_for("home"))
             selected_file_id = (request.form.get("selected_file_id") or "").strip()
@@ -11010,16 +11076,16 @@ def home():
                     "للترجمة إلى الإنجليزية اكتب في خانة السؤال: ترجم للإنجليزية"
                 )
             session["last_question"] = question or "ترجمة ملف"
-            session["last_answer"] = answer
+            session["last_answer"] = (answer or "")[:800]
             session["last_model"] = selected_model
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             return redirect(url_for("home"))
 
         elif action == "summarize_files":
             if use_web and not use_web_and_local:
                 answer = "وضع «الإنترنت فقط» لا يعالج الملفات المحلية ولا يرسلها للنموذج. ألغِ خيار الإنترنت فقط واختر الوضع المحلي أو «الإنترنت + الملفات والمجلدات»."
-                session["_display_answer"] = answer
-                session["last_answer"] = answer
+                set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
+                session["last_answer"] = (answer or "")[:800]
                 session["last_model"] = selected_model
                 return redirect(url_for("home"))
             selected_file_id = (request.form.get("selected_file_id") or "").strip()
@@ -11086,14 +11152,14 @@ def home():
                     "ارفع ملفاً عبر «رفع الملفات» ثم اضغط «تلخيص الملفات المرفوعة»."
                 )
             session["last_question"] = "ملخص الملف"
-            session["last_answer"] = answer
+            session["last_answer"] = (answer or "")[:800]
             session["last_model"] = selected_model
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             return redirect(url_for("home"))
 
         elif action == "key_points":
+            print(">>> ACTION key_points", flush=True)
             selected_file_id = (request.form.get("selected_file_id") or session.get("selected_file_id") or "").strip()
-            # إن لم يُحدد ملف، استخدم أحدث ملف مرفوع للمستخدم
             if not selected_file_id:
                 try:
                     with get_db() as db:
@@ -11112,48 +11178,41 @@ def home():
                             session["selected_file_id"] = selected_file_id
                 except Exception:
                     app.logger.exception("key_points fallback latest file")
-            if use_web and not use_web_and_local:
-                answer = "وضع «الإنترنت فقط» لا يعالج الملفات المحلية. اختر «الإنترنت + الملفات والمجلدات» أو الوضع المحلي."
-            elif selected_file_id:
-                answer = process_selected_uploaded_file(
-                    selected_file_id, selected_model, "key_points",
-                    question=question or "استخرج أهم النقاط من الملف",
-                    use_web_context=use_web_and_local,
-                )
-            else:
-                # ملفات sticky / مرفوعة في الجلسة
-                try:
-                    answer = summarize_or_translate_sticky_upload(
-                        question or "أهم النقاط من الملف المرفق",
-                        selected_model,
-                        force=True,
-                        force_key_points=True,
-                    )
-                except TypeError:
-                    answer = summarize_or_translate_sticky_upload(
-                        question or "أهم النقاط من الملف المرفق",
-                        selected_model,
-                        force=True,
-                    )
-                if not (answer or "").strip():
-                    answer = (
-                        "لاستخراج النقاط الجوهرية: ارفع ملفاً عبر «رفع الملفات»، "
-                        "أو اختره من «الملف المستهدف حصرياً»، ثم اضغط «أهم النقاط»."
-                    )
-            # إن كانت الإجابة مجرد اسم ملف قصير جداً — أعد المحاولة استخراجياً
-            if answer and len(re.sub(r"\s+", "", answer)) < 40 and selected_file_id:
-                try:
+            answer = ""
+            # لا تستخدم بحث الويب لمهمة أهم النقاط من ملف
+            try:
+                if selected_file_id:
                     answer = process_selected_uploaded_file(
                         selected_file_id, selected_model, "key_points",
-                        question="استخرج أهم النقاط والوقائع والأرقام من نص الملف بالكامل",
+                        question=question or "استخرج أهم النقاط من الملف",
                         use_web_context=False,
                     )
-                except Exception:
-                    app.logger.exception("key_points retry")
-            session["last_question"] = question or "استخراج النقاط الجوهرية من الملف المحدد"
-            session["last_answer"] = answer
-            session["last_model"] = selected_model
-            session["_display_answer"] = answer
+                else:
+                    try:
+                        answer = summarize_or_translate_sticky_upload(
+                            question or "أهم النقاط من الملف المرفق",
+                            selected_model,
+                            force=True,
+                            force_key_points=True,
+                        )
+                    except TypeError:
+                        answer = summarize_or_translate_sticky_upload(
+                            question or "أهم النقاط من الملف المرفق",
+                            selected_model,
+                            force=True,
+                        )
+            except Exception as exc:
+                app.logger.exception("key_points process")
+                answer = ""
+            if not (answer or "").strip():
+                answer = (
+                    "تعذر استخراج أهم النقاط.\n"
+                    "• تأكد من رفع الملف عبر «رفع الملفات» (وليس الاختيار فقط).\n"
+                    "• شغّل Ollama محلياً أو انتظر توفر Gemini/GROQ.\n"
+                    "• إن كان PDF صورة ثبّت Tesseract (ara+eng)."
+                )
+            set_display_answer(answer, question=question or "أهم النقاط", model=selected_model)
+            print(">>> key_points answer len", len(answer or ""), flush=True)
             return redirect(url_for("home"))
 
         elif action == "classify":
@@ -11170,7 +11229,7 @@ def home():
             except Exception:
                 app.logger.exception("تعذر بدء التصنيف في الخلفية")
                 answer = "تعذر بدء التصنيف الآن. راجع سجل الأخطاء ثم أعد المحاولة."
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             return redirect(url_for("home"))
 
         elif action == "rebuild_index":
@@ -11183,10 +11242,32 @@ def home():
                 answer = f"تم إعادة بناء الفهرس بنجاح. عدد المستندات التي فُحصت: {count}."
             except Exception as exc:
                 answer = f"فشل إعادة بناء الفهرس: {exc}"
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
             return redirect(url_for("home"))
 
         elif action == "ask":
+            # إن كان طلب أهم نقاط ملف مرفوع — لا تذهب لبحث الويب
+            try:
+                _qask = (question or "").strip()
+                if any(k in _qask for k in ("أهم النقاط", "اهم النقاط", "النقاط الجوهرية", "key points", "keypoints")) and any(
+                    k in _qask for k in ("ملف", "المرفق", "المرفوع", "file", "document")
+                ):
+                    print(">>> ASK diverted to key_points", flush=True)
+                    _sid = (request.form.get("selected_file_id") or session.get("selected_file_id") or "").strip()
+                    _ans = ""
+                    if _sid:
+                        _ans = process_selected_uploaded_file(_sid, selected_model, "key_points", question=_qask, use_web_context=False)
+                    if not (_ans or "").strip():
+                        try:
+                            _ans = summarize_or_translate_sticky_upload(_qask, selected_model, force=True, force_key_points=True)
+                        except Exception:
+                            _ans = summarize_or_translate_sticky_upload(_qask, selected_model, force=True)
+                    if not (_ans or "").strip():
+                        _ans = "لم يُعثر على ملف مرفوع. ارفع الملف أولاً ثم أعد المحاولة."
+                    set_display_answer(_ans, question=_qask, model=selected_model)
+                    return redirect(url_for("home"))
+            except Exception:
+                app.logger.exception("ask divert key_points")
             print(">>> ASK model=%s q=%s" % (selected_model, (question or "")[:60]), flush=True)
             app.logger.warning("ASK model=%s", selected_model)
             if not question:
@@ -11238,7 +11319,7 @@ def home():
                         "لن تُستخدم في الإجابات التالية حتى تختارها أو ترفعها من جديد.\n"
                         "<!--FBRAH_CLEAR_SCOPE-->"
                     )
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 _rcmd = parse_recording_command(question)
@@ -11258,7 +11339,7 @@ def home():
                             "To stop recording, press ⏹ Stop or wait until 2 hours elapse."
                         )
                     session["last_question"] = question
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # ترجمة فورية: ترجم التالي / translate next
@@ -11266,9 +11347,9 @@ def home():
                 if _lt:
                     answer = _lt
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # تنظيف خانة البحث (نص/صوت) — لا يشغّل بحثاً
@@ -11289,9 +11370,9 @@ def home():
                 if _img:
                     answer = _img
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
                                 # === تذكير عام أولاً (أي موعد/موضوع — عربي وإنجليزي) قبل مسار الأذان ===
                 try:
@@ -11338,9 +11419,9 @@ def home():
                                     _rem_gen.get("when_human") or "",
                                 )
                             session["last_question"] = question
-                            session["last_answer"] = answer
+                            session["last_answer"] = (answer or "")[:800]
                             session["last_model"] = selected_model
-                            session["_display_answer"] = answer
+                            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                             print(">>> GENERAL reminder set (AR/EN)", flush=True)
                             return redirect(url_for("home"))
                 except Exception:
@@ -11351,9 +11432,9 @@ def home():
                 if _lc:
                     answer = _lc
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # تذكير الأذان/المواعيد قبل عرض الموعد فقط (حتى يُجدول التنبيه)
@@ -11384,9 +11465,9 @@ def home():
                         sr, _rem_first["kind"], _rem_first.get("message"), _clock
                     )
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 _adhan_list = parse_adhan_reminder_request(question)
@@ -11411,9 +11492,9 @@ def home():
                     if notes:
                         answer += "\n" + "\n".join(notes)
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     print(">>> ADHAN reminder set", flush=True)
                     return redirect(url_for("home"))
                 _rem_early = parse_reminder_request(question)
@@ -11433,9 +11514,9 @@ def home():
                         sr, _rem_early["kind"], _rem_early.get("message"), _clock
                     )
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # مواقيت الصلاة / الساعة / التاريخ — فوري قبل أي مسار ملفات
@@ -11443,9 +11524,9 @@ def home():
                 if _quick:
                     answer = _quick
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     print(">>> FAST answer: %s" % (answer[:120].replace("\n", " "),), flush=True)
                     return redirect(url_for("home"))
 
@@ -11484,7 +11565,7 @@ def home():
                             generated = None
 
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
                     session["dialogue_topic"] = extract_topic_anchor(question, answer)
                     session["dialogue_summary"] = ((question or "")[:120] + " → " + (answer or "")[:200])
@@ -11502,7 +11583,7 @@ def home():
                                 dt.datetime.now().isoformat(timespec="seconds")
                             )
                         )
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     session["_display_generated"] = generated or ""
                     return redirect(url_for("home"))
 
@@ -11519,9 +11600,9 @@ def home():
                         answer = f"تعذر إنشاء الملف: {exc}"
                         generated = None
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     if generated:
                         session["last_generated"] = generated
                     return redirect(url_for("home"))
@@ -11541,9 +11622,9 @@ def home():
                     else:
                         answer += "\nلا يوجد ملف مرفوع في النطاق الآن."
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # إن وُجدت ملفات sticky → لا تذهب لبحث فارغ عند تلخيص/ترجمة
@@ -11613,9 +11694,9 @@ def home():
                         "لم يُرجع النظام نصاً. تأكد من رفع الملف وأن Ollama يعمل (ollama serve)."
                     )
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 # تذكير أذان / تذكير عادي أولاً
@@ -11664,9 +11745,9 @@ def home():
                                     _rem_gen.get("when_human") or "",
                                 )
                             session["last_question"] = question
-                            session["last_answer"] = answer
+                            session["last_answer"] = (answer or "")[:800]
                             session["last_model"] = selected_model
-                            session["_display_answer"] = answer
+                            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                             print(">>> GENERAL reminder set (AR/EN)", flush=True)
                             return redirect(url_for("home"))
                 except Exception:
@@ -11699,9 +11780,9 @@ def home():
                         sr, _rem_first["kind"], _rem_first.get("message"), _clock
                     )
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
 
                 _adhan_list = parse_adhan_reminder_request(question)
@@ -11718,9 +11799,9 @@ def home():
                     answer = "تم ضبط تذكير الأذان/الصلاة:\n" + "\n".join(lines)
                     answer += "\n(يظهر التنبيه إن بقي المتصفح مفتوحاً عند الموعد)"
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
                 _rem = parse_reminder_request(question)
                 if not _rem:
@@ -11743,9 +11824,9 @@ def home():
                         sr, _rem["kind"], _rem.get("message"), _clock
                     )
                     session["last_question"] = question
-                    session["last_answer"] = answer
+                    session["last_answer"] = (answer or "")[:800]
                     session["last_model"] = selected_model
-                    session["_display_answer"] = answer
+                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                     return redirect(url_for("home"))
                 # تلخيص/ترجمة الملفات المرفوعة مباشرة
                 # حوار متسلسل: ربط السؤال الحالي بآخر سؤال/إجابة
@@ -12041,8 +12122,8 @@ def home():
                                 if isinstance(local_context, str) and len(local_context.strip()) < 120:
                                     answer = insufficient_evidence_message(is_en=(out_lang == "en"))
                                     session["last_question"] = question
-                                    session["last_answer"] = answer
-                                    session["_display_answer"] = answer
+                                    session["last_answer"] = (answer or "")[:800]
+                                    set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
                                     return redirect(url_for("home"))
                         except Exception:
                             pass
@@ -12114,7 +12195,7 @@ def home():
 
             if action == "ask" and question:
                 session["last_question"] = question
-                session["last_answer"] = answer
+                session["last_answer"] = (answer or "")[:800]
                 session["last_model"] = selected_model
                 session["dialogue_topic"] = extract_topic_anchor(question, answer)
                 session["dialogue_summary"] = ((question or "")[:120] + " → " + (answer or "")[:200])
@@ -12139,7 +12220,7 @@ def home():
         # تحديث الصفحة بعد ذلك يبدأ بواجهة فارغة دون تكرار السؤال أو الإجابة.
         if answer:
             # احتفظ بكل الرسائل بما فيها تأكيد الرفع والتصنيف
-            session["_display_answer"] = answer
+            set_display_answer(answer, model=selected_model if "selected_model" in dir() else "")
         else:
             session.pop("_display_answer", None)
         session["_display_generated"] = generated or ""
@@ -12270,7 +12351,7 @@ def feedback():
         )
         if session.get("user"):
             session["last_question"] = question
-            session["last_answer"] = answer
+            session["last_answer"] = (answer or "")[:800]
             session["last_model"] = model
         message = "شكرًا لك، تم حفظ تقييمك." if rating_i > 0 else "تم حفظ ملاحظتك بنجاح."
         return feedback_response(True, message, 200)
@@ -12673,6 +12754,87 @@ def _startup_index():
                 last_review_at = time.time()
         except Exception:
             app.logger.exception("تعذر إكمال المراجعة الدورية للفهرس")
+
+
+
+@app.route("/api/file_task", methods=["POST"])
+@login_required
+def api_file_task():
+    """مهام الملف بدون إعادة تحميل الصفحة: key_points / summarize / translate."""
+    try:
+        data = request.get_json(silent=True) or {}
+    except Exception:
+        data = {}
+    task = (data.get("task") or request.form.get("task") or "key_points").strip().lower()
+    if task not in ("key_points", "summarize", "translate"):
+        task = "key_points"
+    question = (data.get("question") or request.form.get("question") or "").strip()
+    model = (data.get("model") or request.form.get("model") or DEFAULT_MODEL).strip() or DEFAULT_MODEL
+    selected_file_id = (data.get("selected_file_id") or request.form.get("selected_file_id") or session.get("selected_file_id") or "").strip()
+
+    if not selected_file_id:
+        try:
+            with get_db() as db:
+                user = session.get("user")
+                if user:
+                    row = db.execute(
+                        "SELECT id FROM files WHERE uploaded_by=? ORDER BY id DESC LIMIT 1",
+                        (user,),
+                    ).fetchone()
+                else:
+                    row = db.execute("SELECT id FROM files ORDER BY id DESC LIMIT 1").fetchone()
+                if row:
+                    selected_file_id = str(row["id"] if hasattr(row, "keys") else row[0])
+                    session["selected_file_id"] = selected_file_id
+        except Exception:
+            app.logger.exception("api_file_task pick file")
+
+    answer = ""
+    try:
+        if selected_file_id:
+            answer = process_selected_uploaded_file(
+                selected_file_id, model, task if task != "summarize" else "summarize",
+                question=question or task,
+                use_web_context=False,
+            )
+        if not (answer or "").strip():
+            force_tr = task == "translate"
+            force_kp = task == "key_points"
+            try:
+                answer = summarize_or_translate_sticky_upload(
+                    question or task, model,
+                    force=(task == "summarize" or force_kp),
+                    force_translate=force_tr,
+                    force_key_points=force_kp,
+                )
+            except TypeError:
+                answer = summarize_or_translate_sticky_upload(
+                    question or task, model, force=True, force_translate=force_tr
+                )
+    except Exception as exc:
+        app.logger.exception("api_file_task")
+        answer = "تعذر معالجة الملف: " + str(exc)[:200]
+
+    if not (answer or "").strip():
+        answer = (
+            "لم يُستخرج نص كافٍ من ملف مرفوع.\n"
+            "1) اختر الملف واضغط «رفع الملفات» حتى تظهر رسالة النجاح\n"
+            "2) تأكد أن Ollama يعمل (ollama serve)\n"
+            "3) أعد المحاولة من زر المهمة"
+        )
+
+    try:
+        set_display_answer(answer, question=question or task, model=model)
+    except Exception:
+        pass
+
+    return jsonify({
+        "ok": True,
+        "task": task,
+        "answer": answer,
+        "file_id": selected_file_id or "",
+        "len": len(answer or ""),
+    })
 
 
 @app.route("/api/reminders", methods=["GET", "POST"])
