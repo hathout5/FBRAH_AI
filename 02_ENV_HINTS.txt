@@ -21,3 +21,8 @@ FBRAH_OCR_MAX_PAGES=0
 
 GROQ_API_KEY=
 GEMINI_API_KEY=
+
+
+# موجز خارجي للنكت المصرية (اختياري — لا تفعّله إلا بعد التحقق من الناشر وحق إعادة الاستخدام)
+FBRAH_EGYPTIAN_JOKES_RSS_URL=
+FBRAH_EGYPTIAN_JOKES_SOURCE=

@@ -383,9 +383,10 @@
             font-size: 12px;
             white-space: nowrap;
             gap: 6px;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+            box-shadow: -8px 0 14px rgba(0, 0, 0, 0.45);
             flex-shrink: 0;
-            z-index: 2;
+            z-index: 6;
+            position: relative;
         }
         .ticker-pulse {
             width: 7px;
@@ -408,6 +409,7 @@
             display: flex;
             align-items: center;
             direction: ltr;
+            min-width: 0;
         }
         .ticker-content-wrap[dir="ltr"] { direction: ltr; }
         .ticker-marquee {
@@ -420,22 +422,23 @@
             max-width: none;
             white-space: nowrap;
             align-items: center;
-            /* اتجاه التخطيط ثابت LTR حتى لا تنكسر حلقة الحركة */
             direction: ltr;
-            animation: ticker-scroll var(--ticker-duration, 180s) linear infinite;
+            /* --ticker-shift يُضبط بالبكسل = نصف عرض المحتوى المكرر لإكمال المسار كاملاً */
+            --ticker-shift: 1000px;
+            --ticker-duration: 60s;
+            animation: none !important; /* الحركة يدوية عبر fbrahTickerEngine */
+            animation-play-state: running;
             padding: 0;
             will-change: transform;
             transform: translate3d(0,0,0);
         }
-        .ticker-marquee.ticker-ar {
-            /* عربي: من الشمال إلى اليمين */
-            animation-direction: reverse;
-        }
+        .ticker-marquee.ticker-ar,
         .ticker-marquee.ticker-en {
+            animation-name: fbrah-ticker-move;
             animation-direction: normal;
         }
         .ticker-sequence {
-            display: flex;
+            display: inline-flex;
             flex-direction: row;
             flex-wrap: nowrap;
             flex: 0 0 auto;
@@ -444,13 +447,13 @@
             white-space: nowrap;
             align-items: center;
             direction: ltr;
-            padding-inline: 24px;
+            padding-inline: 20px;
         }
         .ticker-item {
             display: inline-flex !important;
             align-items: center;
             gap: 6px;
-            margin-right: 28px;
+            margin-right: 32px;
             font-size: 13px;
             color: #f1f5f9 !important;
             opacity: 1 !important;
@@ -464,9 +467,10 @@
             background: rgba(212,175,55,0.12);
             border-radius: 4px;
         }
-        @keyframes ticker-scroll {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-50%, 0, 0); }
+        /* عكس الاتجاه: الكلمات تسير نحو شارة «موجز» وتختفي خلفها بالكامل */
+        @keyframes fbrah-ticker-move {
+            0%   { transform: translate3d(calc(-1 * var(--ticker-shift)), 0, 0); }
+            100% { transform: translate3d(0, 0, 0); }
         }
         .ticker-speed-btn {
             background: transparent;
@@ -512,8 +516,10 @@
             height: 100%;
             align-items: center;
             flex-shrink: 0;
-            z-index: 2;
+            z-index: 6;
+            position: relative;
             border-right: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 8px 0 14px rgba(0, 0, 0, 0.35);
         }
         .ticker-actions button {
             background: transparent;
@@ -2467,7 +2473,7 @@
                 })();
                 </script>
 
-                    <div class="speak-q-row" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;"><button type="button" id="speakQuestionBtnInline" title="Read" aria-label="Read" onclick="event.preventDefault();event.stopPropagation();try{window.speakQuestionBox();}catch(e){alert(e.message);}">🔊</button></div>
+                    <div class="speak-q-row" style="display:flex;align-items:center;gap:8px;margin:0 0 6px;"><button type="button" id="fbrahCalcInlineBtn" title="آلة حاسبة علمية" aria-label="فتح الآلة الحاسبة العلمية" style="background:#6b0f1a;color:#d4af37;border:1px solid #d4af37;border-radius:50%;width:34px;height:34px;font-weight:800;cursor:pointer">∑</button><button type="button" id="speakQuestionBtnInline" title="Read" aria-label="Read" onclick="event.preventDefault();event.stopPropagation();try{window.speakQuestionBox();}catch(e){alert(e.message);}">🔊</button></div>
                     <textarea name="question" id="question" placeholder="اكتب سؤالك أو الصق صورة/رسماً أو أدرج من لوحة القلم" data-i18n-placeholder="phQuestion" dir="rtl" lang="ar" inputmode="text" autocomplete="off" style="text-align:right;direction:rtl;">{{ question or '' }}</textarea>
                 <div class="loading" id="loading" role="status" aria-live="polite" style="display:none;flex-wrap:wrap;align-items:center;gap:10px;">
                         <span id="loadingMessage" style="unicode-bidi:isolate">جاري البحث <span id="searchTimer" dir="ltr" style="direction:ltr;unicode-bidi:isolate;display:inline-block">0ث</span></span></span>
@@ -2514,31 +2520,11 @@
                                 <button type="button" id="voiceCloseBtn" title="إخفاء الشريط" aria-label="إخفاء الشريط">×</button>
                             </div>
                         </div>
-                        <button type="button" id="wakeBtn" onclick="toggleWakeMode()" style="background:#6b0f1a;color:#fff;border:1px solid #d4af37;" title="فعّل النداء مرة واحدة ثم قل فبرا أو يا فبرا">🔔 تفعيل النداء</button>
-                        <button type="button" id="micBtn" onclick="toggleVoiceInput()">🎤 تحدث</button>
-                        <label style="font-size:11px;color:#001F3F;">مدة رنين التذكير
-                            <select id="alarmDurationSec" title="مدة استمرار نغمة التذكير">
-                                <option value="30">30ث</option>
-                                <option value="60" selected>1د</option>
-                                <option value="180">3د</option>
-                                <option value="300">5د</option>
-                                <option value="900">15د</option>
-                                <option value="0">حتى الإيقاف</option>
-                            </select>
-                        </label>
-                        <label style="font-size:11px;color:#001F3F;"><input type="checkbox" id="reminderBigPanel" checked> شريط كبير</label>
-                        <div class="voice-bar-sync-hint" id="voiceSyncHint" data-i18n="voiceSync" style="color:#ffffff !important;font-weight:600;">النداء → تحدث → إرسال: 🔔 تفعيل النداء ← قل «فبرا» ← 🎤 تحدّث ← 🚀 إرسال (أو انتظر الصمت ليُرسل تلقائياً). التسجيل الصوتي منفصل: فقط ● سجل / ⏹ إيقاف</div>
-                    <div class="rec-panel" id="recPanel">
-                        <div class="rec-row">
-                            <button type="button" id="recStartBtn" onclick="fbrahRecStart(event)">● سجل</button>
-                            <button type="button" id="recStopBtn" class="rec-stop" onclick="fbrahRecStop('button')" disabled>⏹ أوقف التسجيل</button>
-                            <span class="rec-timer" id="recTimer">0:00</span>
-                            <span id="recStatus" style="font-size:11px;color:#001F3F;"></span>
+                        <div class="voice-call-group" style="display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;margin:2px 4px;">
+                        <button type="button" id="wakeBtn" onclick="toggleWakeMode()" style="background:#6b0f1a;color:#fff;border:1px solid #d4af37;margin:0;" title="فعّل النداء مرة واحدة ثم قل فبرا أو يا فبرا">🔔 تفعيل النداء</button>
+                        <button type="button" id="micBtn" onclick="toggleVoiceInput()" style="margin:0;">🎤 تحدث</button>
                         </div>
-                        <div style="font-size:11px;color:#8b6914;margin-bottom:4px;">التسجيلات (حد أقصى 10 — كل منها حتى 120 دقيقة)</div>
-                        <ul id="recList"></ul>
-                    </div>
-                        <label style="font-size:12px;color:#fff44f">مزاج الصوت <select id="voiceMood" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي من النص</option><option value="neutral">محايد</option><option value="deep">عميق</option><option value="soft">ناعم</option><option value="bright">حماسي</option><option value="warm">دافئ</option><option value="sad">حزين</option><option value="firm">حازم</option></select></label> <label style="font-size:12px;color:#fff44f">جنس <select id="voiceGender" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي</option><option value="male">ذكوري</option><option value="female">نسائي</option></select></label> <label style="font-size:12px;color:#fff44f">عمر <select id="voiceAge" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="adult">بالغ</option><option value="young">يافع</option><option value="senior">كبير</option></select></label> <button type="button" id="speakAnswerBtn" onclick="speakAnswer()" data-i18n="speakAnswer">🔊 اقرأ الإجابة</button>
+<label style="font-size:12px;color:#fff44f">مزاج الصوت <select id="voiceMood" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي من النص</option><option value="neutral">محايد</option><option value="deep">عميق</option><option value="soft">ناعم</option><option value="bright">حماسي</option><option value="warm">دافئ</option><option value="sad">حزين</option><option value="firm">حازم</option></select></label> <label style="font-size:12px;color:#fff44f">جنس <select id="voiceGender" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="auto">تلقائي</option><option value="male">ذكوري</option><option value="female">نسائي</option></select></label> <label style="font-size:12px;color:#fff44f">عمر <select id="voiceAge" style="background:#333;color:#fff;border:1px solid #d4af37;border-radius:6px;padding:4px;"><option value="adult">بالغ</option><option value="young">يافع</option><option value="senior">كبير</option></select></label> <button type="button" id="speakAnswerBtn" onclick="speakAnswer()" data-i18n="speakAnswer">🔊 اقرأ الإجابة</button>
                         <button type="button" id="speakQuestionBtn" onclick="speakQuestionBox()" title="Read question / dialogue" aria-label="Read question" data-i18n-title="speakQuestion" style="background:transparent;color:#d4af37;border:1px solid #d4af37;padding:4px 8px;font-size:18px;">🔊</button>
                         <button type="button" id="stopSpeakBtn" onclick="stopSpeak()" data-i18n="stopSpeak">⏹ إيقاف الصوت</button>
                         <label style="font-size:11px;font-weight:600;color:#8b6914;">لغة/لهجة النطق
@@ -2594,6 +2580,64 @@
                         </label>
                         <span class="vstatus" id="voiceStatus">حوار كتابي/صوتي جاهز</span>
                         <span class="vstatus" id="sentimentBox" style="color:#001F3F;"></span>
+                    <div class="voice-ring-settings" title="إعدادات رنين التذكير — type / count / duration / volume" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px dashed #d4af37;border-radius:8px;padding:6px 8px;margin:6px 0 4px;background:rgba(212,175,55,0.08);width:100%;order:99;flex-basis:100%;">
+                        <span style="font-size:11px;font-weight:800;color:#8b6914;width:100%;">إعدادات رنين التذكير / Reminder ring</span>
+                        <label style="font-size:11px;color:#001F3F;">نوع الرنين / Ring type
+                            <select id="alarmTone" title="نوع الرنين — Ring type">
+                                <option value="classic">كلاسيكية / Classic</option>
+                                <option value="soft">هادئة / Soft</option>
+                                <option value="urgent">عاجلة / Urgent</option>
+                                <option value="double">متقطعة / Double</option>
+                                <option value="chime">جرس رنان / Chime</option>
+                                <option value="ascending">تصاعدية / Ascending</option>
+                                <option value="digital">رقمية / Digital</option>
+                                <option value="bell">جرس مزدوج / Bell</option>
+                                <option value="melody">لحن / Melody</option>
+                                <option value="pulse">نبضي / Pulse</option>
+                                <option value="radar">رادار / Radar</option>
+                                <option value="xylophone">إكسيلوفون / Xylophone</option>
+                                <option value="alarm">منبّه / Alarm</option>
+                                <option value="softchime">جرس هادئ / Soft Chime</option>
+                                <option value="triple">ثلاثي / Triple</option>
+                                <option value="birds">طيور / Birds</option>
+                                <option value="sparrows">عصافير / Sparrows</option>
+                                <option value="nightingale">بلبل / Nightingale</option>
+                                <option value="curlew">كروان / Curlew</option>
+                                <option value="rooster">ديك / Rooster</option>
+                                <option value="cat">قطة / Cat</option>
+                                <option value="dog">كلب / Dog</option>
+                                <option value="wolf">ذئب / Wolf</option>
+                                <option value="cricket">صراصير / Cricket</option>
+                                <option value="neuroalert">تنبيه عصبي / Neuro Alert</option>
+                                <option value="siren">صفارة / Siren</option>
+                                <option value="focusbeep">جذب انتباه / Focus Beep</option>
+                            </select>
+                        </label>
+                        <label style="font-size:11px;color:#001F3F;">مستوى الصوت
+                            <input id="alarmVolume" type="range" min="10" max="100" step="5" value="80" style="width:140px;vertical-align:middle" title="مستوى صوت التنبيه">
+                            <output id="alarmVolumeValue">80%</output>
+                        </label>
+                        <label style="font-size:11px;color:#001F3F;" data-i18n-label="ringRepeats">مرات الرنين / Ring count
+                            <select id="alarmRepeatCount" title="عدد دورات الرنين"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="10">10</option><option value="0">∞ مستمر / Until stop</option></select>
+                        </label>
+                        <button type="button" id="alarmTestBtn" title="تجربة النغمة والإعدادات">▶ تجربة</button>
+                        <label style="font-size:11px;color:#001F3F;" data-i18n-label="ringDuration">مدة الرنين / Ring duration
+                            <select id="alarmDurationSec" title="مدة استمرار نغمة التذكير">
+                                <option value="15">15s</option>
+                                <option value="30">30s</option>
+                                <option value="60" selected>60s</option>
+                                <option value="120">2m</option>
+                                <option value="180">3m</option>
+                                <option value="300">5m / 5د</option>
+                                <option value="600">10m / 10د</option>
+                                <option value="900">15m / 15د</option>
+                                <option value="0">مستمر / Until stop</option>
+                            </select>
+                        </label>
+                        <label style="font-size:11px;color:#001F3F;"><input type="checkbox" id="reminderBigPanel" checked> شريط كبير</label>
+                    </div>
+
+
                     </div>
 <button type="button" id="voiceRestoreBtn" class="voice-restore-btn" style="display:none" aria-label="إظهار شريط الصوت والحوار" title="اسحب الأيقونة أو انقر لفتح شريط الصوت">🎤</button>
                 </div>
@@ -2615,7 +2659,7 @@
                 {% if answer %}
                 <div class="answer-block free-panel" id="answerBlock"><div class="panel-drag">⠿</div>
 <div style="display:flex;justify-content:flex-end;gap:8px;margin:4px 0;"><button type="button" id="clearAnswerBtn" data-i18n="clearAnswer">مسح النتيجة</button></div>
-                    <div class="answer" role="status" style="white-space:pre-wrap;direction:rtl;">{{ answer|fbrah_safe }}</div>
+                    <div class="answer" role="status" dir="auto" style="white-space:pre-wrap;unicode-bidi:plaintext;text-align:start;">{{ answer|fbrah_safe }}</div>
                     {% if "تم رفع" not in answer and "تم إلغاء" not in answer and "تم تحديث نطاق" not in answer and "تذكير" not in answer and "المنبّه" not in answer and "المنبه" not in answer %}
                     <div class="feedback-bar">
                         <input type="hidden" name="fb_question" form="mainForm" value="{{ session.get('last_question', question)|e }}">
@@ -2780,7 +2824,7 @@
         </div>
         <div class="ticker-content-wrap">
             <div class="ticker-marquee" id="tickerMarquee">
-                <span class="ticker-item"><span class="ticker-icon">⚖️</span> جاري تحميل أحدث الأخبار والمسائل القانونية والاقتصادية...</span>
+                <span class="ticker-item">جارٍ الاتصال بمصادر الأخبار الموثوقة…</span>
             </div>
         </div>
         <div class="ticker-actions">
@@ -2788,11 +2832,372 @@
             <button type="button" class="ticker-speed-btn active" data-speed="normal" id="tickerSpeedNormal" title="عادي / Normal" onclick="setTickerSpeed('normal')">2x</button>
             <button type="button" class="ticker-speed-btn" data-speed="fast" id="tickerSpeedFast" title="سريع / Fast" onclick="setTickerSpeed('fast')">3x</button>
             <button type="button" id="tickerPauseBtn" title="إيقاف / تشغيل" onclick="toggleTickerPause()">⏸</button>
-            <button type="button" id="tickerRefreshBtn" title="تحديث" onclick="fetchLiveNews(true)">🔄</button>
+            <button type="button" id="tickerRefreshBtn" title="تحديث الأخبار الآن" aria-label="تحديث الأخبار الآن" onclick="fetchLiveNews(true)">🔄</button>
             <button type="button" id="tickerCloseBtn" title="إغلاق شريط الأخبار / Close news ticker" aria-label="إغلاق شريط الأخبار">✕</button>
         </div>
     </div>
-    <button type="button" id="tickerRestoreBtn" title="News ticker — drag or click to open / اسحب أو انقر لفتح الأخبار" aria-label="استعادة شريط الأخبار" style="display:none;position:fixed;bottom:70px;left:14px;z-index:2147483000;width:56px;height:56px;border:2px solid #d4af37;background:#0a192f;color:#ffd700;border-radius:50%;padding:0;cursor:grab;font-size:22px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.45);pointer-events:auto;line-height:52px;text-align:center;">⚡</button>
+    
+<script id="fbrahTickerEngine">
+(function () {
+  "use strict";
+  var ENDPOINTS = ["/api/live_news"];
+  var state = { items: [], lang: "ar", speed: "normal", paused: false, timer: null, anim: null };
+
+  function $(id) { return document.getElementById(id); }
+  function isEn() {
+    try {
+      if (typeof window.fbrahIsEn === "function") return !!window.fbrahIsEn();
+    } catch (e) {}
+    try {
+      var ls = localStorage.getItem("fbrahLang") || localStorage.getItem("lang") || "";
+      if (String(ls).toLowerCase().indexOf("en") === 0) return true;
+    } catch (e2) {}
+    return (document.documentElement.lang || "").toLowerCase().indexOf("en") === 0;
+  }
+  function pxSpeed(level) {
+    return ({ slow: 35, normal: 65, fast: 110 })[level] || 65;
+  }
+
+  function statusMsg() {
+    return isEn() ? "Connecting to trusted news sources…" : "جارٍ الاتصال بمصادر الأخبار الموثوقة…";
+  }
+
+  function isPlaceholder(text) {
+    return /جار[يى]\s*الاتصال|جار[يى]\s*جلب|مصادر الأخبار|موثوقة|Connecting to trusted|Fetching trusted|No verified|لا توجد حالياً/i.test(text || "");
+  }
+
+  function applySpeed(level) {
+    state.speed = level || state.speed || "normal";
+    try { localStorage.setItem("fbrahTickerSpeed", state.speed); } catch (e) {}
+    document.querySelectorAll(".ticker-speed-btn").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-speed") === state.speed);
+    });
+    startAnim();
+  }
+
+  function startAnim() {
+    var marquee = $("tickerMarquee");
+    var wrap = marquee && marquee.parentElement;
+    if (!marquee || !wrap) return;
+    // أوقف أي أنيميشن CSS قديم قد يقتطع المسار
+    marquee.style.animation = "none";
+    marquee.style.transform = "translate3d(0,0,0)";
+
+    var total = marquee.scrollWidth || 0;
+    var view = wrap.clientWidth || 0;
+    if (total < 20 || view < 20) return;
+
+    // نحتاج محتوى أطول من العرض؛ وإلا نكرر العقد
+    var guard = 0;
+    while (marquee.scrollWidth < view * 2.2 && guard < 10) {
+      var kids = Array.prototype.slice.call(marquee.children);
+      if (!kids.length) break;
+      kids.forEach(function (n) { marquee.appendChild(n.cloneNode(true)); });
+      guard++;
+    }
+    total = marquee.scrollWidth;
+    // مسافة دورة واحدة = نصف العرض (نسختان)
+    var distance = Math.max(Math.round(total / 2), view);
+    var duration = Math.max(12, distance / pxSpeed(state.speed));
+
+    // حركة يدوية بـ rAF حتى نهاية المسار بالكامل نحو شارة الموجز (يمين الشريط في RTL)
+    if (state.anim) cancelAnimationFrame(state.anim);
+    var start = null;
+    // الاتجاه: من اليسار إلى اليمين نحو الشارة (قيم transform تزداد من -distance إلى 0)
+    function frame(ts) {
+      if (state.paused) {
+        state.anim = requestAnimationFrame(frame);
+        return;
+      }
+      if (start === null) start = ts;
+      var elapsed = (ts - start) / 1000;
+      var progress = (elapsed % duration) / duration;
+      // progress 0..1 : x من -distance إلى 0 (حركة يمين نحو الموجز)
+      var x = -distance + progress * distance;
+      marquee.style.transform = "translate3d(" + x + "px,0,0)";
+      state.anim = requestAnimationFrame(frame);
+    }
+    state.anim = requestAnimationFrame(frame);
+  }
+
+  function normalizeUrl(raw, source) {
+    var u = String(raw || "").trim();
+    if (!u) return "";
+    // بروتوكول نسبي
+    if (u.indexOf("//") === 0) u = "https:" + u;
+    // روابط بدون مخطط
+    if (!/^https?:\/\//i.test(u) && /^[\w.-]+\.[a-z]{2,}/i.test(u)) u = "https://" + u;
+    // إصلاح شائع لمصادر معيّنة
+    var src = String(source || "").toLowerCase();
+    try {
+      // فرانس 24: تأكد من المسار الكامل
+      if (/france\s*24|france24/.test(src) || /france24\.com/i.test(u)) {
+        u = u.replace("http://", "https://");
+        if (/france24\.com\/?$/i.test(u)) return ""; // جذر فقط
+      }
+      // سكاي نيوز عربية
+      if (/سكاي|sky\s*news/i.test(src) || /skynewsarabia\.com/i.test(u)) {
+        u = u.replace("http://", "https://");
+        // بعض الخلاصات تضع رابط القسم فقط
+        if (/skynewsarabia\.com\/?$/i.test(u) || /\/rss\/?$/i.test(u)) return "";
+      }
+      // المصري اليوم
+      if (/المصري|almasry|masryalyoum/i.test(src) || /almasryalyoum\.com/i.test(u)) {
+        u = u.replace("http://", "https://");
+        if (/almasryalyoum\.com\/?$/i.test(u)) return "";
+      }
+      var parsed = new URL(u);
+      if (!parsed.hostname) return "";
+      // ارفض خلاصات XML نفسها
+      if (/\.xml($|\?)/i.test(parsed.pathname) || /\/rss\/?$/i.test(parsed.pathname)) return "";
+      return parsed.href;
+    } catch (e) {
+      return /^https?:\/\//i.test(u) ? u : "";
+    }
+  }
+
+  function openArticle(url) {
+    url = String(url || "").trim();
+    if (!url) return;
+    // اقبل فقط روابط خارجية http/https — لا تفتح مسارات فبرا الداخلية
+    if (!/^https?:\/\//i.test(url)) return;
+    try {
+      var a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    } catch (e0) {}
+    try {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e1) {}
+    // لا نستخدم location.href أبداً حتى لا تُستبدل صفحة فبرا
+  }
+
+  function render(items) {
+    var marquee = $("tickerMarquee");
+    if (!marquee) return;
+    var list = Array.isArray(items) ? items.filter(function (it) {
+      return it && (it.text || "").trim() && (it.source || "").trim();
+    }) : [];
+    if (!list.length) {
+      marquee.innerHTML = '<span class="ticker-item" style="cursor:default">' + statusMsg() + "</span>";
+      startAnim();
+      return;
+    }
+    state.items = list.slice(0, 50);
+    marquee.innerHTML = "";
+    var seq = document.createElement("div");
+    seq.className = "ticker-sequence";
+    seq.style.cssText = "display:inline-flex;flex-wrap:nowrap;white-space:nowrap;align-items:center;";
+    state.items.forEach(function (it) {
+      var url = normalizeUrl(it.url, it.source);
+      // خبر بلا رابط خارجي لا يُعرض كرابط
+      var span = document.createElement(url ? "a" : "span");
+      span.className = "ticker-item";
+      span.style.cssText = "display:inline-flex;align-items:center;margin-right:36px;white-space:nowrap;color:#f1f5f9;text-decoration:none;";
+      var body = document.createElement("span");
+      body.className = "ticker-headline";
+      body.textContent = String(it.text || "").trim();
+      span.appendChild(body);
+      var src = document.createElement("span");
+      src.className = "ticker-source";
+      src.style.color = "#ffd700";
+      src.style.fontWeight = "800";
+      src.textContent = " — " + String(it.source || "").trim();
+      span.appendChild(src);
+      if (url) {
+        span.setAttribute("href", url);
+        span.setAttribute("target", "_blank");
+        span.setAttribute("rel", "noopener noreferrer");
+        span.setAttribute("data-url", url);
+        span.style.cursor = "pointer";
+        span.title = (isEn() ? "Open source article: " : "افتح الخبر من مصدره: ") + (it.source || "");
+        span.addEventListener("click", function (ev) {
+          try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
+          openArticle(url);
+        }, true);
+      } else {
+        span.style.cursor = "default";
+        span.title = String(it.source || "");
+      }
+      seq.appendChild(span);
+    });
+    marquee.appendChild(seq);
+    marquee.appendChild(seq.cloneNode(true));
+    var badge = document.querySelector("#tickerDragHandle .ticker-title");
+    if (badge) {
+      badge.textContent = isEn()
+        ? ("⚡ FBRAH | News (" + state.items.length + ")")
+        : ("⚡ فبرا | موجز (" + state.items.length + ")");
+    }
+    // تفويض النقر/المرور مرة واحدة على الحاوية (يعمل بعد cloneNode)
+    if (marquee.dataset.engineBound !== "1") {
+      marquee.dataset.engineBound = "1";
+      marquee.addEventListener("click", function (ev) {
+        var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+        if (!node) return;
+        var u = node.getAttribute("data-url") || "";
+        if (!u) return;
+        try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
+        openArticle(u);
+      });
+      marquee.addEventListener("keydown", function (ev) {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+        if (!node) return;
+        try { ev.preventDefault(); } catch (e1) {}
+        openArticle(node.getAttribute("data-url") || "");
+      });
+      // إيقاف الحركة عند الوقوف على خبر
+      marquee.addEventListener("mouseover", function (ev) {
+        var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item") : null;
+        if (!node) return;
+        if (state.userPaused) return;
+        state.hoverPaused = true;
+        state.paused = true;
+      });
+      marquee.addEventListener("mouseout", function (ev) {
+        var to = ev.relatedTarget;
+        if (to && marquee.contains(to)) return;
+        state.hoverPaused = false;
+        if (!state.userPaused) state.paused = false;
+      });
+    }
+    requestAnimationFrame(function () { requestAnimationFrame(startAnim); });
+  }
+
+  function fetchNews(force) {
+    var btn = $("tickerRefreshBtn");
+    if (btn && force) { btn.disabled = true; btn.textContent = "…"; }
+    var lang = isEn() ? "en" : "ar";
+    state.lang = lang;
+    function applyItems(items, label) {
+      items = (items || []).filter(function (x) {
+        return x && typeof x.text === "string" && x.text.trim() && x.source && String(x.source).trim();
+      });
+      if (items.length) {
+        render(items);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "🔄";
+          btn.title = (isEn() ? "Updated: " : "تم التحديث: ") + items.length + (label ? " (" + label + ")" : "");
+        }
+        return true;
+      }
+      return false;
+    }
+    function trySimple() {
+      return fetch("/api/live_news_simple?lang=" + encodeURIComponent(lang), {
+        credentials: "same-origin", cache: "no-store", headers: { "Accept": "application/json" }
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (applyItems(data && data.items, "simple")) return true;
+        return false;
+      }).catch(function () { return false; });
+    }
+    var url = "/api/live_news?lang=" + encodeURIComponent(lang) + (force ? "&force=1" : "");
+    var ctrl = null;
+    try { ctrl = new AbortController(); } catch (e) {}
+    var timer = setTimeout(function () { try { if (ctrl) ctrl.abort(); } catch (e) {} }, 28000);
+    fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: ctrl ? ctrl.signal : undefined,
+      headers: { "Accept": "application/json" }
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (data) {
+      clearTimeout(timer);
+      if (applyItems(data && data.items, "live")) return;
+      // مسار بديل فوري
+      return trySimple().then(function (ok) {
+        if (ok) return;
+        if (data && data.refreshing) {
+          if (btn) { btn.textContent = "…"; btn.title = isEn() ? "Refreshing…" : "جارٍ التحديث…"; }
+          setTimeout(function () { fetchNews(false); }, 1600);
+        } else {
+          if (!$("tickerMarquee").querySelector(".ticker-item[data-url]")) render([]);
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "↻";
+            btn.title = (data && data.refresh_error)
+              ? ((isEn() ? "Error: " : "خطأ: ") + String(data.refresh_error).slice(0, 120))
+              : (isEn() ? "No items — retry" : "لا عناوين — أعد المحاولة");
+          }
+        }
+      });
+    }).catch(function (err) {
+      clearTimeout(timer);
+      trySimple().then(function (ok) {
+        if (ok) return;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "↻";
+          btn.title = (isEn() ? "Failed: " : "تعذر: ") + (err && err.message ? err.message : "error");
+        }
+      });
+    });
+  }
+
+  function bind() {
+    var slow = $("tickerSpeedSlow");
+    var normal = $("tickerSpeedNormal");
+    var fast = $("tickerSpeedFast");
+    var refresh = $("tickerRefreshBtn");
+    var pause = $("tickerPauseBtn");
+    if (slow) slow.onclick = function (e) { e.preventDefault(); applySpeed("slow"); };
+    if (normal) normal.onclick = function (e) { e.preventDefault(); applySpeed("normal"); };
+    if (fast) fast.onclick = function (e) { e.preventDefault(); applySpeed("fast"); };
+    if (refresh) refresh.onclick = function (e) { e.preventDefault(); fetchNews(true); };
+    if (pause) pause.onclick = function (e) {
+      e.preventDefault();
+      state.userPaused = !state.userPaused;
+      state.paused = !!state.userPaused;
+      pause.textContent = state.userPaused ? "▶" : "⏸";
+    };
+    try {
+      var s = localStorage.getItem("fbrahTickerSpeed") || "normal";
+      state.speed = s;
+      document.querySelectorAll(".ticker-speed-btn").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-speed") === s);
+      });
+    } catch (e) {}
+    // واجهة عامة
+    window.fbrahTickerEngine = {
+      fetch: fetchNews,
+      render: render,
+      setSpeed: applySpeed,
+      startAnim: startAnim
+    };
+    window.fetchLiveNews = function (force) { fetchNews(!!force); };
+    window.setTickerSpeed = function (level) { applySpeed(level || "normal"); };
+    window.toggleTickerPause = function () {
+      state.userPaused = !state.userPaused;
+      state.paused = !!state.userPaused;
+      var p = $("tickerPauseBtn");
+      if (p) p.textContent = state.userPaused ? "▶" : "⏸";
+    };
+    // جلب أولي + دوري
+    fetchNews(true);
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(function () { fetchNews(true); }, 50000);
+    window.addEventListener("resize", function () { startAnim(); });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bind);
+  } else {
+    bind();
+  }
+})();
+</script>
+
+<button type="button" id="tickerRestoreBtn" title="News ticker — drag or click to open / اسحب أو انقر لفتح الأخبار" aria-label="استعادة شريط الأخبار" style="display:none;position:fixed;bottom:70px;left:14px;z-index:2147483000;width:56px;height:56px;border:2px solid #d4af37;background:#0a192f;color:#ffd700;border-radius:50%;padding:0;cursor:grab;font-size:22px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.45);pointer-events:auto;line-height:52px;text-align:center;">⚡</button>
     <button type="button" id="tickerHeaderRestoreBtn" title="استعادة شريط الأخبار / Restore news ticker" style="display:none;position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483000;border:2px solid #d4af37;background:#001F3F;color:#ffd700;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:800;box-shadow:0 2px 12px rgba(0,0,0,.4);">⚡ استعادة الأخبار / News</button>
     <footer>FBRAH — مساعد قانوني ذكي · حوار متسلسل · واجهة v2026-11</footer>
     <script>
@@ -2848,149 +3253,160 @@
         var _fbrahNewsRequest = null;
         var _fbrahNewsRequestLang = "";
         var _fbrahLastGoodNews = { ar: [], en: [] };
+        var _fbrahNewsPollTimer = null;
+        var _fbrahNewsRefreshStartedAt = 0;
 
         function fbrahTickerFallbackItems() {
-            // موجز احتياطي: أخبار بصياغة عناوين + نكات — بلا رسائل ترويجية وبلا روابط لصفحات رئيسية
-            if (fbrahIsEn()) {
-                return [
-                    {cat:"Business",icon:"📈",source:"Markets desk",text:"Global markets watch: investors track rates, energy prices and regional risk signals.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"I asked my budget for flexibility. It said: try yoga; the numbers still will not stretch.",url:""},
-                    {cat:"Tech & AI",icon:"🤖",source:"Tech desk",text:"AI tools expand in offices — compliance and data-protection rules tighten in parallel.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"The office printer asked for a break. It carries more pressure than the whole team.",url:""},
-                    {cat:"Law & Courts",icon:"⚖️",source:"Legal desk",text:"Courts and counsel focus on electronic filing, evidence rules and commercial dispute timelines.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"My calendar said free afternoon. Rechecked: software bug.",url:""},
-                    {cat:"FX & Metals",icon:"💱",source:"FX desk",text:"Currency desks monitor official reference rates and demand for dollar and gold.",url:""},
-                    {cat:"Light joke",icon:"😄",source:"FBRAH",text:"Accountant: the books balance. Manager: then why is the wallet on a diet?",url:""},
-                    {cat:"Politics",icon:"🏛️",source:"World desk",text:"Diplomacy brief: regional talks and international statements under continuous coverage.",url:""},
-                    {cat:"Science",icon:"🔬",source:"Science desk",text:"Research notes: health guidance and published studies remain under active review.",url:""}
-                ];
-            }
-            return [
-                {cat:"اقتصاد وأعمال",icon:"📈",source:"مكتب الأسواق",text:"الأسواق تتابع أسعار الفائدة والطاقة ومؤشرات المخاطر الإقليمية عن كثب.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"واحد قال للميزانية: محتاج شوية مرونة. قالتله: جرّب اليوجا، الأرقام مش راضية تتمط.",url:""},
-                {cat:"تقنية وذكاء اصطناعي",icon:"🤖",source:"مكتب التقنية",text:"أدوات الذكاء الاصطناعي تتوسع في المكاتب مع تشديد قواعد حماية البيانات والامتثال.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"طابعة المكتب طلبت إجازة… قالت إنها شايلة ضغط الشغل كله على الورق.",url:""},
-                {cat:"قانون وقضاء",icon:"⚖️",source:"مكتب القانون",text:"المحاكم تركز على الإيداع الإلكتروني وقواعد الإثبات ومواعيد المنازعات التجارية.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"التقويم قال لي عندك عصر فاضي… طلع ده خطأ في التحديث.",url:""},
-                {cat:"عملات ومعادن",icon:"💱",source:"مكتب العملات",text:"مكاتب الصرف تراقب الأسعار المرجعية والطلب على الدولار والذهب.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحاسب: الرقم صح. المدير: طب ليه الخسارة؟ المحاسب: عشان الرقم التاني أصح!",url:""},
-                {cat:"سياسة",icon:"🏛️",source:"مكتب العالم",text:"جولات دبلوماسية وبيانات دولية تحت التغطية المستمرة من مصادر متعددة.",url:""},
-                {cat:"علوم وصحة",icon:"🔬",source:"مكتب العلوم",text:"ملاحظات بحثية: إرشادات الصحة والدراسات المنشورة قيد المتابعة والمراجعة.",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"المحامي قال للموكل: عندنا قضية قوية. سأله: والقاضي؟ قاله: ده كمان قوي جداً!",url:""},
-                {cat:"نكتة خفيفة",icon:"😄",source:"فبرا",text:"الواي فاي فصل في المكتب… الموظفين اكتشفوا أخيراً إن عندهم زملاء قاعدين جنبهم!",url:""}
-            ];
+            // لا ننشئ أخباراً أو نكاتاً من داخل FBRAH. عند غياب مصدر موثق يبقى الشريط خالياً.
+            return [];
         }
         function renderTickerItems(items) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return false;
             if (!Array.isArray(items) || !items.length) {
                 if (typeof fbrahTickerHasRealItems === "function" && fbrahTickerHasRealItems(marquee)) return false;
-                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
+                items = [];
             }
-            if (!items.length) return false;
-
-            if (items.length > 48) items = items.slice(0, 48);
+            if (!items.length) {
+                marquee.innerHTML = '<span class="ticker-item" style="cursor:default">جارٍ جلب الأخبار من المصادر الموثوقة…</span>';
+                return false;
+            }
+            if (items.length > 60) items = items.slice(0, 60);
 
             var wasPaused = marquee.dataset.userPaused === "1";
             var isEn = (typeof fbrahIsEn === "function") ? fbrahIsEn() : false;
-
-            marquee.classList.remove("ticker-ltr", "ticker-rtl");
             marquee.classList.toggle("ticker-en", !!isEn);
             marquee.classList.toggle("ticker-ar", !isEn);
             marquee.setAttribute("dir", "ltr");
-
             var tickerWrap = marquee.parentElement;
-            if (tickerWrap) tickerWrap.setAttribute("dir", isEn ? "ltr" : "rtl");
+            if (tickerWrap) tickerWrap.setAttribute("dir", "ltr");
 
             function isArticleUrl(u) {
                 if (!u || !/^https?:\/\//i.test(u)) return false;
-                // ارفض الصفحات الرئيسية العامة حتى لا يفتح «الموقع» بدل الخبر
                 try {
                     var path = (new URL(u)).pathname || "/";
+                    // اقبل مسارات المقالات؛ ارفض الجذر فقط
                     if (path === "/" || path === "") return false;
+                    return true;
                 } catch (e) { return false; }
-                return true;
             }
 
-            function buildSequence() {
-                var seq = document.createElement("div");
-                seq.className = "ticker-sequence";
-                items.forEach(function (item) {
-                    if (!item || typeof item !== "object") return;
-                    var body = String(item.text || "").trim();
-                    if (!body) return;
-                    var src = String(item.source || (isEn ? "Source" : "مصدر")).trim();
-                    var url = String(item.url || "").trim();
-                    var isJoke = /نكتة|joke|Light joke/i.test(item.cat || "") || item.icon === "😄";
-                    var cat = (typeof fbrahTickerCatLabel === "function")
-                        ? fbrahTickerCatLabel(item.cat || (isEn ? "News" : "خبر"))
-                        : (item.cat || (isEn ? "News" : "خبر"));
-
-                    var span = document.createElement("span");
-                    span.className = "ticker-item" + (isJoke ? " ticker-joke" : "");
-
-                    var catEl = document.createElement("span");
-                    catEl.className = "ticker-cat";
-                    catEl.textContent = cat;
-                    span.appendChild(catEl);
-
-                    var bodyEl = document.createElement("span");
-                    bodyEl.textContent = (item.icon || "▪") + " " + body;
-                    span.appendChild(bodyEl);
-
-                    var srcEl = document.createElement("span");
-                    srcEl.className = "ticker-source";
-                    srcEl.textContent = isEn ? (" — Source: " + src) : (" — المصدر: " + src);
-                    span.appendChild(srcEl);
-
-                    if (isArticleUrl(url)) {
-                        span.title = (isEn ? "Open article: " : "افتح الخبر: ") + src;
-                        span.style.cursor = "pointer";
-                        span.setAttribute("data-url", url);
-                    } else if (isJoke) {
-                        span.title = isEn ? "FBRAH joke" : "نكتة فبرا";
-                    } else {
-                        span.title = src;
-                    }
-                    seq.appendChild(span);
-                });
-                return seq;
+            function makeItem(item) {
+                var body = String(item.text || "").trim();
+                var src = String(item.source || "").trim();
+                var url = String(item.url || "").trim();
+                if (!body || !src) return null;
+                // اسمح بعرض الخبر إن وُجد ناشر ونص؛ الرابط يفضّل أن يكون مقالاً
+                var span = document.createElement(isArticleUrl(String(item.url||"").trim()) ? "a" : "span");
+                span.className = "ticker-item";
+                span.setAttribute("dir", isEn ? "ltr" : "rtl");
+                var bodyEl = document.createElement("span");
+                bodyEl.className = "ticker-headline";
+                bodyEl.textContent = body;
+                span.appendChild(bodyEl);
+                var srcEl = document.createElement("span");
+                srcEl.className = "ticker-source";
+                srcEl.textContent = " — " + src;
+                span.appendChild(srcEl);
+                if (isArticleUrl(url)) {
+                    span.title = (isEn ? "Open: " : "افتح: ") + src;
+                    span.style.cursor = "pointer";
+                    span.setAttribute("data-url", url);
+                } else {
+                    span.title = src;
+                    span.style.cursor = "default";
+                }
+                return span;
             }
 
-            var first = buildSequence();
-            if (!first.childNodes.length) {
-                items = (typeof fbrahTickerFallbackItems === "function") ? fbrahTickerFallbackItems() : [];
-                if (!items.length) return false;
-                first = buildSequence();
+            // ابنِ تسلسلاً واحداً من الأخبار الحقيقية فقط
+            var seq = document.createElement("div");
+            seq.className = "ticker-sequence";
+            var added = 0;
+            items.forEach(function (item) {
+                if (!item || typeof item !== "object") return;
+                // لا ترفض الخبر لمجرد أن المسار قصير نسبياً إن وُجد رابط http
+                var url = String(item.url || "").trim();
+                var src = String(item.source || "").trim();
+                var body = String(item.text || "").trim();
+                if (!body || !src) return;
+                if (url && !/^https?:\/\//i.test(url)) return;
+                var node = makeItem(item);
+                if (node) { seq.appendChild(node); added++; }
+            });
+            if (!added) {
+                marquee.innerHTML = '<span class="ticker-item" style="cursor:default">' +
+                    (isEn ? "No live headlines yet — refreshing sources…" : "لا عناوين حية بعد — جارٍ تحديث المصادر…") +
+                    "</span>";
+                return false;
             }
 
             marquee.replaceChildren();
-            marquee.appendChild(first);
+            marquee.appendChild(seq);
 
-            var vw = tickerWrap ? tickerWrap.clientWidth : 800;
-            if (first.scrollWidth < Math.max(vw, 400) * 1.1) {
-                var seed = Array.prototype.slice.call(first.childNodes);
-                seed.forEach(function (n) { first.appendChild(n.cloneNode(true)); });
+            // كرّر حتى يغطي المحتوى عرض الشريط مرتين على الأقل فيصل لنهاية المسار عند شارة الموجز
+            var bar = document.getElementById("fbrahNewsTicker");
+            var vw = (tickerWrap && tickerWrap.clientWidth) ? tickerWrap.clientWidth : Math.max(window.innerWidth - 200, 500);
+            if (bar) {
+                var badge = bar.querySelector(".ticker-badge");
+                var actions = bar.querySelector(".ticker-actions");
+                var bw = badge ? badge.offsetWidth : 0;
+                var aw = actions ? actions.offsetWidth : 0;
+                vw = Math.max(120, bar.clientWidth - bw - aw);
             }
+            var guard = 0;
+            while (marquee.scrollWidth < vw * 2.4 && guard < 12) {
+                marquee.appendChild(seq.cloneNode(true));
+                guard++;
+            }
+            if (marquee.children.length < 2) {
+                marquee.appendChild(seq.cloneNode(true));
+            }
+            // مسافة الإزاحة = نصف العرض الكلي (دورة كاملة حتى تختفي العناوين خلف الموجز)
+            var totalW = marquee.scrollWidth || (vw * 2);
+            var shift = Math.max(Math.round(totalW / 2), Math.round(vw));
+            marquee.style.setProperty("--ticker-shift", shift + "px");
 
-            var second = first.cloneNode(true);
-            marquee.appendChild(second);
+            // مدة متناسبة مع طول المسار لسرعة قراءة ثابتة
+            var level = marquee.dataset.speedLevel || "normal";
+            try { level = localStorage.getItem("fbrahTickerSpeed") || level; } catch (e0) {}
+            var pxPerSec = { slow: 40, normal: 70, fast: 110 }[level] || 70;
+            var sec = Math.max(20, Math.min(240, Math.round(shift / pxPerSec)));
+            marquee.style.setProperty("--ticker-duration", sec + "s");
+            marquee.style.animationDuration = sec + "s";
 
-            // معالج نقر واحد بالتفويض — يمنع فتح المصدر مرتين
+            // أعد تشغيل الأنيميشن من البداية بعد بناء المحتوى
+            marquee.style.animation = "none";
+            void marquee.offsetWidth;
+            marquee.style.animation = "";
+            marquee.style.animationName = "fbrah-ticker-move";
+            marquee.style.animationTimingFunction = "linear";
+            marquee.style.animationIterationCount = "infinite";
+            marquee.style.animationDuration = sec + "s";
+            marquee.style.animationPlayState = wasPaused ? "paused" : "running";
+            marquee.dataset.userPaused = wasPaused ? "1" : "0";
+
             if (marquee.dataset.clickBound !== "1") {
                 marquee.dataset.clickBound = "1";
                 marquee.addEventListener("click", function (ev) {
-                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url]") : null;
+                    var node = ev.target && ev.target.closest ? ev.target.closest(".ticker-item[data-url], a.ticker-item[href]") : null;
                     if (!node) return;
-                    var u = node.getAttribute("data-url") || "";
+                    var u = node.getAttribute("data-url") || node.getAttribute("href") || "";
                     if (!/^https?:\/\//i.test(u)) return;
-                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e0) {}
-                    try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e1) {}
-                });
+                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e1) {}
+                    // افتح المصدر الخارجي فقط — لا تغيّر صفحة فبرا
+                    try {
+                      if (typeof openArticle === "function") openArticle(u);
+                      else {
+                        var a = document.createElement("a");
+                        a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
+                        document.body.appendChild(a); a.click(); a.remove();
+                      }
+                    } catch (e2) {
+                      try { window.open(u, "_blank", "noopener,noreferrer"); } catch (e3) {}
+                    }
+                }, true);
             }
-
-            // توقف الشريط عند مرور الماوس على الخبر، واستئناف عند الإبعاد
-            // لا يلغي الإيقاف اليدوي (زر ⏸)
             if (marquee.dataset.hoverBound !== "1") {
                 marquee.dataset.hoverBound = "1";
                 marquee.addEventListener("mouseenter", function () {
@@ -3007,34 +3423,46 @@
                 });
             }
 
-            marquee.style.animationPlayState = wasPaused ? "paused" : "running";
-            marquee.dataset.userPaused = wasPaused ? "1" : "0";
-
             try {
                 var badge = document.querySelector("#tickerDragHandle .ticker-title");
                 if (badge) {
                     badge.textContent = isEn
-                        ? ("⚡ FBRAH | News (" + items.length + ")")
-                        : ("⚡ فبرا | موجز (" + items.length + ")");
+                        ? ("⚡ FBRAH | News (" + added + ")")
+                        : ("⚡ فبرا | موجز (" + added + ")");
                 }
             } catch (eB) {}
 
             try {
-                requestAnimationFrame(function () {
-                    if (typeof fbrahRetuneTickerSpeed === "function") fbrahRetuneTickerSpeed();
-                });
+                if (typeof setTickerSpeed === "function") {
+                    // يحافظ على السرعة ويعيد ضبط --ticker-shift بعد القياس
+                    setTimeout(function () {
+                        var m = document.getElementById("tickerMarquee");
+                        if (!m) return;
+                        var tw = m.parentElement;
+                        var viewW = (tw && tw.clientWidth) ? tw.clientWidth : 600;
+                        var total = m.scrollWidth || viewW * 2;
+                        var sh = Math.max(Math.round(total / 2), viewW);
+                        m.style.setProperty("--ticker-shift", sh + "px");
+                    }, 50);
+                }
             } catch (eT) {}
             return true;
         }
 
         function fbrahTickerHasRealItems(marquee) {
             if (!marquee) return false;
-            var nodes = marquee.querySelectorAll(".ticker-item");
+            var nodes = marquee.querySelectorAll(".ticker-item[data-url]");
+            if (nodes && nodes.length) return true;
+            // لا تعتبر رسائل التحميل/الاتصال أخباراً حقيقية
+            nodes = marquee.querySelectorAll(".ticker-item");
             if (!nodes || !nodes.length) return false;
             for (var i = 0; i < nodes.length; i++) {
                 var txt = (nodes[i].textContent || "").trim();
-                // تجاهل رسالة التحميل فقط
-                if (txt && !/جاري تحميل|Loading latest|Loading news/i.test(txt)) return true;
+                if (!txt) continue;
+                if (/جار[يى]\s*الاتصال|جار[يى]\s*جلب|جار[يى]\s*سحب|مصادر الأخبار|موثوقة|Loading|Fetching|trusted sources|No verified|لا توجد حالياً/i.test(txt)) {
+                    continue;
+                }
+                if (nodes[i].getAttribute("data-url")) return true;
             }
             return false;
         }
@@ -3051,7 +3479,14 @@
                 else renderTickerItems(fbrahTickerFallbackItems());
             }
 
-            if (_fbrahNewsRequest && _fbrahNewsRequestLang === feedLang) return;
+            var refreshBtn = document.getElementById("tickerRefreshBtn");
+            if (force && refreshBtn) { refreshBtn.disabled = true; refreshBtn.textContent = "…"; refreshBtn.title = fbrahIsEn() ? "Refreshing news…" : "جارٍ تحديث الأخبار…"; }
+            if (force) _fbrahNewsRefreshStartedAt = Date.now();
+            if (_fbrahNewsRequest && _fbrahNewsRequestLang === feedLang) {
+                if (!force) return;
+                try { _fbrahNewsRequest.abort(); } catch (eSameAbort) {}
+                _fbrahNewsRequest = null; _fbrahNewsRequestLang = "";
+            }
             if (_fbrahNewsRequest && _fbrahNewsRequestLang !== feedLang) {
                 try { _fbrahNewsRequest.abort(); } catch (eAbort) {}
                 _fbrahNewsRequest = null;
@@ -3070,6 +3505,25 @@
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
                     if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
                     var items = data && Array.isArray(data.items) ? data.items.filter(function(x){ return x && typeof x.text === "string" && x.text.trim(); }) : [];
+                    if (data && data.refreshing) {
+                        if (refreshBtn) { refreshBtn.textContent = "…"; refreshBtn.title = fbrahIsEn() ? "News source is updating" : "المصادر ما زالت تُحدّث الأخبار"; }
+                        if (!items.length && marquee && !fbrahTickerHasRealItems(marquee)) {
+                            marquee.innerHTML = '<span class="ticker-item" style="cursor:default">' + (fbrahIsEn() ? "Fetching trusted sources…" : "جارٍ سحب الأخبار من المصادر الموثوقة…") + '</span>';
+                        }
+                        if (_fbrahNewsPollTimer) clearTimeout(_fbrahNewsPollTimer);
+                        if (Date.now() - _fbrahNewsRefreshStartedAt < 60000) {
+                            _fbrahNewsPollTimer = setTimeout(function(){ fetchLiveNews(false); }, 1500);
+                        } else if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = "↻"; refreshBtn.title = fbrahIsEn() ? "Refresh news" : "إعادة المحاولة"; }
+                    } else if (refreshBtn) {
+                        refreshBtn.disabled = false;
+                        if (data && data.refresh_error) {
+                            refreshBtn.textContent = "⚠";
+                            refreshBtn.title = (fbrahIsEn() ? "Last refresh failed: " : "تعذر آخر تحديث: ") + String(data.refresh_error).slice(0,180);
+                        } else {
+                            refreshBtn.textContent = "🔄";
+                            refreshBtn.title = fbrahIsEn() ? "News updated. " + (items.length || 0) + " items." : "تم فحص موجز الأخبار. عدد المواد: " + (items.length || 0);
+                        }
+                    }
                     if (items.length) {
                         var sig = items.map(function(x){ return (x.text||"").slice(0,60); }).join("|");
                         var prevSig = marquee.dataset.itemsSig || "";
@@ -3108,11 +3562,18 @@
                             } catch (eRot) {}
                         }
                     } else if (!fbrahTickerHasRealItems(marquee)) {
-                        renderTickerItems(_fbrahLastGoodNews[feedLang] || fbrahTickerFallbackItems());
+                        var prior = _fbrahLastGoodNews[feedLang] || [];
+                        if (prior.length) renderTickerItems(prior);
+                        else {
+                            marquee.textContent = fbrahIsEn()
+                                ? "No verified publisher-linked stories are available right now. Try refresh again shortly."
+                                : "لا توجد حالياً مواد إخبارية موثقة بروابط ناشرين. أعد التحديث بعد قليل.";
+                        }
                     }
                 })
                 .catch(function(){
                     clearTimeout(timer);
+                    if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.textContent = "↻"; refreshBtn.title = fbrahIsEn() ? "Refresh failed — try again" : "تعذر التحديث — حاول مرة أخرى"; }
                     if (_fbrahNewsRequest === ctrl) { _fbrahNewsRequest = null; _fbrahNewsRequestLang = ""; }
                     if ((fbrahIsEn() ? "en" : "ar") !== feedLang) return;
                     if (!fbrahTickerHasRealItems(marquee)) {
@@ -3123,14 +3584,13 @@
         function startLiveNewsAutoRefresh() {
             try { if (_fbrahNewsTimer) clearInterval(_fbrahNewsTimer); } catch (e) {}
             var _fbrahNewsTick = 0;
-            // تحديث مستمر للأخبار والنكت في العربية والإنجليزية
+            // تحديث تلقائي كل دقيقتين مع الإبقاء على التحديث اليدوي الفوري.
             _fbrahNewsTimer = setInterval(function () {
                 try {
                     _fbrahNewsTick += 1;
-                    // كل 30 ثانية؛ كل ثانية إجبارية من المصدر لتدوير النكت والموجز
                     fetchLiveNews(_fbrahNewsTick % 2 === 0);
                 } catch (e1) {}
-            }, 30000);
+            }, 60000);
             if (window._fbrahNewsVisibilityHandler) {
                 document.removeEventListener("visibilitychange", window._fbrahNewsVisibilityHandler);
             }
@@ -3175,20 +3635,25 @@ function toggleTickerPause() {
         function setTickerSpeed(level) {
             var marquee = document.getElementById("tickerMarquee");
             if (!marquee) return;
-            level = level || "slow";
-            var isEn = (typeof fbrahIsEn === "function" && fbrahIsEn());
-            // مدة الدورة حسب نصف عرض المحتوى لسرعة قراءة ثابتة
-            var pxMap = isEn
-                ? { slow: 38, normal: 58, fast: 85 }
-                : { slow: 42, normal: 65, fast: 95 };
-            var px = pxMap[level] || pxMap.slow;
-            var half = Math.max((marquee.scrollWidth || 1200) / 2, 700);
-            var sec = Math.max(100, Math.min(800, Math.round(half / px)));
+            level = level || "normal";
+            var pxMap = { slow: 40, normal: 70, fast: 110 };
+            var px = pxMap[level] || pxMap.normal;
+            var total = Math.max(marquee.scrollWidth || 0, 800);
+            var shift = Math.max(Math.round(total / 2), 400);
+            marquee.style.setProperty("--ticker-shift", shift + "px");
+            var sec = Math.max(20, Math.min(240, Math.round(shift / px)));
             var dur = sec + "s";
             marquee.dataset.speedLevel = level;
-            marquee.style.animationName = "ticker-scroll";
+            marquee.setAttribute("dir", "ltr");
+            marquee.style.animationName = "fbrah-ticker-move";
+            marquee.style.animationDirection = "normal";
+            marquee.style.animationTimingFunction = "linear";
+            marquee.style.animationIterationCount = "infinite";
             marquee.style.setProperty("--ticker-duration", dur);
             marquee.style.animationDuration = dur;
+            if (marquee.dataset.userPaused !== "1") {
+                marquee.style.animationPlayState = "running";
+            }
             try { localStorage.setItem("fbrahTickerSpeed", level); } catch (e) {}
             document.querySelectorAll(".ticker-speed-btn").forEach(function (b) {
                 b.classList.toggle("active", b.getAttribute("data-speed") === level);
@@ -3203,6 +3668,53 @@ function toggleTickerPause() {
         }
         window.setTickerSpeed = setTickerSpeed;
         window.fbrahRetuneTickerSpeed = fbrahRetuneTickerSpeed;
+        window.fetchLiveNews = fetchLiveNews;
+        window.toggleTickerPause = toggleTickerPause;
+        window.renderTickerItems = renderTickerItems;
+        window.startLiveNewsAutoRefresh = function () {
+            try {
+                if (window._fbrahNewsTickTimer) return;
+                window._fbrahNewsTick = 0;
+                window._fbrahNewsTickTimer = setInterval(function () {
+                    try {
+                        window._fbrahNewsTick = (window._fbrahNewsTick || 0) + 1;
+                        fetchLiveNews(window._fbrahNewsTick % 3 === 0);
+                    } catch (e) {}
+                }, 45000);
+            } catch (e) {}
+        };
+        (function bindTickerControls(){
+            function on(id, ev, fn){
+                var el=document.getElementById(id);
+                if(el){ el.addEventListener(ev, function(e){ try{ e.preventDefault(); }catch(_){} fn(e); }); }
+            }
+            on("tickerRefreshBtn", "click", function(){ fetchLiveNews(true); });
+            on("tickerPauseBtn", "click", function(){ toggleTickerPause(); });
+            on("tickerSpeedSlow", "click", function(){ setTickerSpeed("slow"); });
+            on("tickerSpeedNormal", "click", function(){ setTickerSpeed("normal"); });
+            on("tickerSpeedFast", "click", function(){ setTickerSpeed("fast"); });
+            // جلب فوري عند الجاهزية
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", function(){
+                    try { fetchLiveNews(true); } catch(e){}
+                    try { startLiveNewsAutoRefresh(); } catch(e){}
+                });
+            } else {
+                setTimeout(function(){ try { fetchLiveNews(true); } catch(e){} try { startLiveNewsAutoRefresh(); } catch(e){} }, 400);
+            }
+        })();
+
+        // تجديد مستمر للأخبار والنكت كل 75 ثانية
+        (function fbrahNewsAutoRefresh(){
+            if (window._fbrahNewsAutoRefresh) return;
+            window._fbrahNewsAutoRefresh = true;
+            setInterval(function(){
+                try { if (typeof fetchLiveNews === "function") fetchLiveNews(false); } catch(e){}
+            }, 75000);
+            // أول جلب سريع
+            setTimeout(function(){ try { if (typeof fetchLiveNews === "function") fetchLiveNews(true); } catch(e){} }, 1200);
+        })();
+
         (function initTickerSpeed() {
             try {
                 var s = localStorage.getItem("fbrahTickerSpeed") || "slow";
@@ -3768,6 +4280,10 @@ function toggleTickerPause() {
                 wakeOff: "🔕 إيقاف النداء",
                 talk: "🎤 تحدث",
                 alarmDur: "مدة رنين التذكير",
+                ringType: "نوع الرنين",
+                ringRepeats: "مرات الرنين",
+                ringDuration: "مدة الرنين",
+                ringVolume: "مستوى الصوت",
                 bigPanel: "شريط كبير",
                 voiceTitle: "الصوت والحوار",
                 weatherLoad: "جاري تحميل الطقس...",
@@ -3936,6 +4452,10 @@ function toggleTickerPause() {
                 wakeOff: "🔕 Stop wake",
                 talk: "🎤 Talk",
                 alarmDur: "Alarm duration",
+                ringType: "Ring type",
+                ringRepeats: "Ring count",
+                ringDuration: "Ring duration",
+                ringVolume: "Volume",
                 bigPanel: "Large banner",
                 voiceTitle: "Voice & chat",
                 weatherLoad: "Loading weather...",
@@ -4443,9 +4963,13 @@ function toggleTickerPause() {
             document.querySelectorAll("#voiceBar label").forEach(function (lab) {
                 var tx = (lab.textContent || "").trim();
                 var sel = lab.querySelector("select, input");
-                if (/مدة رنين|Alarm duration/i.test(tx)) {
-                    var keep = sel ? sel.outerHTML : "";
-                    lab.innerHTML = t.alarmDur + " " + keep;
+                if (sel && sel.id === "alarmDurationSec") {
+                    var keep = sel.outerHTML;
+                    lab.innerHTML = (t.ringDuration || t.alarmDur || "مدة الرنين") + " " + keep;
+                } else if (sel && sel.id === "alarmTone") {
+                    lab.innerHTML = (t.ringType || "نوع الرنين") + " " + sel.outerHTML;
+                } else if (sel && sel.id === "alarmRepeatCount") {
+                    lab.innerHTML = (t.ringRepeats || "مرات الرنين") + " " + sel.outerHTML;
                 } else if (/لغة الميكروفون|Microphone language/i.test(tx)) {
                     var keep2 = sel ? sel.outerHTML : "";
                     lab.innerHTML = t.micLang + " " + keep2;
@@ -4524,9 +5048,21 @@ function toggleTickerPause() {
                         lab.innerHTML = "";
                         lab.appendChild(document.createTextNode(t.voiceSpeed + " "));
                         if (control) lab.appendChild(control);
-                    } else if (/alarm|رنين|duration|مدة/i.test(lab.textContent + (control ? control.id : ""))) {
+                    } else if (id === "alarmTone") {
                         lab.innerHTML = "";
-                        lab.appendChild(document.createTextNode(t.alarmDur + " "));
+                        lab.appendChild(document.createTextNode((t.ringType || "نوع الرنين / Ring type") + " "));
+                        if (control) lab.appendChild(control);
+                    } else if (id === "alarmRepeatCount") {
+                        lab.innerHTML = "";
+                        lab.appendChild(document.createTextNode((t.ringRepeats || "مرات الرنين / Ring count") + " "));
+                        if (control) lab.appendChild(control);
+                    } else if (id === "alarmDurationSec") {
+                        lab.innerHTML = "";
+                        lab.appendChild(document.createTextNode((t.ringDuration || t.alarmDur || "مدة الرنين / Ring duration") + " "));
+                        if (control) lab.appendChild(control);
+                    } else if (id === "alarmVolume") {
+                        lab.innerHTML = "";
+                        lab.appendChild(document.createTextNode((t.ringVolume || "مستوى الصوت / Volume") + " "));
                         if (control) lab.appendChild(control);
                     } else if (id && /ttsLang|speakLang|langSelect/i.test(id)) {
                         lab.innerHTML = "";
@@ -6971,8 +7507,16 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             t = t.replace(/(?:📄|📝|📥|🔗|📎|⬇️|⬆️|✅|❌|⚙️|🔄|📊|📑|📋)\s*/g, " ");
             t = t.replace(/\b(?:docx|pdf|xlsx|pptx|csv)\b/gi, " ");
             t = t.replace(/<[^>]+>/g, " ");
-            return t;
+            // رموز لا تُنطق: شرطات، نجوم، تنصيص، مائل
+            t = t.replace(/[|\u2502\u2503]+/g, " ");
+            t = t.replace(/[\u2014\u2013\u2012\u2010\-]+/g, " ");
+            t = t.replace(/[\/\\]+/g, " ");
+            t = t.replace(/[\u00AB\u00BB\u201C\u201D\u2018\u2019"']+/g, " ");
+            t = t.replace(/[*#`_~]{1,}/g, " ");
+            t = t.replace(/[ \t]{2,}/g, " ");
+            return t.trim();
         }
+
 
         function extractAnswerSpeechText(el) {
             if (!el) return "";
@@ -7028,14 +7572,13 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
 
         function cleanTextForAnswerSpeech(text) {
             var t = String(text || "");
-            t = t.replace(/\|+/g, " ");
-            t = t.replace(/[│┃┆┇┊┋]/g, " ");
             // لا تُنطق أقسام المصادر
             var cutSrc = t.search(/(?:^|\n)\s*(?:مصادر|المصادر|Sources|References|الروابط)\b/i);
             if (cutSrc >= 0) t = t.slice(0, cutSrc);
             t = t.replace(/(?:^|\n)\s*(?:المصدر|مصدر|Source)\s*\d*\s*[:：][^\n]*/gi, "\n");
             t = t.replace(/https?:\/\/\S+/gi, " ");
-            // رسائل نظام/تحويل نماذج — لا تُنطق
+            t = t.replace(/\bwww\.\S+/gi, " ");
+            // رسائل نظام/تحويل نماذج
             t = t.replace(/(?:⚠️|⚠)?\s*تحويل\s*تلقائي\s*[^\n]*/gi, " ");
             t = t.replace(/FAILOVER\s*:[^\n]*/gi, " ");
             t = t.replace(/Gemini\s*[→\->]+\s*GROQ[^\n]*/gi, " ");
@@ -7044,18 +7587,35 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             t = t.replace(/\bHTTPSConnectionPool[^\n]*/gi, " ");
             t = t.replace(/\bread timed out[^\n]*/gi, " ");
             t = t.replace(/\bmodel router[^\n]*/gi, " ");
-            // نجوم وتنسيق ماركداون بلا معنى صوتي
+            // ——— رموز لا تُنطق أبداً ———
+            // نجوم وتسطير وماركداون
             t = t.replace(/\*{1,}/g, " ");
-            t = t.replace(/#{2,}/g, " ");
-            t = t.replace(/_{2,}/g, " ");
+            t = t.replace(/#{1,}/g, " ");
+            t = t.replace(/_{1,}/g, " ");
             t = t.replace(/`+/g, " ");
-            t = t.replace(/~{2,}/g, " ");
-            t = t.replace(/\|{2,}/g, " ");
-            t = t.replace(/[•▪▫◆◇►◀▪︎]/g, " ");
-            t = t.replace(/[⏳🚀📥📄📝📊📑📋🔗📎✅❌⚙️🔄]/g, " ");
-            // أبقِ علامات الترقيم العربية/الإنجليزية للتوقف الطبيعي
+            t = t.replace(/~{1,}/g, " ");
+            // شرطات بجميع أشكالها (أفقية ورأسية)
+            t = t.replace(/[|\u2502\u2503\u2506\u2507\u250a\u250b\u00a6]+/g, " ");
+            t = t.replace(/[\u2014\u2013\u2012\u2010\u2212\uFE58\uFE63\uFF0D\-]+/g, " ");
+            t = t.replace(/[─━┄┅┈┉╌╍═]+/g, " ");
+            // خطوط مائلة
+            t = t.replace(/[\/\\]+/g, " ");
+            // علامات التنصيص بجميع أنواعها
+            t = t.replace(/[\u00AB\u00BB\u201C\u201D\u201E\u201F\u2018\u2019\u201A\u201B\"\'\`]+/g, " ");
+            // أقواس ورموز تعداد
+            t = t.replace(/[\[\]\{\}<>«»‹›]/g, " ");
+            t = t.replace(/[•▪▫◆◇►◀●○■□▪︎‣⁃]+/g, " ");
+            t = t.replace(/[⏳🚀📥📄📝📊📑📋🔗📎✅❌⚙️🔄⭐✨💡📌📍➤➜]+/g, " ");
+            // إشارات @ # = + متكررة بلا معنى صوتي
+            t = t.replace(/[@#=]{2,}/g, " ");
+            t = t.replace(/(?:^|\n)\s*[\-\*\u2022]+\s+/g, "\n");
+            // لا تُنطق اسم فبرا كبادئة متكررة داخل النص المنسوخ من الواجهة
+            t = t.replace(/(?:^|\n)\s*(?:فبرا|FBRAH|Fbrah)\s*[:：\|\-–—]?\s*/g, "\n");
+            // مسافات
             t = t.replace(/[ \t]{2,}/g, " ");
             t = t.replace(/\n{3,}/g, "\n\n");
+            t = t.replace(/ ?([،,.;:!?؟]) ?/g, "$1 ");
+            t = t.replace(/\s{2,}/g, " ");
             return t.trim();
         }
 
@@ -7082,12 +7642,12 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             opts = opts || {};
             var st = document.getElementById("voiceStatus");
             if (!spoken || !window.speechSynthesis) return;
-            spoken = cleanTextForAnswerSpeech(spoken);
-            if (!spoken) return;
             try {
                 var preLang = (typeof detectLangForTts === "function") ? detectLangForTts(spoken) : "ar-EG";
+                // أولاً: توسيع الأرقام والكسور قبل حذف الخط المائل
                 if (typeof expandNumbersForSpeech === "function") spoken = expandNumbersForSpeech(spoken, preLang);
             } catch (eNum) {}
+            spoken = cleanTextForAnswerSpeech(spoken);
             if (!spoken) return;
             try { window.speechSynthesis.cancel(); } catch (e0) {}
             speechRunToken++;
@@ -7120,21 +7680,73 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             var rate = Math.max(0.7, Math.min(1.25, baseRate * (pr.rate || 1)));
             var pitch = pr.pitch || 1;
 
-            // تقسيم يراعي الترقيم: . ! ? ؟ ۔ ، ؛ :
-            var parts = spoken.match(/[^۔.!?؟\n]+[۔.!?؟…]*/g) || [spoken];
-            parts = parts.map(function (p) { return p.trim(); }).filter(function (p) {
-                if (p.length < 2) return false;
-                if (/^https?:\/\//i.test(p)) return false;
-                if (/تحويل\s*تلقائي|FAILOVER|Gemini\s*→/i.test(p)) return false;
-                // تجاهل مقاطع رموز فقط
-                if (!/[\u0600-\u06FFA-Za-z0-9]/.test(p)) return false;
-                return true;
-            });
-            if (!parts.length) parts = [spoken.slice(0, 500)];
+            // تقسيم مستقر لمنع تقطيع الصوت (جمل كاملة + قطع متوسطة + فواصل زمنية)
+            function splitSpeechChunks(text) {
+                var src = String(text || "").replace(/\s+/g, " ").trim();
+                if (!src) return [];
+                var sentences = src.match(/[^.!?؟۔…]+[.!?؟۔…]*/g) || [src];
+                var out = [];
+                var buf = "";
+                var maxLen = 280; // أقصر من حد المتصفح وأكثر ثباتاً
+                sentences.forEach(function (s) {
+                    s = (s || "").trim();
+                    if (!s) return;
+                    if ((buf + " " + s).trim().length <= maxLen) {
+                        buf = (buf ? buf + " " : "") + s;
+                    } else {
+                        if (buf) out.push(buf);
+                        if (s.length <= maxLen) {
+                            buf = s;
+                        } else {
+                            // قطع عند فواصل عربية/إنجليزية دون منتصف كلمة إن أمكن
+                            var rest = s;
+                            while (rest.length > maxLen) {
+                                var cut = maxLen;
+                                var slice = rest.slice(0, maxLen);
+                                var sp = Math.max(slice.lastIndexOf(" "), slice.lastIndexOf("،"), slice.lastIndexOf(","), slice.lastIndexOf("؛"));
+                                if (sp > 80) cut = sp;
+                                out.push(rest.slice(0, cut).trim());
+                                rest = rest.slice(cut).trim();
+                            }
+                            buf = rest;
+                        }
+                    }
+                });
+                if (buf) out.push(buf);
+                return out.filter(function (p) {
+                    if (!p || p.length < 2) return false;
+                    if (/^https?:\/\//i.test(p)) return false;
+                    if (/تحويل\s*تلقائي|FAILOVER|Gemini\s*→/i.test(p)) return false;
+                    if (!/[\u0600-\u06FFA-Za-z0-9]/.test(p)) return false;
+                    return true;
+                });
+            }
+            var parts = splitSpeechChunks(spoken);
+            if (!parts.length) parts = [spoken.slice(0, 280)];
             var i = 0;
+            var keepAliveTimer = null;
+            function clearKeepAlive() {
+                try { if (keepAliveTimer) clearInterval(keepAliveTimer); } catch (eK) {}
+                keepAliveTimer = null;
+            }
+            // Chrome يوقف النطق أحياناً في الخلفيات — نبض خفيف لاستئناف
+            function startKeepAlive() {
+                clearKeepAlive();
+                try {
+                    keepAliveTimer = setInterval(function () {
+                        if (thisRun !== speechRunToken) { clearKeepAlive(); return; }
+                        try {
+                            if (window.speechSynthesis && window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+                                window.speechSynthesis.resume();
+                            }
+                        } catch (eR) {}
+                    }, 8000);
+                } catch (eT) {}
+            }
             function next() {
-                if (thisRun !== speechRunToken) return;
+                if (thisRun !== speechRunToken) { clearKeepAlive(); return; }
                 if (i >= parts.length) {
+                    clearKeepAlive();
                     if (st) st.textContent = (lang.indexOf("ar") === 0) ? "انتهى نطق الإجابة" : "Finished reading answer";
                     if (opts.afterSpeak === "wake") {
                         try { setTimeout(function () { startWakeListener(); }, 400); } catch (eW) {}
@@ -7142,42 +7754,55 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     return;
                 }
                 var chunk = parts[i++];
-                if (chunk.length > 500) chunk = chunk.slice(0, 500);
                 var u = new SpeechSynthesisUtterance(chunk);
                 var chunkLang = (typeof detectLangForTts === "function") ? detectLangForTts(chunk) : lang;
                 u.lang = chunkLang || lang;
-                // استفهام أبطأ قليلاً / تعجب أوضح
                 var localRate = rate;
                 var localPitch = pitch;
-                if (/[؟?]\s*$/.test(chunk)) {
-                    localRate = Math.max(0.7, rate * 0.92);
-                    localPitch = Math.min(2, pitch * 1.06);
-                } else if (/[!！]\s*$/.test(chunk)) {
-                    localRate = Math.min(1.25, rate * 1.05);
-                    localPitch = Math.min(2, pitch * 1.08);
-                } else if (/[،,؛;]\s*$/.test(chunk)) {
-                    localRate = Math.max(0.7, rate * 0.96);
-                }
+                try {
+                    if (/[؟?]/.test(chunk)) { localRate = Math.max(0.75, rate * 0.92); localPitch = Math.min(1.2, pitch * 1.03); }
+                    else if (/[!！]/.test(chunk)) { localPitch = Math.min(1.25, pitch * 1.06); }
+                } catch (eAdj) {}
                 u.rate = localRate;
-                try { u.pitch = localPitch; } catch (ePi) {}
+                u.pitch = localPitch;
+                u.volume = 1;
                 var v = null;
                 try {
-                    if (typeof pickVoiceForProfile === "function") v = pickVoiceForProfile(u.lang, gender, age);
-                    if (!v && typeof pickVoiceForLang === "function") v = pickVoiceForLang(u.lang);
+                    if (typeof pickVoiceForLang === "function") v = pickVoiceForLang(u.lang);
                     if (!v && typeof pickVoice === "function") v = pickVoice(u.lang);
                 } catch (eV) {}
                 if (v) u.voice = v;
-                u.onend = function () { if (thisRun === speechRunToken) next(); };
-                u.onerror = function () { if (thisRun === speechRunToken) next(); };
-                try { window.speechSynthesis.speak(u); } catch (eS) { next(); }
+                var advanced = false;
+                function goNext(delayMs) {
+                    if (advanced || thisRun !== speechRunToken) return;
+                    advanced = true;
+                    setTimeout(function () {
+                        if (thisRun === speechRunToken) next();
+                    }, typeof delayMs === "number" ? delayMs : 120);
+                }
+                u.onend = function () { goNext(140); };
+                u.onerror = function () { goNext(80); };
+                try {
+                    startKeepAlive();
+                    window.speechSynthesis.speak(u);
+                    // استئناف فوري إن توقف المتصفح مباشرة بعد speak
+                    setTimeout(function () {
+                        try {
+                            if (thisRun === speechRunToken && window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+                                window.speechSynthesis.resume();
+                            }
+                        } catch (eRes) {}
+                    }, 250);
+                } catch (eS) { goNext(50); }
             }
             if (st) {
                 st.textContent = (lang.indexOf("ar") === 0)
                     ? ("جاري قراءة الإجابة… (" + mood + "/" + gender + "/" + age + ")")
                     : ("Reading answer… (" + mood + "/" + gender + "/" + age + ")");
             }
-            next();
+            setTimeout(function () { if (thisRun === speechRunToken) next(); }, 60);
         }
+
 
         function speakAnswer(opts) {
             opts = opts || {};
@@ -7836,6 +8461,7 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             try {
                 if (__fbrahAlarmTimer) { clearTimeout(__fbrahAlarmTimer); __fbrahAlarmTimer = null; }
                 if (__fbrahAlarmAudio) { __fbrahAlarmAudio.pause(); __fbrahAlarmAudio = null; }
+                if (window.__fbrahBeepStop) { try{window.__fbrahBeepStop();}catch(e){} window.__fbrahBeepStop=null; }
                 if (window.__fbrahBeepCtx) { try { window.__fbrahBeepCtx.close(); } catch (e) {} window.__fbrahBeepCtx = null; }
             } catch (e) {}
         }
@@ -7843,41 +8469,120 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             stopFbrahAlarmSound();
             durationSec = parseInt(durationSec, 10);
             if (isNaN(durationSec)) durationSec = 60;
+            var toneEl=document.getElementById("alarmTone"), volumeEl=document.getElementById("alarmVolume"), repeatEl=document.getElementById("alarmRepeatCount");
+            var tone=toneEl? toneEl.value:"classic", volume=volumeEl?Math.max(0.05,Math.min(1,parseInt(volumeEl.value,10)/100)):0.65;
+            var repeats=repeatEl?parseInt(repeatEl.value,10):3; if(isNaN(repeats))repeats=3;
             try {
-                var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                window.__fbrahBeepCtx = ctx;
-                var osc = ctx.createOscillator();
-                var gain = ctx.createGain();
-                osc.type = "sine";
-                osc.frequency.value = 880;
-                gain.gain.value = 0.08;
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                // نبض بسيط
-                var pulse = setInterval(function () {
-                    try {
-                        gain.gain.value = gain.gain.value > 0.02 ? 0.01 : 0.09;
-                        osc.frequency.value = osc.frequency.value === 880 ? 660 : 880;
-                    } catch (e) {}
-                }, 500);
-                window.__fbrahBeepPulse = pulse;
-                if (durationSec > 0) {
-                    __fbrahAlarmTimer = setTimeout(function () {
-                        try { clearInterval(pulse); } catch (e) {}
-                        stopFbrahAlarmSound();
-                    }, durationSec * 1000);
-                }
-            } catch (e) {
-                try {
-                    if (window.speechSynthesis) {
-                        var u = new SpeechSynthesisUtterance("تذكير فبرا");
-                        u.lang = "ar-EG";
-                        window.speechSynthesis.speak(u);
+                if(toneEl)localStorage.setItem("fbrahReminderTone",tone);
+                if(volumeEl)localStorage.setItem("fbrahReminderVolume",String(volumeEl.value));
+                if(repeatEl)localStorage.setItem("fbrahReminderRepeats",String(repeats));
+            } catch(e0){}
+            var patterns={
+                classic:{f:[880,660,880],wave:"sine",dur:170,gap:180},
+                soft:{f:[440,523,440],wave:"triangle",dur:230,gap:260},
+                urgent:{f:[1046,784,1046,784],wave:"square",dur:130,gap:100},
+                double:{f:[660,660,880,880],wave:"sine",dur:150,gap:100},
+                chime:{f:[784,988,1175,988],wave:"sine",dur:260,gap:120},
+                ascending:{f:[392,494,587,784],wave:"triangle",dur:180,gap:90},
+                digital:{f:[1200,800,1200,800],wave:"square",dur:100,gap:100},
+                bell:{f:[880,880,660,660],wave:"sine",dur:300,gap:120},
+                melody:{f:[523,659,784,659,523],wave:"sine",dur:200,gap:110},
+                pulse:{f:[700,700,700],wave:"square",dur:90,gap:220},
+                radar:{f:[400,900,400,900,400],wave:"sawtooth",dur:120,gap:80},
+                xylophone:{f:[1046,1318,1568,1318,1046],wave:"triangle",dur:140,gap:70},
+                alarm:{f:[880,0,880,0,880],wave:"square",dur:180,gap:120},
+                softchime:{f:[523,659,784],wave:"sine",dur:320,gap:160},
+                triple:{f:[660,880,1100,880,660],wave:"triangle",dur:150,gap:90},
+                /* طيور وحيوانات — نغمات مركّبة عبر مذبذبات Web Audio */
+                birds:{f:[2100,2800,2400,3200,2600,3000],wave:"sine",dur:70,gap:55,chirp:1},
+                sparrows:{f:[3500,4200,3800,4500,3600],wave:"triangle",dur:45,gap:40,chirp:1},
+                nightingale:{f:[1800,2400,3000,2600,3200,2800,2200],wave:"sine",dur:90,gap:60,chirp:1},
+                curlew:{f:[900,1400,1900,1500,1100,1600],wave:"sine",dur:160,gap:100,chirp:1},
+                rooster:{f:[600,1200,1800,900,1500],wave:"sawtooth",dur:140,gap:90},
+                cat:{f:[800,1200,900,1300],wave:"triangle",dur:180,gap:120},
+                dog:{f:[300,500,280,520,320],wave:"sawtooth",dur:120,gap:150},
+                wolf:{f:[220,280,320,260,200],wave:"sawtooth",dur:280,gap:180},
+                cricket:{f:[4800,5200,4800,5200,4800,5200],wave:"square",dur:35,gap:45},
+                neuroalert:{f:[880,1320,880,1320,1760,880],wave:"square",dur:90,gap:70},
+                siren:{f:[600,900,1200,900,600,900],wave:"sawtooth",dur:160,gap:40},
+                focusbeep:{f:[1500,1500,0,1500,1500],wave:"sine",dur:110,gap:90}
+            };
+            var pat=patterns[tone]||patterns.classic, ctx=null, stopped=false, pulseIndex=0, cycle=0, timers=[];
+            function later(fn,ms){var t=setTimeout(fn,ms);timers.push(t);return t;}
+            function beep(freq){
+                if(stopped)return;
+                if(!freq||freq<=0){return;}
+                try{
+                    if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();
+                    if(ctx.state==="suspended")ctx.resume();
+                    var o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;
+                    o.type=pat.wave||"sine";
+                    if(pat.chirp){
+                        o.frequency.setValueAtTime(Math.max(80,freq*0.72),t);
+                        o.frequency.exponentialRampToValueAtTime(Math.max(90,freq*1.25),t+pat.dur/1000);
+                    }else{
+                        o.frequency.setValueAtTime(freq,t);
                     }
-                } catch (e2) {}
+                    g.gain.setValueAtTime(0.0001,t);
+                    g.gain.exponentialRampToValueAtTime(Math.max(0.001,volume*0.42),t+0.012);
+                    g.gain.exponentialRampToValueAtTime(0.0001,t+pat.dur/1000);
+                    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+pat.dur/1000+0.03);
+                }catch(e){}
             }
+            function runPulse(){
+                if(stopped)return;
+                if(pulseIndex>=pat.f.length){pulseIndex=0;cycle++;if(repeats>0&&cycle>=repeats){later(function(){stopped=true;try{if(ctx)ctx.close();}catch(e){}window.__fbrahBeepStop=null;},120);return;}later(runPulse,650);return;}
+                beep(pat.f[pulseIndex++]);later(runPulse,pat.dur+pat.gap);
+            }
+            runPulse();
+            if(durationSec>0){__fbrahAlarmTimer=setTimeout(function(){stopFbrahAlarmSound();},durationSec*1000);}
+            window.__fbrahBeepStop=function(){stopped=true;timers.forEach(clearTimeout);try{if(ctx)ctx.close();}catch(e){}};
         }
+        try {
+            var savedTone = localStorage.getItem("fbrahReminderTone");
+            var toneControl = document.getElementById("alarmTone"), volumeControl=document.getElementById("alarmVolume"), repeatControl=document.getElementById("alarmRepeatCount"), volumeOutput=document.getElementById("alarmVolumeValue");
+            if (savedTone && toneControl) toneControl.value = savedTone;
+            if(volumeControl){var sv=localStorage.getItem("fbrahReminderVolume");if(sv)volumeControl.value=sv;if(volumeOutput)volumeOutput.textContent=volumeControl.value+"%";volumeControl.addEventListener("input",function(){if(volumeOutput)volumeOutput.textContent=volumeControl.value+"%";try{localStorage.setItem("fbrahReminderVolume",volumeControl.value);}catch(e){}});}
+            if(repeatControl){var sr=localStorage.getItem("fbrahReminderRepeats");if(sr!==null)repeatControl.value=sr;repeatControl.addEventListener("change",function(){try{localStorage.setItem("fbrahReminderRepeats",repeatControl.value);}catch(e){}});}
+            function fbrahPersistReminderSound(){
+                try{
+                    var toneEl=document.getElementById("alarmTone");
+                    var volumeEl=document.getElementById("alarmVolume");
+                    var repeatEl=document.getElementById("alarmRepeatCount");
+                    var durEl=document.getElementById("alarmDurationSec");
+                    var payload={
+                        tone: toneEl?toneEl.value:"classic",
+                        volume: volumeEl?parseInt(volumeEl.value,10)||80:80,
+                        repeats: repeatEl?parseInt(repeatEl.value,10):3,
+                        duration_sec: durEl?parseInt(durEl.value,10)||60:60
+                    };
+                    localStorage.setItem("fbrahReminderTone", payload.tone);
+                    localStorage.setItem("fbrahReminderVolume", String(payload.volume));
+                    localStorage.setItem("fbrahReminderRepeats", String(payload.repeats));
+                    localStorage.setItem("fbrahReminderDuration", String(payload.duration_sec));
+                    // يحفظ للعامل Windows ليعمل التنبيه بعد إغلاق المتصفح
+                    fetch("/api/reminder_sound", {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify(payload)
+                    }).catch(function(){});
+                }catch(e){}
+            }
+            if (toneControl) toneControl.addEventListener("change", function(){ fbrahPersistReminderSound(); });
+            if (volumeControl) volumeControl.addEventListener("change", function(){ fbrahPersistReminderSound(); });
+            if (repeatControl) repeatControl.addEventListener("change", function(){ fbrahPersistReminderSound(); });
+            var durControl=document.getElementById("alarmDurationSec");
+            if (durControl) {
+                var sd=localStorage.getItem("fbrahReminderDuration");
+                if(sd!==null) durControl.value=sd;
+                durControl.addEventListener("change", function(){ fbrahPersistReminderSound(); });
+            }
+            // مزامنة أولية مع العامل
+            setTimeout(function(){ fbrahPersistReminderSound(); }, 1500);
+            var testBtn=document.getElementById("alarmTestBtn");if(testBtn)testBtn.addEventListener("click",function(){unlockFbrahAudio();startFbrahAlarmSound(8);setTimeout(stopFbrahAlarmSound,8000);});
+        } catch (eTone) {}
+
         function showReminderToast(item) {
             item = item || {};
             var big = true;
@@ -7893,14 +8598,22 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
             } catch (e) {}
             stopFbrahAlarmSound();
             startFbrahAlarmSound(dur);
+            try {
+                if (window.Notification && Notification.permission === "granted") {
+                    var nativeNotice = new Notification(item.kind === "appointment" ? "FBRAH · موعد" : "FBRAH · تذكير", {body: item.message || "موعدك", tag: "fbrah-reminder-" + item.id});
+                    setTimeout(function(){try{nativeNotice.close();}catch(e){}}, 12000);
+                }
+            } catch (eNotice) {}
 
+            var autoDismissTimer = null;
             function dismiss(doneApi) {
+                if (autoDismissTimer) { clearTimeout(autoDismissTimer); autoDismissTimer = null; }
                 stopFbrahAlarmSound();
                 try { if (overlay) overlay.remove(); } catch (e) {}
                 try { if (box) box.remove(); } catch (e) {}
                 if (doneApi && item.id && String(item.id).indexOf("local-") !== 0) {
                     try {
-                        fetch("/api/reminders/" + item.id + "/done", { method: "POST", credentials: "same-origin" });
+                        fetch("/api/reminders/" + item.id + "/done", { method: "POST", credentials: "same-origin" }).then(function(){delete REM_NOTIFIED[item.id];});
                     } catch (e) {}
                 }
             }
@@ -7913,16 +8626,25 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                     '<div class="rmsg"></div>' +
                     '<div class="rtime"></div>' +
                     '<div><button type="button" class="btn-stop">إيقاف الصوت والشريط</button>' +
+                    '<button type="button" class="btn-snooze">غفوة 10 دقائق</button>' +
                     '<button type="button" class="btn-ok">تم</button></div></div>';
                 var panel = overlay.querySelector(".fbrah-reminder-panel");
                 panel.querySelector(".rmsg").textContent = item.message || "موعدك";
                 panel.querySelector(".rtime").textContent = item.remind_at ? ("الموعد: " + item.remind_at) : "";
                 panel.querySelector(".btn-stop").onclick = function () { dismiss(true); };
                 panel.querySelector(".btn-ok").onclick = function () { dismiss(true); };
+                panel.querySelector(".btn-snooze").onclick = function () {
+                    if (autoDismissTimer) { clearTimeout(autoDismissTimer); autoDismissTimer = null; }
+                    stopFbrahAlarmSound();
+                    if(item.id && String(item.id).indexOf("local-")!==0){
+                        fetch("/api/reminders/"+item.id+"/snooze",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({minutes:10})}).then(function(r){if(!r.ok)throw new Error("snooze failed");delete REM_NOTIFIED[item.id];}).catch(function(){});
+                    }
+                    try{overlay.remove();}catch(e){}
+                };
                 document.body.appendChild(overlay);
                 // إيقاف تلقائي للشريط مع الصوت إن حُددت مدة
                 if (dur > 0) {
-                    setTimeout(function () { try { dismiss(false); } catch (e) {} }, dur * 1000);
+                    autoDismissTimer = setTimeout(function () { try { dismiss(true); } catch (e) {} }, dur * 1000);
                 }
                 return;
             }
@@ -7952,9 +8674,6 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                   });
               }).catch(function () {});
         }
-        if (window.Notification && Notification.permission === "default") {
-            setTimeout(function () { try { Notification.requestPermission(); } catch (e) {} }, 2500);
-        }
         // فحص أقصر: يبقى فعالاً أثناء استخدام الموقع لأمور أخرى
         setInterval(pollReminders, 15000);
         setTimeout(pollReminders, 1000);
@@ -7962,6 +8681,9 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         document.addEventListener("visibilitychange", function () {
             if (!document.hidden) pollReminders();
         });
+
+
+        /* initReminderManager removed — لا خانة مواعيد في شريط الصوت */
 
 
         function resetActionButtons() {
@@ -9976,8 +10698,11 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
                 var fullWidthVertical = !!options.fullWidthVertical;
                 function down(e) {
                     if (e.button != null && e.button !== 0) return;
-                    // زر الاستعادة نفسه قابل للسحب؛ نتجاهل الأزرار الداخلية فقط في بقية العناصر.
-                    if (el.id !== "tickerRestoreBtn" && e.target && e.target.closest && e.target.closest("button")) return;
+                    // لا تسحب عند النقر على خبر/رابط — حتى يفتح المصدر في تاب جديد
+                    if (e.target && e.target.closest) {
+                        if (e.target.closest("a, .ticker-item[data-url], .ticker-item[href]")) return;
+                        if (el.id !== "tickerRestoreBtn" && e.target.closest("button")) return;
+                    }
                     dragging = true; moved = false;
                     sx = e.touches ? e.touches[0].clientX : e.clientX;
                     sy = e.touches ? e.touches[0].clientY : e.clientY;
@@ -11002,5 +11727,475 @@ function moodToPitchRate(mood){var map={neutral:{pitch:1,rate:1},deep:{pitch:0.7
         };
 
 </script>
+
+<style id="fbrahCalcStyles">
+#fbrahCalcLauncher{display:none;position:fixed;left:18px;bottom:118px;z-index:9998;background:#6b0f1a;color:#fff;border:1px solid #d4af37;border-radius:24px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px #0003}
+#fbrahCalcPanel{
+  position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);
+  z-index:10050;
+  width:min(340px,calc(100vw - 20px));
+  height:auto;
+  max-height:calc(100vh - 100px);
+  overflow:hidden;
+  background:linear-gradient(165deg,#1a0a0e 0%,#2a1218 100%);
+  color:#f5f0e6;
+  border:1.5px solid #d4af37;
+  border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,.55);
+  padding:8px 8px 10px;
+  display:none;
+  resize:none;
+}
+#fbrahCalcPanel *{box-sizing:border-box}
+#fbrahCalcPanel textarea{
+  width:100%;padding:7px 8px;border:1px solid rgba(212,175,55,.4);
+  border-radius:8px;font-size:14px;font-family:ui-monospace,Consolas,monospace;
+  background:rgba(0,0,0,.28);color:inherit;outline:none;resize:none;min-height:36px;max-height:48px;line-height:1.3
+}
+#fbrahCalcPanel button{
+  cursor:pointer;border:1px solid rgba(155,123,36,.7);border-radius:7px;
+  padding:4px 6px;background:#6b0f1a;color:#fff;font-weight:700;
+  font-size:12px;line-height:1.1;transition:transform .07s,background .12s
+}
+#fbrahCalcPanel button:hover{background:#8a1422;border-color:#d4af37}
+#fbrahCalcPanel button:active{transform:scale(.96)}
+#fbrahCalcPanel .calc-secondary{background:rgba(255,255,255,.06);color:inherit;border-color:rgba(153,153,153,.45);font-size:11px}
+#fbrahCalcPanel .calc-op{background:#3d1a22;color:#ffd700;border-color:#9b7b24;font-size:14px}
+#fbrahCalcPanel .calc-num{background:#2a151a;font-size:13px}
+#fbrahCalcPanel .calc-fn{background:#1f1216;font-size:10px;padding:3px 5px;color:#e8d5a3}
+#fbrahCalcPanel .calc-eq{background:#d4af37;color:#1a0a0e;border-color:#f0d060;font-weight:800;font-size:14px}
+#fbrahCalcPanel .calc-clear{background:#5c1a1a;border-color:#a33}
+#fbrahCalcPanel button:disabled{opacity:.55;cursor:wait}
+#fbrahCalcResult{
+  padding:6px 8px;margin:5px 0 4px;border-radius:7px;
+  background:rgba(0,0,0,.28);border:1px solid rgba(212,175,55,.25);
+  white-space:pre-wrap;overflow-wrap:anywhere;min-height:28px;max-height:40px;overflow:hidden;
+  font-family:ui-monospace,Consolas,monospace;font-size:12px
+}
+#fbrahCalcHistory{max-height:52px;overflow:auto;border-top:1px solid rgba(212,175,55,.25);margin-top:4px;padding-top:3px}
+.fbrah-calc-row{padding:3px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fbrah-calc-row:hover{background:rgba(212,175,55,.1)}
+.fbrah-calc-keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+.fbrah-calc-keypad button{height:32px;min-height:32px;aspect-ratio:auto;display:flex;align-items:center;justify-content:center;padding:0}
+.fbrah-calc-sci{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:5px}
+.fbrah-calc-sci button{height:26px;min-height:26px}
+.fbrah-calc-actions{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:6px}
+.fbrah-calc-actions button{height:28px;min-height:28px;padding:2px 4px;font-size:10px}
+#fbrahCalcDragHandle{
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  margin-bottom:5px;cursor:move;touch-action:none;user-select:none;
+  padding:4px 4px 6px;border-bottom:1px solid rgba(212,175,55,.5)
+}
+#fbrahCalcDragHandle strong{font-size:12px}
+#fbrahCalcClose{
+  background:#6b0f1a!important;color:#ffd700!important;border:1px solid #d4af37!important;
+  border-radius:7px!important;padding:3px 10px!important;font-size:11px!important;font-weight:800!important
+}
+.fbrah-calc-resize{position:absolute;z-index:6}
+.fbrah-calc-resize.n{top:0;left:12px;right:12px;height:8px;cursor:ns-resize}
+.fbrah-calc-resize.s{bottom:0;left:12px;right:12px;height:8px;cursor:ns-resize}
+.fbrah-calc-resize.e{right:0;top:12px;bottom:12px;width:8px;cursor:ew-resize}
+.fbrah-calc-resize.w{left:0;top:12px;bottom:12px;width:8px;cursor:ew-resize}
+.fbrah-calc-resize.ne{top:0;right:0;width:14px;height:14px;cursor:nesw-resize}
+.fbrah-calc-resize.nw{top:0;left:0;width:14px;height:14px;cursor:nwse-resize}
+.fbrah-calc-resize.se{right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize}
+.fbrah-calc-resize.sw{left:0;bottom:0;width:14px;height:14px;cursor:nesw-resize}
+.fbrah-calc-resize.se::after{content:"";position:absolute;right:2px;bottom:2px;width:8px;height:8px;border-right:2px solid #d4af37;border-bottom:2px solid #d4af37;opacity:.8}
+@media(max-width:480px){
+  #fbrahCalcPanel{width:calc(100vw - 12px)}
+  .fbrah-calc-keypad button{height:30px}
+}
+</style>
+<button id="fbrahCalcLauncher" type="button" aria-expanded="false">∑ الآلة الحاسبة العلمية</button>
+<section id="fbrahCalcPanel" dir="rtl" aria-label="FBRAH scientific calculator">
+  <div id="fbrahCalcDragHandle" title="اسحب للتحريك في أي اتجاه">
+    <strong id="fbrahCalcTitle">الآلة الحاسبة</strong>
+    <button id="fbrahCalcClose" type="button" title="إغلاق">إغلاق</button>
+  </div>
+  <div style="font-size:10px;opacity:.75;margin-bottom:3px" id="fbrahCalcHelp">عمليات + دوال · ans = آخر نتيجة</div>
+  <textarea id="fbrahCalcInput" rows="1" dir="ltr" autocomplete="off" spellcheck="false" placeholder="15% * 240 + sqrt(81)"></textarea>
+  <div class="fbrah-calc-keypad" id="fbrahCalcKeypad">
+    <button type="button" class="calc-clear" data-act="clear">C</button>
+    <button type="button" class="calc-secondary" data-act="back">⌫</button>
+    <button type="button" class="calc-op" data-ins="%">%</button>
+    <button type="button" class="calc-op" data-ins="/">÷</button>
+    <button type="button" class="calc-num" data-ins="7">7</button>
+    <button type="button" class="calc-num" data-ins="8">8</button>
+    <button type="button" class="calc-num" data-ins="9">9</button>
+    <button type="button" class="calc-op" data-ins="*">×</button>
+    <button type="button" class="calc-num" data-ins="4">4</button>
+    <button type="button" class="calc-num" data-ins="5">5</button>
+    <button type="button" class="calc-num" data-ins="6">6</button>
+    <button type="button" class="calc-op" data-ins="-">−</button>
+    <button type="button" class="calc-num" data-ins="1">1</button>
+    <button type="button" class="calc-num" data-ins="2">2</button>
+    <button type="button" class="calc-num" data-ins="3">3</button>
+    <button type="button" class="calc-op" data-ins="+">+</button>
+    <button type="button" class="calc-num" data-ins="0" style="grid-column:span 2">0</button>
+    <button type="button" class="calc-num" data-ins=".">.</button>
+    <button type="button" class="calc-eq" data-act="eq">=</button>
+  </div>
+  <div class="fbrah-calc-sci" id="fbrahCalcFunctions">
+    <button type="button" class="calc-fn" data-ins="(">(</button>
+    <button type="button" class="calc-fn" data-ins=")">)</button>
+    <button type="button" class="calc-fn" data-ins="sin(">sin</button>
+    <button type="button" class="calc-fn" data-ins="cos(">cos</button>
+    <button type="button" class="calc-fn" data-ins="tan(">tan</button>
+    <button type="button" class="calc-fn" data-ins="sqrt(">√</button>
+    <button type="button" class="calc-fn" data-ins="log(">log</button>
+    <button type="button" class="calc-fn" data-ins="ln(">ln</button>
+    <button type="button" class="calc-fn" data-ins="exp(">eˣ</button>
+    <button type="button" class="calc-fn" data-ins="^">xʸ</button>
+    <button type="button" class="calc-fn" data-ins="pi">π</button>
+    <button type="button" class="calc-fn" data-ins="e">e</button>
+    <button type="button" class="calc-fn" data-ins="factorial(">n!</button>
+    <button type="button" class="calc-fn" data-ins="mean(">μ</button>
+    <button type="button" class="calc-fn" data-ins="ans">ans</button>
+  </div>
+  <div class="fbrah-calc-actions">
+    <button id="fbrahCalcRun" type="button">احسب</button>
+    <button id="fbrahCalcInsert" type="button" class="calc-secondary">إدراج</button>
+    <button id="fbrahCalcReport" type="button" class="calc-secondary">تقرير</button>
+    <button id="fbrahCalcReload" type="button" class="calc-secondary">تحديث</button>
+    <button id="fbrahCalcClear" type="button" class="calc-secondary">مسح</button>
+  </div>
+  <div id="fbrahCalcResult" aria-live="polite">النتيجة</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+    <strong id="fbrahCalcHistoryTitle" style="font-size:10px">السجل</strong>
+    <small id="fbrahCalcCount" style="font-size:10px">0</small>
+  </div>
+  <div id="fbrahCalcHistory"></div>
+  <div class="fbrah-calc-resize n" data-resize="n"></div>
+  <div class="fbrah-calc-resize s" data-resize="s"></div>
+  <div class="fbrah-calc-resize e" data-resize="e"></div>
+  <div class="fbrah-calc-resize w" data-resize="w"></div>
+  <div class="fbrah-calc-resize ne" data-resize="ne"></div>
+  <div class="fbrah-calc-resize nw" data-resize="nw"></div>
+  <div class="fbrah-calc-resize se" data-resize="se"></div>
+  <div class="fbrah-calc-resize sw" data-resize="sw"></div>
+</section>
+<script id="fbrahAdvancedCalculatorUI">
+(function(){
+  const $ = id => document.getElementById(id);
+  const launcher=$("fbrahCalcLauncher"), panel=$("fbrahCalcPanel"), input=$("fbrahCalcInput");
+  if(!launcher||!panel||!input||panel.dataset.ready==="1") return;
+  panel.dataset.ready="1";
+  const isEn=()=>{
+    try {
+      if (typeof window.fbrahIsEn === "function") return !!window.fbrahIsEn();
+    } catch(e){}
+    try {
+      const ls = localStorage.getItem("fbrahLang") || localStorage.getItem("lang") || "";
+      if (String(ls).toLowerCase().startsWith("en")) return true;
+    } catch(e){}
+    return (document.documentElement.lang || "").toLowerCase().startsWith("en");
+  };
+  function tr(ar,en){return isEn()?en:ar;}
+  let lastCalcResult="";
+  const BAR=58, MIN_W=280, MIN_H=360;
+
+  function measureNatural(){
+    // ارتفاع طبيعي بدون سكرول: اترك height تلقائي ثم اقرأ
+    panel.style.height="auto";
+    panel.style.maxHeight="none";
+    panel.style.overflow="hidden";
+    return {w: panel.offsetWidth, h: panel.offsetHeight};
+  }
+
+  function clampInView(){
+    panel.style.transform="none";
+    const r=panel.getBoundingClientRect();
+    let left=r.left, top=r.top;
+    const maxL=Math.max(0, window.innerWidth - panel.offsetWidth - 4);
+    const maxT=Math.max(0, window.innerHeight - panel.offsetHeight - BAR);
+    left=Math.min(maxL, Math.max(4, left));
+    top=Math.min(maxT, Math.max(6, top));
+    panel.style.left=left+"px";
+    panel.style.top=top+"px";
+    panel.style.bottom="auto";
+  }
+
+  function placeFullyVisible(){
+    panel.style.transform="none";
+    panel.style.overflow="hidden";
+    // عرض مناسب يظهر كل شيء قطعة واحدة
+    const idealW=Math.min(340, window.innerWidth-20);
+    panel.style.width=idealW+"px";
+    panel.style.height="auto";
+    panel.style.maxHeight=(window.innerHeight-BAR-12)+"px";
+    // إن لزم تصغير طفيف للحفاظ على الظهور الكامل بدون سكرول داخلي
+    requestAnimationFrame(function(){
+      const h=panel.offsetHeight;
+      const maxH=window.innerHeight-BAR-12;
+      if(h>maxH){
+        panel.style.height=maxH+"px";
+        // فقط السجل يسكرول إن ضاق المكان
+        const hist=$("fbrahCalcHistory");
+        if(hist) hist.style.maxHeight="40px";
+      } else {
+        panel.style.height="auto";
+      }
+      const w=panel.offsetWidth, hh=panel.offsetHeight;
+      let left=Math.max(6, Math.round((window.innerWidth-w)/2));
+      let top=Math.max(6, Math.round((window.innerHeight-hh-BAR)/2));
+      panel.style.left=left+"px";
+      panel.style.top=top+"px";
+      panel.style.bottom="auto";
+      clampInView();
+    });
+  }
+
+  function open(opened){
+    panel.style.display=opened?"block":"none";
+    launcher.setAttribute("aria-expanded",opened?"true":"false");
+    if(opened){
+      // تجاهل حجم محفوظ قديم يجعل اللوحة ناقصة
+      panel.style.width="";
+      panel.style.height="auto";
+      requestAnimationFrame(function(){
+        placeFullyVisible();
+        loadHistory();
+        input.focus();
+      });
+    }
+  }
+  launcher.addEventListener("click",()=>open(panel.style.display!=="block"));
+  $("fbrahCalcClose").addEventListener("click",function(ev){ev.preventDefault();ev.stopPropagation();open(false);});
+  const inlineLauncher=$("fbrahCalcInlineBtn");
+  if(inlineLauncher) inlineLauncher.addEventListener("click",()=>open(true));
+
+  // سحب مرن
+  (function(){
+    const handle=$("fbrahCalcDragHandle"); if(!handle)return;
+    let drag=null;
+    handle.addEventListener("pointerdown",function(ev){
+      if(ev.target.closest("button"))return;
+      panel.style.transform="none";
+      const r=panel.getBoundingClientRect();
+      drag={x:ev.clientX,y:ev.clientY,left:r.left,top:r.top};
+      try{handle.setPointerCapture(ev.pointerId);}catch(e){}
+      ev.preventDefault();
+    });
+    handle.addEventListener("pointermove",function(ev){
+      if(!drag)return;
+      const maxL=Math.max(0,window.innerWidth-panel.offsetWidth);
+      const maxT=Math.max(0,window.innerHeight-panel.offsetHeight-BAR);
+      panel.style.left=Math.min(maxL,Math.max(0,drag.left+ev.clientX-drag.x))+"px";
+      panel.style.top=Math.min(maxT,Math.max(0,drag.top+ev.clientY-drag.y))+"px";
+      panel.style.bottom="auto";
+    });
+    function end(){
+      if(!drag)return;drag=null;clampInView();
+      const r=panel.getBoundingClientRect();
+      try{localStorage.setItem("fbrahCalcPosition",JSON.stringify({left:Math.round(r.left),top:Math.round(r.top)}));}catch(e){}
+    }
+    handle.addEventListener("pointerup",end);
+    handle.addEventListener("pointercancel",end);
+  })();
+
+  // تغيير حجم مرن من كل الجهات
+  (function(){
+    const handles=panel.querySelectorAll(".fbrah-calc-resize");
+    let rs=null;
+    handles.forEach(function(h){
+      h.addEventListener("pointerdown",function(ev){
+        panel.style.transform="none";
+        const r=panel.getBoundingClientRect();
+        rs={mode:h.getAttribute("data-resize"),x:ev.clientX,y:ev.clientY,w:r.width,h:r.height,left:r.left,top:r.top};
+        try{h.setPointerCapture(ev.pointerId);}catch(e){}
+        ev.preventDefault();ev.stopPropagation();
+      });
+      h.addEventListener("pointermove",function(ev){
+        if(!rs)return;
+        const dx=ev.clientX-rs.x, dy=ev.clientY-rs.y;
+        let left=rs.left, top=rs.top, w=rs.w, hgt=rs.h;
+        const m=rs.mode||"";
+        if(m.indexOf("e")>=0) w=rs.w+dx;
+        if(m.indexOf("s")>=0) hgt=rs.h+dy;
+        if(m.indexOf("w")>=0){ w=rs.w-dx; left=rs.left+dx; }
+        if(m.indexOf("n")>=0){ hgt=rs.h-dy; top=rs.top+dy; }
+        w=Math.max(MIN_W, Math.min(w, window.innerWidth-8));
+        hgt=Math.max(MIN_H, Math.min(hgt, window.innerHeight-BAR-8));
+        if(left<0){w+=left;left=0;}
+        if(top<4){hgt+=top-4;top=4;}
+        if(left+w>window.innerWidth-4) w=window.innerWidth-4-left;
+        if(top+hgt>window.innerHeight-BAR) hgt=window.innerHeight-BAR-top;
+        panel.style.width=w+"px";
+        panel.style.height=hgt+"px";
+        panel.style.left=left+"px";
+        panel.style.top=top+"px";
+        panel.style.bottom="auto";
+        panel.style.overflow="hidden";
+      });
+      function end(){
+        if(!rs)return;rs=null;clampInView();
+        const r=panel.getBoundingClientRect();
+        try{
+          localStorage.setItem("fbrahCalcSize",JSON.stringify({w:Math.round(r.width),h:Math.round(r.height)}));
+          localStorage.setItem("fbrahCalcPosition",JSON.stringify({left:Math.round(r.left),top:Math.round(r.top)}));
+        }catch(e){}
+      }
+      h.addEventListener("pointerup",end);
+      h.addEventListener("pointercancel",end);
+    });
+  })();
+
+  function insertAtCursor(str){
+    const el=input,s=el.selectionStart||el.value.length,e=el.selectionEnd||el.value.length;
+    el.value=el.value.slice(0,s)+str+el.value.slice(e);
+    el.setSelectionRange(s+str.length,s+str.length);el.focus();
+  }
+  function onPad(e){
+    const btn=e.target.closest("button"); if(!btn)return;
+    const act=btn.getAttribute("data-act"), ins=btn.getAttribute("data-ins");
+    if(act==="clear"){input.value="";input.focus();return;}
+    if(act==="back"){
+      const el=input,s=el.selectionStart||0,en=el.selectionEnd||0;
+      if(s!==en){el.value=el.value.slice(0,s)+el.value.slice(en);el.setSelectionRange(s,s);}
+      else if(s>0){el.value=el.value.slice(0,s-1)+el.value.slice(s);el.setSelectionRange(s-1,s-1);}
+      el.focus();return;
+    }
+    if(act==="eq"){calculate();return;}
+    if(ins!=null) insertAtCursor(ins);
+  }
+  $("fbrahCalcKeypad").addEventListener("click",onPad);
+  $("fbrahCalcFunctions").addEventListener("click",onPad);
+
+  function show(msg){$("fbrahCalcResult").textContent=msg;}
+  async function api(url,opts){
+    const r=await fetch(url,Object.assign({credentials:"same-origin"},opts||{}));
+    if(!r.ok){let msg="";try{const j=await r.json();msg=j.error||j.message||"";}catch(e){}throw new Error(msg||("HTTP "+r.status));}
+    const ct=r.headers.get("content-type")||"";
+    if(ct.indexOf("application/json")>=0) return r.json();
+    return r;
+  }
+  async function calculate(){
+    const expr=(input.value||"").trim();
+    if(!expr){show(tr("اكتب عملية.","Enter expression."));return;}
+    $("fbrahCalcRun").disabled=true;
+    try{
+      const data=await api("/api/calculator/evaluate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expression:expr})});
+      const result=data&&(data.result!=null?data.result:data.value);
+      lastCalcResult=String(result!=null?result:"");
+      show(lastCalcResult);
+      await loadHistory();
+    }catch(e){show(tr("تعذر: ","Failed: ")+e.message);}
+    finally{$("fbrahCalcRun").disabled=false;}
+  }
+  $("fbrahCalcRun").addEventListener("click",calculate);
+  input.addEventListener("keydown",function(ev){if(ev.key==="Enter"&&(ev.ctrlKey||ev.metaKey)){ev.preventDefault();calculate();}});
+  async function loadHistory(){
+    try{
+      const data=await api("/api/calculator/history?limit=20");
+      const list=(data&&data.items)||[];
+      const box=$("fbrahCalcHistory"); box.innerHTML="";
+      $("fbrahCalcCount").textContent=String(list.length);
+      list.slice(0,8).forEach(function(row){
+        const div=document.createElement("div");
+        div.className="fbrah-calc-row";
+        const expr=row.expression||"";
+        const res=row.result!=null?row.result:"";
+        div.textContent=expr+" = "+res;
+        div.addEventListener("click",function(){input.value=expr;input.focus();});
+        box.appendChild(div);
+      });
+    }catch(e){}
+  }
+  $("fbrahCalcReload").addEventListener("click",loadHistory);
+  $("fbrahCalcInsert").addEventListener("click",()=>{
+    if(!lastCalcResult){show(tr("احسب أولاً.","Calculate first."));return;}
+    const q=$("question"); if(!q)return;
+    q.value=(q.value.trim()?q.value.trim()+" ":"")+lastCalcResult; q.focus(); open(false);
+  });
+  $("fbrahCalcClear").addEventListener("click",async()=>{
+    if(!confirm(tr("مسح سجل الحسابات؟","Clear history?")))return;
+    try{await api("/api/calculator/history",{method:"DELETE"});await loadHistory();show(tr("تم المسح.","Cleared."));}catch(e){show(e.message);}
+  });
+  $("fbrahCalcReport").addEventListener("click",async()=>{
+    try{
+      const r=await api("/api/calculator/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({limit:200})});
+      const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");
+      a.href=url;a.download="FBRAH_Calculation_Report.txt";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    }catch(e){show(e.message);}
+  });
+  function localize(){
+    const en = isEn();
+    $("fbrahCalcTitle").textContent=tr("الآلة الحاسبة","Calculator");
+    $("fbrahCalcHelp").textContent=tr("عمليات + دوال · ans = آخر نتيجة","Ops + functions · ans = last result");
+    $("fbrahCalcRun").textContent=tr("احسب","Calculate");
+    $("fbrahCalcReport").textContent=tr("تقرير","Report");
+    $("fbrahCalcReload").textContent=tr("تحديث","Refresh");
+    $("fbrahCalcInsert").textContent=tr("إدراج","Insert");
+    $("fbrahCalcClear").textContent=tr("مسح","Clear");
+    $("fbrahCalcHistoryTitle").textContent=tr("السجل","History");
+    $("fbrahCalcClose").textContent=tr("إغلاق","Close");
+    $("fbrahCalcClose").title=tr("إغلاق","Close");
+    launcher.textContent=tr("∑ الآلة الحاسبة","∑ Calculator");
+    if(inlineLauncher) inlineLauncher.title=tr("فتح الآلة الحاسبة","Open calculator");
+    const result=$("fbrahCalcResult");
+    if(result && /النتيجة|Result|^\s*$/i.test((result.textContent||"").trim())) {
+      if(/النتيجة|Result/i.test(result.textContent||"")) result.textContent = en ? "Result" : "النتيجة";
+    }
+    const themeLab=$("fbrahCalcThemeLabel");
+    if(themeLab) themeLab.textContent = en ? "Theme" : "اللون";
+    panel.dir=en?"ltr":"rtl";
+  }
+  function applyCalcTheme(name){
+    name = name || "burgundy";
+    const themes = {
+      burgundy: {bg:"linear-gradient(165deg,#1a0a0e 0%,#2a1218 100%)", border:"#d4af37", btn:"#6b0f1a", op:"#3d1a22", accent:"#d4af37"},
+      navy: {bg:"linear-gradient(165deg,#0a1628 0%,#12243a 100%)", border:"#7eb6ff", btn:"#0b3d6e", op:"#163a5c", accent:"#c9a227"},
+      olive: {bg:"linear-gradient(165deg,#1a1f12 0%,#2a3218 100%)", border:"#c6a15b", btn:"#3d4a1c", op:"#4a5a22", accent:"#d4af37"}
+    };
+    const th = themes[name] || themes.burgundy;
+    panel.style.background = th.bg;
+    panel.style.borderColor = th.border;
+    panel.querySelectorAll("button").forEach(function(b){
+      if(b.id==="fbrahCalcClose") return;
+      if(b.classList.contains("calc-eq")) { b.style.background=th.accent; b.style.color="#1a0a0e"; return; }
+      if(b.classList.contains("calc-op")) { b.style.background=th.op; return; }
+      if(b.classList.contains("calc-secondary")||b.classList.contains("calc-fn")) return;
+      if(b.classList.contains("calc-num")||b.classList.contains("calc-clear")) { b.style.background=th.btn; }
+    });
+    const close=$("fbrahCalcClose");
+    if(close){ close.style.background=th.btn; close.style.borderColor=th.accent; close.style.color=th.accent; }
+    try { localStorage.setItem("fbrahCalcTheme", name); } catch(e){}
+    document.querySelectorAll(".fbrah-calc-theme-btn").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme")===name);
+    });
+  }
+  (function(){
+    const handle=$("fbrahCalcDragHandle");
+    if(handle && !$("fbrahCalcThemeBox")){
+      const box=document.createElement("div");
+      box.id="fbrahCalcThemeBox";
+      box.style.cssText="display:flex;align-items:center;gap:4px;margin-inline-start:auto;margin-inline-end:6px";
+      const lab=document.createElement("span");
+      lab.id="fbrahCalcThemeLabel";
+      lab.style.cssText="font-size:10px;opacity:.85";
+      lab.textContent="اللون";
+      box.appendChild(lab);
+      [["burgundy","#6b0f1a"],["navy","#0b3d6e"],["olive","#3d4a1c"]].forEach(function(pair){
+        const b=document.createElement("button");
+        b.type="button";
+        b.className="fbrah-calc-theme-btn";
+        b.setAttribute("data-theme", pair[0]);
+        b.title=pair[0];
+        b.style.cssText="width:16px;height:16px;border-radius:50%;border:1px solid #d4af37;padding:0;background:"+pair[1]+";cursor:pointer";
+        b.addEventListener("click", function(ev){ ev.preventDefault(); ev.stopPropagation(); applyCalcTheme(pair[0]); });
+        box.appendChild(b);
+      });
+      const close=$("fbrahCalcClose");
+      if(close) handle.insertBefore(box, close);
+      else handle.appendChild(box);
+    }
+    let saved="burgundy";
+    try { saved=localStorage.getItem("fbrahCalcTheme")||"burgundy"; } catch(e){}
+    applyCalcTheme(saved);
+  })();
+  document.addEventListener("fbrah-lang-change",localize);localize();
+})();
+</script>
+
 </body>
 </html>

@@ -52,7 +52,7 @@ def test_ocr_cloud_default_off(monkeypatch=None):
 def test_answer_output_uses_jinja_autoescape():
     with open(os.path.join(ROOT, "templates", "index.html"), "r", encoding="utf-8") as f:
         html = f.read()
-    assert "{{ answer }}" in html
+    assert "{{ answer|fbrah_safe }}" in html
     assert "{{ answer|safe }}" not in html
 
 

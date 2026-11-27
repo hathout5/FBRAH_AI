@@ -1,21 +1,20 @@
-حزمة أولويات FBRAH (P0–P1) — ملفات جاهزة للاستبدال
-=====================================================
+FBRAH AI — دليل التثبيت السريع
+================================
 
-لا علاقة لها بـ PowerShell. انسخ الملفات إلى مشروعك يدوياً.
+اقرأ `READ_ME_FIRST_AR.txt` للحصول على تفاصيل التحديث والحدود والاختبارات.
 
-الترتيب:
-1) انسخ app.py  →  يستبدل app.py في جذر المشروع
-2) انسخ templates/index.html  →  templates/index.html
-   (إن كان عندك القالب في "Fbrah Ai G/templates" انسخه هناك أيضاً)
-3) انسخ .gitignore  →  جذر المشروع (اختياري لكن مهم قبل النشر)
-4) اقرأ 01_CHANGELOG_AR.txt
+1) أوقف FBRAH من PowerShell عبر Ctrl+C.
+2) فك ضغط الحقيبة في مجلد مستقل.
+3) افتح PowerShell داخل مجلد الحقيبة.
+4) شغّل: `powershell -ExecutionPolicy Bypass -File ".\APPLY_UPDATE.ps1" -ProjectRoot "C:\مسار\مشروع FBRAH"`
+5) اكتب APPLY عند طلب التأكيد.
+6) أعد تشغيل FBRAH.
 
-بعد النسخ: أعد تشغيل التطبيق فقط (python app.py).
+المثبت ينشئ نسخة احتياطية ولا يستبدل .env أو قاعدة البيانات أو data أو الملفات المرفوعة.
 
-ملفات هذه الحزمة:
-- app.py
-- templates/index.html
-- .gitignore
-- 00_INSTALL_AR.txt
-- 01_CHANGELOG_AR.txt
-- 02_ENV_HINTS.txt
+لتفعيل تنبيهات Windows عند إغلاق المتصفح: ثبّت `winotify` ثم شغّل `INSTALL_FBRAH_REMINDERS_STARTUP.ps1` وحدد اسم مستخدم FBRAH المستهدف.
+
+لا توجد نكت خارجية مفعلة افتراضياً؛ لا يعرض النظام نكتاً إلا عند ضبط موجز خارجي موثوق وذي روابط مقالات فعلية.
+
+
+مهم: إذا ظهرت لك علامة >>> فأنت داخل Python. اكتب exit() ثم Enter. لا تكتب أوامر PowerShell داخل Python. يمكنك بدلاً من ذلك تشغيل RUN_UPDATE_FOR_EXISTING_PROJECT.bat بالنقر المزدوج.

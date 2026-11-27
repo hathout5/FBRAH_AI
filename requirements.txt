@@ -19,3 +19,6 @@ pdf2image>=1.16.0
 arabic-reshaper>=3.0.0
 python-bidi>=0.4.2
 waitress>=2.1.0
+
+# Optional Windows toast notifications for reminders (run fbrah_reminder_worker.py)
+winotify>=1.1.0; platform_system == "Windows"
